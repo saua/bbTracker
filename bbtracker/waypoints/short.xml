@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<waypoints>
+	<waypoint time="1500" latitude="14.389796708964603"
+		longitude="50.09985002736201" altitude="310" />
+	<waypoint time="5500" latitude="14.390283327582706"
+		longitude="50.099909292742595" altitude="310" />
+	<waypoint time="5500" latitude="14.390282428592135"
+		longitude="50.100262519964886" altitude="310" />
+	<waypoint time="1500" latitude="14.390793552257932"
+		longitude="50.10032395846041" altitude="310" />
+</waypoints>

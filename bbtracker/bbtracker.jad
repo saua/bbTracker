@@ -1,0 +1,8 @@
+MIDlet-1: BBTracker,bbtracker.png,org.dyndns.rentar.bbtracker.mobile.BBTracker
+MIDlet-Jar-URL: bbtracker.jar
+MIDlet-Name: BBTracker
+MIDlet-Permissions: javax.microedition.location.Location, javax.microedition.location.Orientation
+MIDlet-Vendor: Joachim Sauer
+MIDlet-Version: 0.1.5
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0
