@@ -11,15 +11,13 @@ import org.bbtracker.TrackSegment;
 import org.bbtracker.Utils;
 
 public class TrackTile extends Tile {
-	private static final int POINT_COLOR = 0x00bbbbbb;
-
 	private static final int MARKED_POINT_COLOR = 0x00bb0000;
 
 	private static final int LAST_POINT_COLOR = 0x00555555;
 
 	private static final int LAST_MARKED_POINT_COLOR = 0x00550000;
 
-	private static final int LINK_COLOR = 0x00008800;
+	private static final int LINK_COLOR = 0x00003300;
 
 	private static final int SEGMENT_LINK_COLOR = 0x00aaaaaa;
 
@@ -37,6 +35,8 @@ public class TrackTile extends Tile {
 
 	private final Track track;
 
+	private TrackPoint currentPoint;
+
 	private int scaleSizeInPixel;
 
 	private int scaleSize;
@@ -46,6 +46,14 @@ public class TrackTile extends Tile {
 
 		minimumLongitude = minimumLatitude = Double.NaN;
 		scale = Float.NaN;
+	}
+
+	public void setCurrentPoint(final TrackPoint currentPoint) {
+		this.currentPoint = currentPoint;
+	}
+
+	public TrackPoint getCurrentPoint() {
+		return currentPoint;
 	}
 
 	protected void recalculateBounds() {
@@ -129,6 +137,7 @@ public class TrackTile extends Tile {
 			boolean newSegment = (prevX != -1);
 			final TrackSegment segment = (TrackSegment) segments.nextElement();
 			final Enumeration points = segment.getPoints();
+			TrackPoint prev = null;
 			while (points.hasMoreElements()) {
 				final TrackPoint point = (TrackPoint) points.nextElement();
 				final int curX = (int) ((point.getLongitude() - minimumLongitude) / scale);
@@ -136,7 +145,7 @@ public class TrackTile extends Tile {
 				if (prevX != -1) {
 
 					g.drawLine(prevX, prevY, curX, curY);
-					drawPoint(g, prevX, prevY, prevIsWaypoint, false);
+					drawPoint(g, prevX, prevY, prevIsWaypoint, prev == currentPoint);
 					if (newSegment) {
 						g.setColor(SEGMENT_LINK_COLOR);
 						newSegment = false;
@@ -146,17 +155,28 @@ public class TrackTile extends Tile {
 				}
 				prevX = curX;
 				prevY = curY;
+				prev = point;
 			}
-			drawPoint(g, prevX, prevY, prevIsWaypoint, true);
+			drawPoint(g, prevX, prevY, prevIsWaypoint, prev == currentPoint);
 		}
 	}
 
-	private void drawPoint(final Graphics g, final int x, final int y, final boolean waypoint, final boolean last) {
-		final int color = last ? (waypoint ? LAST_MARKED_POINT_COLOR : LAST_POINT_COLOR)
-				: (waypoint ? MARKED_POINT_COLOR : POINT_COLOR);
-		g.setColor(color);
-		g.drawLine(x - 2, y - 2, x + 2, y + 2);
-		g.drawLine(x - 2, y + 2, x + 2, y - 2);
+	private void drawPoint(final Graphics g, final int x, final int y, final boolean waypoint, final boolean current) {
+		if (!(waypoint || current)) {
+			return;
+		}
+		if (current) {
+			g.setColor(waypoint ? LAST_MARKED_POINT_COLOR : LAST_POINT_COLOR);
+			g.drawLine(x, y - 3, x + 3, y);
+			g.drawLine(x + 3, y, x, y + 3);
+			g.drawLine(x, y + 3, x - 3, y);
+			g.drawLine(x - 3, y, x, y - 3);
+
+		} else {
+			g.setColor(MARKED_POINT_COLOR);
+			g.drawLine(x - 2, y - 2, x + 2, y + 2);
+			g.drawLine(x - 2, y + 2, x + 2, y - 2);
+		}
 	}
 
 	private void drawScale(final Graphics g) {

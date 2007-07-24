@@ -28,7 +28,11 @@ public class Preferences {
 	public static synchronized Preferences getInstance() {
 		if (instance == null) {
 			instance = new Preferences();
-			instance.load();
+			try {
+				instance.load();
+			} catch (final RecordStoreException ignored) {
+				// ignore
+			}
 		}
 		return instance;
 	}
@@ -40,6 +44,8 @@ public class Preferences {
 	private int startAction = START_ACTION_INIT_GPS;
 
 	private int trackNumber = 1;
+
+	private String exportDirectory;
 
 	private Preferences() {
 	}
@@ -64,7 +70,7 @@ public class Preferences {
 		return trackNumber++;
 	}
 
-	private void load() {
+	private void load() throws RecordStoreException {
 		RecordStore rs = null;
 		try {
 			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
@@ -88,18 +94,17 @@ public class Preferences {
 			startAction = in.readShort();
 			sampleInterval = in.readInt();
 			trackNumber = in.readInt();
+			if (in.readByte() != 0) {
+				exportDirectory = in.readUTF();
+			}
 
 			in.close();
 		} catch (final RecordStoreNotFoundException e) {
 			// ignore, don't load anything
 		} catch (final InvalidRecordIDException e) {
 			// ignore, don't load anything
-		} catch (final RecordStoreException e) {
-			BBTracker.nonFatal(e, "loading preferences");
-			e.printStackTrace();
 		} catch (final IOException e) {
-			BBTracker.nonFatal(e, "loading preferences");
-			e.printStackTrace();
+			throw new RecordStoreException(e.getMessage());
 		} finally {
 			if (rs != null) {
 				try {
@@ -111,7 +116,7 @@ public class Preferences {
 		}
 	}
 
-	public void store() {
+	public void store() throws RecordStoreException {
 		RecordStore rs = null;
 		try {
 			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
@@ -122,6 +127,12 @@ public class Preferences {
 			out.writeShort(startAction);
 			out.writeInt(sampleInterval);
 			out.writeInt(trackNumber);
+			if (exportDirectory == null) {
+				out.writeByte(0);
+			} else {
+				out.writeByte(1);
+				out.writeUTF(exportDirectory);
+			}
 
 			out.close();
 			final byte[] data = baos.toByteArray();
@@ -138,12 +149,8 @@ public class Preferences {
 				}
 				enumerateRecords.destroy();
 			}
-		} catch (final RecordStoreException e) {
-			BBTracker.nonFatal(e, "storing preferences");
-			e.printStackTrace();
 		} catch (final IOException e) {
-			BBTracker.nonFatal(e, "storing preferences");
-			e.printStackTrace();
+			throw new RecordStoreException(e.getMessage());
 		} finally {
 			if (rs != null) {
 				try {
@@ -153,5 +160,13 @@ public class Preferences {
 				}
 			}
 		}
+	}
+
+	public String getExportDirectory() {
+		return exportDirectory;
+	}
+
+	public void setExportDirectory(final String exportDirectory) {
+		this.exportDirectory = exportDirectory;
 	}
 }

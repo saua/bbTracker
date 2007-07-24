@@ -9,6 +9,7 @@ import java.io.IOException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
+import javax.microedition.rms.RecordStoreNotFoundException;
 
 import org.bbtracker.Track;
 
@@ -35,7 +36,7 @@ public class TrackStore {
 	private TrackStore() {
 	}
 
-	public String[] getTrackNames() {
+	public String[] getTrackNames() throws RecordStoreException {
 		if (names == null) {
 			RecordStore rs = null;
 			try {
@@ -62,8 +63,9 @@ public class TrackStore {
 					indices[i++] = enumeration.nextRecordId();
 				}
 				enumeration.destroy();
-			} catch (final RecordStoreException e) {
-				e.printStackTrace();
+			} catch (final RecordStoreNotFoundException e) {
+				names = new String[0];
+				indices = new int[0];
 			} finally {
 				if (rs != null) {
 					try {
@@ -77,7 +79,7 @@ public class TrackStore {
 		return names;
 	}
 
-	public Track getTrack(final int index) {
+	public Track getTrack(final int index) throws RecordStoreException {
 		if (indices == null) {
 			throw new IllegalStateException("Must not call getTrack() without calling getTrackNames() before!");
 		}
@@ -92,9 +94,7 @@ public class TrackStore {
 			dis.close();
 			return track;
 		} catch (final IOException e) {
-			BBTracker.nonFatal(e, "Loading Track");
-		} catch (final RecordStoreException e) {
-			BBTracker.nonFatal(e, "Loading Track");
+			throw new RecordStoreException(e.getMessage());
 		} finally {
 			if (rs != null) {
 				try {
@@ -111,7 +111,6 @@ public class TrackStore {
 				}
 			}
 		}
-		return null;
 	}
 
 	public void store(final Track track) throws RecordStoreException {
@@ -149,7 +148,7 @@ public class TrackStore {
 		}
 	}
 
-	public void deleteTrack(final int selectedIndex) {
+	public void deleteTrack(final int selectedIndex) throws RecordStoreException {
 		RecordStore rs = null;
 		try {
 			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
@@ -158,8 +157,6 @@ public class TrackStore {
 
 			indices = null;
 			names = null;
-		} catch (final RecordStoreException e) {
-			BBTracker.nonFatal(e, "deleting track");
 		} finally {
 			if (rs != null) {
 				try {

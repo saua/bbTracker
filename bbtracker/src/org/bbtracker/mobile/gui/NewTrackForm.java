@@ -40,10 +40,12 @@ public class NewTrackForm extends Form implements CommandListener {
 		if (command == okCommand) {
 			try {
 				trackManager.newTrack(nameField.getString());
+				BBTracker.getInstance().showMainCanvas();
 			} catch (final LocationException e) {
-				BBTracker.nonFatal(e, "Starting new track");
+				BBTracker.nonFatal(e, "Starting new track", null);
 			}
+		} else if (command == cancelCommand) {
+			BBTracker.getInstance().showMainCanvas();
 		}
-		BBTracker.getInstance().showMainCanvas();
 	}
 }

@@ -13,7 +13,6 @@ import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
-import org.bbtracker.TrackSegment;
 
 public class TrackManager implements LocationListener {
 
@@ -164,7 +163,7 @@ public class TrackManager implements LocationListener {
 			provider.setLocationListener(TrackManager.this, sampleInterval, sampleInterval, -1);
 		} catch (final IllegalArgumentException e) {
 			provider.setLocationListener(TrackManager.this, -1, -1, -1);
-			BBTracker.nonFatal(e, "Trying to set sample interval " + sampleInterval);
+			BBTracker.log(e);
 		}
 	}
 
@@ -172,15 +171,10 @@ public class TrackManager implements LocationListener {
 		maybeSafeTrack();
 		state = STATE_STATIC;
 		track = newTrack;
-		if (track == null) {
+		if (track == null || track.getPointCount() == 0) {
 			currentPoint = null;
 		} else {
-			if (track.getSegmentCount() > 0) {
-				final TrackSegment seg = track.getSegment(0);
-				if (seg.getPointCount() > 0) {
-					currentPoint = seg.getPoint(0);
-				}
-			}
+			currentPoint = track.getPoint(0);
 		}
 	}
 
@@ -218,7 +212,7 @@ public class TrackManager implements LocationListener {
 			try {
 				TrackStore.getInstance().store(track);
 			} catch (final RecordStoreException e) {
-				BBTracker.nonFatal(e, "Storing track");
+				BBTracker.log(e);
 			}
 		}
 	}

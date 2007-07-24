@@ -6,6 +6,7 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
@@ -85,6 +86,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
+		trackTile.setCurrentPoint(newPoint);
 		if (boundsChanged) {
 			trackTile.onResize(); // XXX Make that nicer
 		}
@@ -128,9 +130,13 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		} else if (command == newTrackCommand) {
 			nextDisplayable = new NewTrackForm(manager);
 		} else if (command == tracksCommand) {
-			nextDisplayable = new TracksForm(manager);
+			try {
+				nextDisplayable = new TracksForm(manager);
+			} catch (final RecordStoreException e) {
+				BBTracker.nonFatal(e, "getting list of stored tracks", this);
+			}
 		} else if (command == exitCommand) {
-			BBTracker.getInstance().shutdown();
+			BBTracker.getInstance().shutdown(true);
 			return;
 		}
 		BBTracker.getDisplay().setCurrent(nextDisplayable);

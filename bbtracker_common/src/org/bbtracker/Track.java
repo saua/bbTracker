@@ -54,6 +54,24 @@ public class Track {
 		return pointCount;
 	}
 
+	public TrackPoint getPoint(final int nr) {
+		if (nr < 0 || nr > pointCount) {
+			throw new IndexOutOfBoundsException("no such point: " + nr + ", must be >= 0 and < " + pointCount);
+		}
+		int i = nr;
+		final Enumeration segs = segments.elements();
+		while (segs.hasMoreElements()) {
+			final TrackSegment seg = (TrackSegment) segs.nextElement();
+			final int count = seg.getPointCount();
+			if (i < count) {
+				return seg.getPoint(i);
+			} else {
+				i -= count;
+			}
+		}
+		throw new IllegalStateException("pointCount corrupt!");
+	}
+
 	public int getSegmentCount() {
 		return segments.size();
 	}

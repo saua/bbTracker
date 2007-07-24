@@ -2,11 +2,15 @@ package org.bbtracker.mobile;
 
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
+import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Form;
 import javax.microedition.location.LocationException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
+import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.mobile.gui.MainCanvas;
 import org.bbtracker.mobile.gui.NewTrackForm;
@@ -22,7 +26,7 @@ public class BBTracker extends MIDlet {
 
 	private final TrackManager trackManager;
 
-	private MainCanvas mainCanvas;
+	private final MainCanvas mainCanvas;
 
 	private boolean firstStart = true;
 
@@ -34,6 +38,8 @@ public class BBTracker extends MIDlet {
 
 		trackManager = new TrackManager();
 
+		mainCanvas = new MainCanvas(trackManager);
+
 		try {
 			switch (Preferences.getInstance().getStartAction()) {
 			case Preferences.START_ACTION_INIT_GPS:
@@ -44,24 +50,29 @@ public class BBTracker extends MIDlet {
 				break;
 			}
 		} catch (final LocationException e) {
-			nonFatal(e, "Initializing Location Provider");
+			nonFatal(e, "Initializing Location Provider", mainCanvas);
 		}
 	}
 
-	public void shutdown() {
+	public void shutdown(final boolean destroy) {
 		if (trackManager != null) {
 			trackManager.shutdown();
 		}
-		Preferences.getInstance().store();
-		notifyDestroyed();
+		try {
+			Preferences.getInstance().store();
+		} catch (final RecordStoreException ignored) {
+			// ignore
+		}
+		if (destroy) {
+			notifyDestroyed();
+		}
 	}
 
 	protected void destroyApp(final boolean arg0) throws MIDletStateChangeException {
-		shutdown();
+		shutdown(true);
 	}
 
 	protected void pauseApp() {
-		mainCanvas = null;
 	}
 
 	protected void startApp() throws MIDletStateChangeException {
@@ -76,19 +87,6 @@ public class BBTracker extends MIDlet {
 			showMainCanvas();
 		}
 
-	}
-
-	public static void alert(final Alert alert) {
-		final Display d = getDisplay();
-		Displayable next = d.getCurrent();
-		if (next == null) {
-			final BBTracker i = getInstance();
-			if (i.mainCanvas == null) {
-				i.mainCanvas = new MainCanvas(i.trackManager);
-			}
-			next = i.mainCanvas;
-		}
-		d.setCurrent(alert, next);
 	}
 
 	public static Display getDisplay() {
@@ -111,21 +109,45 @@ public class BBTracker extends MIDlet {
 		return version;
 	}
 
-	public static void nonFatal(final Throwable t, final String action) {
-		t.printStackTrace();
-		alert(new Alert("Non-fatal Exception", "Non-fatal Exception while " + action + ": " + t.getMessage(), null,
-				AlertType.WARNING));
+	public static void nonFatal(final Throwable t, final String action, final Displayable next) {
+		log(t);
+		final Alert alert = new Alert("Non-fatal Exception", "Non-fatal Exception while " + action + ": " +
+				t.getMessage(), null, AlertType.WARNING);
+		alert(alert, next);
+	}
+
+	public static void alert(final Alert alert, final Displayable next) {
+		getDisplay().setCurrent(alert, next != null ? next : getInstance().mainCanvas);
 	}
 
 	public static void fatal(final Throwable t, final String action) {
-		// TODO
-		getInstance().shutdown();
+		log(t);
+		final BBTracker i = getInstance();
+		i.shutdown(false);
+		final Form errorForm = new Form("Fatal Exception!");
+		errorForm.append("Fatal Exception while " + action + ":");
+		errorForm.append(t.toString());
+		errorForm.addCommand(new Command("Exit", Command.EXIT, 0));
+		errorForm.setCommandListener(new CommandListener() {
+
+			public void commandAction(final Command cmd, final Displayable displayable) {
+				i.notifyDestroyed();
+			}
+		});
+		getDisplay().setCurrent(errorForm);
 	}
 
 	public void showMainCanvas() {
-		if (mainCanvas == null) {
-			mainCanvas = new MainCanvas(trackManager);
-		}
 		getDisplay().setCurrent(mainCanvas);
+	}
+
+	public static void log(final Throwable e) {
+		// used only for debugging
+		e.printStackTrace();
+	}
+
+	public static void log(final String m) {
+		// used only for debugging
+		System.err.println(m);
 	}
 }

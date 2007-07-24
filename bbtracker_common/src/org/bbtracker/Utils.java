@@ -152,4 +152,23 @@ public final class Utils {
 		// luckily enough Date.toString() is well-defined, so we can cut the TimeZone info out
 		return orig.substring(0, 20) + orig.substring(size - 4, size);
 	}
+
+	public static String escapeXml(final String xml) {
+		final StringBuffer escaped = new StringBuffer(xml.length() + 4);
+		final char[] chars = xml.toCharArray();
+		for (int i = 0; i < chars.length; i++) {
+			final char c = chars[i];
+			switch (c) {
+			case '<':
+				escaped.append("&lt;");
+				break;
+			case '&':
+				escaped.append("&amp;");
+				break;
+			default:
+				escaped.append(c);
+			}
+		}
+		return escaped.toString();
+	}
 }
