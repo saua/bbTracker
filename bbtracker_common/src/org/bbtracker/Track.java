@@ -174,6 +174,6 @@ public class Track {
 		final String name = in.readUTF();
 		final Date creationDate = new Date(in.readLong());
 
-		return name + " (" + creationDate + ")";
+		return name + " (" + Utils.dateToString(creationDate) + ")";
 	}
 }

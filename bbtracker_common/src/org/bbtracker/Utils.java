@@ -1,5 +1,7 @@
 package org.bbtracker;
 
+import java.util.Date;
+
 public final class Utils {
 
 	// U+00B0 = Degree Sign
@@ -138,9 +140,16 @@ public final class Utils {
 
 	public static String courseToString(final float course) {
 		if (Float.isNaN(course)) {
-			return "???\u00B0";
+			return "???" + DEGREE;
 		} else {
 			return String.valueOf((int) (Math.floor(course + 0.5d))) + DEGREE;
 		}
+	}
+
+	public static String dateToString(final Date date) {
+		final String orig = date.toString();
+		final int size = orig.length();
+		// luckily enough Date.toString() is well-defined, so we can cut the TimeZone info out
+		return orig.substring(0, 20) + orig.substring(size - 4, size);
 	}
 }
