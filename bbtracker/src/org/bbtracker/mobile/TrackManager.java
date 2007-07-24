@@ -214,7 +214,7 @@ public class TrackManager implements LocationListener {
 	}
 
 	public void maybeSafeTrack() {
-		if (track != null && state != STATE_STATIC) {
+		if (track != null && state != STATE_STATIC && track.getPointCount() > 0) {
 			try {
 				TrackStore.getInstance().store(track);
 			} catch (final RecordStoreException e) {
