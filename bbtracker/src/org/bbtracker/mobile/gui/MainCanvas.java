@@ -86,19 +86,19 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
-		trackTile.setCurrentPoint(newPoint);
 		if (boundsChanged) {
 			trackTile.onResize(); // XXX Make that nicer
 		}
-		if (isShown()) {
-			repaint();
-		}
+		repaint();
+	}
+
+	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
+		trackTile.setCurrentPoint(newPoint);
+		repaint();
 	}
 
 	public void stateChanged(final int newState) {
-		if (isShown()) {
-			repaint();
-		}
+		repaint();
 	}
 
 	public void setTrack(final Track track) {
@@ -118,6 +118,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		if (newTrack != track) {
 			setTrack(newTrack);
 		}
+		trackTile.onResize();
 		manager.addPointListener(this);
 	}
 

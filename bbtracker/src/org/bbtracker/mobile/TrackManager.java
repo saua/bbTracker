@@ -34,6 +34,8 @@ public class TrackManager implements LocationListener {
 
 	private TrackPoint currentPoint;
 
+	private int currentPointIndex = -1;
+
 	private boolean trackInterrupted;
 
 	private Track track;
@@ -59,6 +61,10 @@ public class TrackManager implements LocationListener {
 		return currentPoint;
 	}
 
+	public int getCurrentPointIndex() {
+		return currentPointIndex;
+	}
+
 	public Track getTrack() {
 		return track;
 	}
@@ -67,9 +73,9 @@ public class TrackManager implements LocationListener {
 		if (state == STATE_STATIC) {
 			return;
 		}
-		boolean boundsChanged = false;
-		boolean newSegment = false;
 		if (location.isValid()) {
+			boolean boundsChanged = false;
+			boolean newSegment = false;
 			if (trackInterrupted == true) {
 				newSegment = true;
 				trackInterrupted = false;
@@ -78,14 +84,16 @@ public class TrackManager implements LocationListener {
 			final TrackPoint trackPoint = new TrackPoint(location.getTimestamp(), coordinates.getLatitude(),
 					coordinates.getLongitude(), coordinates.getAltitude(), location.getSpeed(), location.getCourse(),
 					false);
-			if (track != null && state != STATE_STATIC) {
+			if (track != null) {
+				currentPointIndex = track.getPointCount();
 				boundsChanged = track.addPoint(trackPoint);
 			}
 			currentPoint = trackPoint;
 			fireNewPoint(currentPoint, boundsChanged, newSegment);
+			fireCurrentPointChanged();
 			providerStateChanged(provider, provider.getState());
 		} else {
-			fireNewPoint(null, boundsChanged, newSegment);
+			fireNewPoint(null, false, false);
 		}
 	}
 
@@ -141,6 +149,17 @@ public class TrackManager implements LocationListener {
 		}
 	}
 
+	private void fireCurrentPointChanged() {
+		if (listeners == null) {
+			return;
+		}
+
+		final Enumeration e = listeners.elements();
+		while (e.hasMoreElements()) {
+			((TrackListener) e.nextElement()).currentPointChanged(currentPoint, currentPointIndex);
+		}
+	}
+
 	/**
 	 * Start a new track.
 	 * 
@@ -155,6 +174,11 @@ public class TrackManager implements LocationListener {
 
 		track = new Track(name);
 		state = STATE_TRACKING;
+
+		currentPointIndex = -1;
+		currentPoint = null;
+		fireStateChanged();
+		fireCurrentPointChanged();
 	}
 
 	public void updateSampleInterval() {
@@ -173,9 +197,13 @@ public class TrackManager implements LocationListener {
 		track = newTrack;
 		if (track == null || track.getPointCount() == 0) {
 			currentPoint = null;
+			currentPointIndex = -1;
 		} else {
 			currentPoint = track.getPoint(0);
+			currentPointIndex = 0;
 		}
+		fireStateChanged();
+		fireCurrentPointChanged();
 	}
 
 	public int getState() {
