@@ -5,13 +5,13 @@ import java.util.Date;
 public final class Utils {
 
 	// U+00B0 = Degree Sign
+	public static final char DEGREE = '\u00B0';
+
 	// U+2032 = Prime
+	public static final char MINUTE = '\u2032';
+
 	// U+2033 = Double Prime
-	private static final char DEGREE = '\u00B0';
-
-	private static final char MINUTE = '\u2032';
-
-	private static final char SECOND = '\u2033';
+	public static final char SECOND = '\u2033';
 
 	private static final float MS_TO_KMH_FACTOR = 3.6f;
 
@@ -170,5 +170,9 @@ public final class Utils {
 			}
 		}
 		return escaped.toString();
+	}
+
+	public static String elevationToString(final float elevation) {
+		return ((int) elevation) + "m";
 	}
 }
