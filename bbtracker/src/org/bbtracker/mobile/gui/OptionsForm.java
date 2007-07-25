@@ -31,6 +31,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final TextField directoryField;
 
+	private final ChoiceGroup exportFormatGroup;
+
 	public OptionsForm(final TrackManager trackManager) {
 		super("Options");
 
@@ -47,9 +49,15 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		directoryField.addCommand(browseCommand);
 		directoryField.setItemCommandListener(this);
 
+		exportFormatGroup = new ChoiceGroup("Export to: ", Choice.MULTIPLE, Preferences.EXPORT_FORMATS, null);
+		for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
+			exportFormatGroup.setSelectedIndex(i, pref.getExportFormat(i));
+		}
+
 		append(sampleField);
 		append(startTypeGroup);
 		append(directoryField);
+		append(exportFormatGroup);
 
 		okCommand = new Command("OK", Command.OK, 0);
 		addCommand(okCommand);
@@ -64,17 +72,22 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			try {
 				final int sampleInterval = Integer.parseInt(sampleField.getString());
 				pref.setSampleInterval(sampleInterval);
+				trackManager.updateSampleInterval();
 				pref.setStartAction(startTypeGroup.getSelectedIndex());
 				pref.setExportDirectory(directoryField.getString());
+
+				for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
+					pref.setExportFormat(i, exportFormatGroup.isSelected(i));
+				}
 
 				pref.store();
 			} catch (final NumberFormatException e) {
 				// should not happen
+				BBTracker.log(e);
 			} catch (final RecordStoreException e) {
 				BBTracker.nonFatal(e, "storing preferences", null);
+				return;
 			}
-
-			trackManager.updateSampleInterval();
 		}
 		BBTracker.getInstance().showMainCanvas();
 	}

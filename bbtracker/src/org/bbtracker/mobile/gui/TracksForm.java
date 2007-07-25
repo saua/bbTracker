@@ -19,6 +19,7 @@ import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore;
+import org.bbtracker.mobile.exporter.GpxTrackExporter;
 import org.bbtracker.mobile.exporter.KmlTrackExporter;
 import org.bbtracker.mobile.exporter.TrackExporter;
 
@@ -100,22 +101,36 @@ public class TracksForm extends List implements CommandListener {
 					BBTracker.alert(alert, null);
 					return;
 				}
+				int count;
 				try {
-					exportTrack(dir, track);
+					count = exportTrack(dir, track);
 				} catch (final IOException e) {
 					BBTracker.nonFatal(e, "exporting track", this);
 					return;
 				}
 
 				final Alert alert = new Alert("Finished exporting", "The track " + track.getName() +
-						" has been exported successfully!", null, AlertType.INFO);
-				BBTracker.alert(alert, null);
+						" has been exported successfully to " + count + " formats!", null, AlertType.INFO);
+				BBTracker.alert(alert, this);
 			}
 		}
 	}
 
-	private void exportTrack(final String dir, final Track track) throws IOException {
-		final TrackExporter exporter = new KmlTrackExporter();
+	private int exportTrack(final String dir, final Track track) throws IOException {
+		final Preferences pref = Preferences.getInstance();
+		int exportCount = 0;
+		if (pref.getExportFormat(0)) {
+			export(dir, track, new KmlTrackExporter());
+			exportCount++;
+		}
+		if (pref.getExportFormat(1)) {
+			export(dir, track, new GpxTrackExporter());
+			exportCount++;
+		}
+		return exportCount;
+	}
+
+	private void export(final String dir, final Track track, final TrackExporter exporter) throws IOException {
 		final String fileName = exporter.getFileName(track);
 		final String fullName = dir.endsWith("/") ? dir + fileName : dir + "/" + fileName;
 		FileConnection connection = null;

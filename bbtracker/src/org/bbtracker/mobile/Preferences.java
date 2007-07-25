@@ -23,6 +23,8 @@ public class Preferences {
 
 	public static String[] START_ACTIONS = new String[] { "Do nothing", "Initialize GPS", "Start new track" };
 
+	public static String[] EXPORT_FORMATS = new String[] { "KML (Google Earth)", "GPX" };
+
 	private static Preferences instance;
 
 	public static synchronized Preferences getInstance() {
@@ -44,6 +46,8 @@ public class Preferences {
 	private int startAction = START_ACTION_INIT_GPS;
 
 	private int trackNumber = 1;
+
+	private int exportFormats = 0x03; // export format 0 and 1 are set
 
 	private String exportDirectory;
 
@@ -97,6 +101,7 @@ public class Preferences {
 			if (in.readByte() != 0) {
 				exportDirectory = in.readUTF();
 			}
+			exportFormats = in.readInt();
 
 			in.close();
 		} catch (final RecordStoreNotFoundException e) {
@@ -133,6 +138,7 @@ public class Preferences {
 				out.writeByte(1);
 				out.writeUTF(exportDirectory);
 			}
+			out.writeInt(exportFormats);
 
 			out.close();
 			final byte[] data = baos.toByteArray();
@@ -168,5 +174,20 @@ public class Preferences {
 
 	public void setExportDirectory(final String exportDirectory) {
 		this.exportDirectory = exportDirectory;
+	}
+
+	public void setExportFormat(final int index, final boolean value) {
+		if (index >= EXPORT_FORMATS.length || index < 0) {
+			throw new IllegalArgumentException();
+		}
+		if (value) {
+			exportFormats |= 1 << index;
+		} else {
+			exportFormats &= ~(1 << index);
+		}
+	}
+
+	public boolean getExportFormat(final int index) {
+		return (exportFormats & (1 << index)) != 0;
 	}
 }
