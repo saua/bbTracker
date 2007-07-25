@@ -68,7 +68,7 @@ public class BBTracker extends MIDlet {
 		}
 	}
 
-	protected void destroyApp(final boolean arg0) throws MIDletStateChangeException {
+	protected void destroyApp(final boolean force) throws MIDletStateChangeException {
 		shutdown(true);
 	}
 
