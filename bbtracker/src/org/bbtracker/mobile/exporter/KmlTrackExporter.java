@@ -61,7 +61,7 @@ public class KmlTrackExporter implements TrackExporter {
 					w.write(' ');
 				}
 			}
-			w.write("\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n</Document>\n</kml>");
+			w.write("\n\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n</Document>\n</kml>");
 		} finally {
 			if (w != null) {
 				try {
