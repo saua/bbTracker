@@ -93,11 +93,13 @@ public class TrackTile extends Tile {
 		final int metersAvailableForScale = (int) (widthInMeter * 0.9);
 
 		scaleSize = 1;
-		while (scaleSize * 10 < metersAvailableForScale) {
+		while (scaleSize < metersAvailableForScale / 10) {
 			scaleSize = scaleSize * 10;
 		}
 		if (scaleSize * 5 < metersAvailableForScale) {
 			scaleSize = scaleSize * 5;
+		} else if (scaleSize * 2 < metersAvailableForScale) {
+			scaleSize = scaleSize * 2;
 		}
 		scaleSizeInPixel = (int) (scaleSize * (width / widthInMeter));
 	}
@@ -187,7 +189,7 @@ public class TrackTile extends Tile {
 		String unit;
 		int displayScaleSize;
 
-		if (scaleSize >= 10000) {
+		if (scaleSize >= 1000) {
 			unit = "km";
 			displayScaleSize = scaleSize / 1000;
 		} else {
@@ -196,18 +198,30 @@ public class TrackTile extends Tile {
 		}
 
 		final String leftLabel = "0";
-		final String middleLabel = displayScaleSize == 5 ? "2.5" : String.valueOf(displayScaleSize / 2);
+		final String middleLabel;
+		switch (displayScaleSize) {
+		case 1:
+			middleLabel = "0.5";
+			break;
+		case 5:
+			middleLabel = "2.5";
+			break;
+		default:
+			middleLabel = String.valueOf(displayScaleSize / 2);
+		}
 		final String rightLabel = displayScaleSize + " " + unit;
 
 		final Font font = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+
+		final int left = (font.stringWidth(leftLabel) / 2) + 2;
 		g.setFont(font);
 		g.setColor(0x00000000);
-		g.drawRect(2, height - 2 - SCALE_HEIGTH, scaleSizeInPixel, SCALE_HEIGTH);
-		g.fillRect(2, height - 2 - SCALE_HEIGTH, scaleSizeInPixel / 2, SCALE_HEIGTH);
+		g.drawRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel, SCALE_HEIGTH);
+		g.fillRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel / 2, SCALE_HEIGTH);
 
 		final int textBottom = height - 4 - SCALE_HEIGTH;
-		g.drawString(leftLabel, 2, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
-		g.drawString(middleLabel, 2 + (scaleSizeInPixel / 2), textBottom, Graphics.BOTTOM | Graphics.HCENTER);
-		g.drawString(rightLabel, 2 + scaleSizeInPixel, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
+		g.drawString(leftLabel, left, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
+		g.drawString(middleLabel, left + (scaleSizeInPixel / 2), textBottom, Graphics.BOTTOM | Graphics.HCENTER);
+		g.drawString(rightLabel, left + scaleSizeInPixel, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
 	}
 }
