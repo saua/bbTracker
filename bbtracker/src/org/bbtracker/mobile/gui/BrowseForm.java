@@ -12,6 +12,7 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.List;
 
 import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.IconManager;
 
 public class BrowseForm extends List implements CommandListener {
 	private final String title;
@@ -49,12 +50,13 @@ public class BrowseForm extends List implements CommandListener {
 
 	private void updateContent() {
 		deleteAll();
+		final IconManager im = IconManager.getInstance();
 		setTitle(path == null ? title : path + " - " + title);
 		if (path == null) {
 			final Enumeration roots = FileSystemRegistry.listRoots();
 			while (roots.hasMoreElements()) {
 				final String root = (String) roots.nextElement();
-				append(root, null);
+				append(root, im.getListImage(getRootIconName(root)));
 			}
 		} else {
 			try {
@@ -64,18 +66,28 @@ public class BrowseForm extends List implements CommandListener {
 					updateContent();
 				}
 				append("<select this directory>", null);
-				append("..", null);
+				append("..", im.getListImage("go-up"));
 				final Enumeration list = connection.list();
 				while (list.hasMoreElements()) {
 					final String element = (String) list.nextElement();
 					if (element.endsWith("/")) {
-						append(element, null);
+						append(element, im.getListImage("folder"));
 					}
 				}
 			} catch (final IOException e) {
 				BBTracker.nonFatal(e, "getting file roots", null);
 			}
 		}
+	}
+
+	private String getRootIconName(final String string) {
+		if (string.startsWith("CF")) {
+			return "cf";
+		} else if (string.startsWith("SD")) {
+			return "sd";
+		}
+		// generic default
+		return "disk";
 	}
 
 	public void setPath(final String path) {
@@ -100,10 +112,8 @@ public class BrowseForm extends List implements CommandListener {
 					} else {
 						path = path.substring(0, slashIndex);
 					}
-					System.out.println("..: " + path);
 				} else {
 					path = path == null ? selected : path + selected;
-					System.out.println(selected + ": " + path);
 				}
 				updateContent();
 			}
