@@ -108,7 +108,6 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 			});
 			display.setCurrent(browser);
-			System.out.println(browser.getPath());
 		}
 	}
 }
