@@ -9,8 +9,14 @@ import org.bbtracker.Utils;
 import org.bbtracker.mobile.TrackManager;
 
 public class StatusTile extends Tile {
-	public static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
+	private static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
 			"W";
+
+	private static final String MAX_SPEED_STRING = "888.8 km/h";
+
+	private static final String MAX_COURSE_STRING = "399" + Utils.DEGREE;
+
+	private static final String MAX_ELEVATION_STRING = "8888m";
 
 	private static final int MARGIN = 2;
 
@@ -22,10 +28,23 @@ public class StatusTile extends Tile {
 
 	private final int latWidth;
 
+	private final int speedWidth;
+
+	private final int courseWidth;
+
+	private final int elevationWidth;
+
 	public StatusTile(final TrackManager manager) {
 		this.manager = manager;
 		font = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, Font.SIZE_SMALL);
 		latWidth = font.stringWidth(MAX_DEGREE_STRING);
+		System.out.println(latWidth);
+		speedWidth = font.stringWidth(MAX_SPEED_STRING);
+		System.out.println(speedWidth);
+		courseWidth = font.stringWidth(MAX_COURSE_STRING);
+		System.out.println(courseWidth);
+		elevationWidth = font.stringWidth(MAX_ELEVATION_STRING);
+		System.out.println(elevationWidth);
 	}
 
 	protected void doPaint(final Graphics g) {
@@ -62,20 +81,27 @@ public class StatusTile extends Tile {
 			course = "-" + Utils.DEGREE;
 			elevation = "-m";
 		}
+		final String length;
+		if (track != null) {
+			length = Utils.distanceToString(track.getLength());
+		} else {
+			length = "-m";
+		}
 
 		int y = MARGIN;
 
-		final int leftColumn = MARGIN + latWidth;
-		final int middleColumn = MARGIN + latWidth * 2 + GAP;
-		final int rightBorder = width - MARGIN;
+		final int lonPos = MARGIN + latWidth;
+		final int latPos = MARGIN + latWidth * 2 + GAP;
+		final int rightPos = width - MARGIN;
 
-		g.drawString(lon, leftColumn, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(lat, middleColumn, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(elevation, rightBorder, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(lon, lonPos, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(lat, latPos, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(length, rightPos, y, Graphics.TOP | Graphics.RIGHT);
 		y += font.getHeight();
-		g.drawString(speed, leftColumn, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(course, middleColumn, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(point, rightBorder, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(speed, lonPos, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(course, lonPos + GAP + GAP + courseWidth, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(elevation, latPos, y, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(point, rightPos, y, Graphics.TOP | Graphics.RIGHT);
 	}
 
 	public int getPreferredHeight() {

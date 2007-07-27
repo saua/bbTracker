@@ -100,6 +100,15 @@ public class Track {
 		return minLongitude;
 	}
 
+	public double getLength() {
+		final Enumeration e = segments.elements();
+		double length = 0d;
+		while (e.hasMoreElements()) {
+			length += ((TrackSegment) e.nextElement()).getLength();
+		}
+		return length;
+	}
+
 	public boolean addPoint(final TrackPoint point) {
 		final int segmentCount = segments.size();
 		final TrackSegment currentSegment;

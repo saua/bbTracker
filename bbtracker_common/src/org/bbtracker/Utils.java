@@ -205,4 +205,12 @@ public final class Utils {
 	public static String elevationToString(final float elevation) {
 		return ((int) elevation) + "m";
 	}
+
+	public static String distanceToString(final double length) {
+		if (length < 1000) {
+			return ((int) length) + "m";
+		} else {
+			return String.valueOf(((int) (length / 100)) / 10f) + "km";
+		}
+	}
 }
