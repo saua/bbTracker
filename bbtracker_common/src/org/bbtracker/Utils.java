@@ -1,6 +1,8 @@
 package org.bbtracker;
 
+import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 public final class Utils {
 
@@ -151,6 +153,34 @@ public final class Utils {
 		final int size = orig.length();
 		// luckily enough Date.toString() is well-defined, so we can cut the TimeZone info out
 		return orig.substring(0, 20) + orig.substring(size - 4, size);
+	}
+
+	/**
+	 * Calculates a valid xsd:dateTime value from a given date.
+	 * 
+	 * The XML Schema standard defines a dateTime roughly as "YYYY-MM-DDThh:mm:ss(.s+)? (zzzzzz)?"
+	 * 
+	 * @param date
+	 * @return
+	 */
+	public static String dateToXmlDateTime(final Date date) {
+		final TimeZone utc = TimeZone.getTimeZone("GMT");
+		final Calendar c = Calendar.getInstance(utc);
+		c.setTime(date);
+		final StringBuffer result = new StringBuffer(24);
+		result.append(c.get(Calendar.YEAR)).append('-');
+		appendTwoDigits(result, c.get(Calendar.MONTH) + 1, '0').append('-');
+		appendTwoDigits(result, c.get(Calendar.DATE), '0').append('T');
+		appendTwoDigits(result, c.get(Calendar.HOUR_OF_DAY), '0').append(':');
+		appendTwoDigits(result, c.get(Calendar.MINUTE), '0').append(':');
+		appendTwoDigits(result, c.get(Calendar.SECOND), '0').append('.');
+		final int millisecond = c.get(Calendar.MILLISECOND);
+		if (millisecond < 100) {
+			result.append('0');
+		}
+		appendTwoDigits(result, millisecond, '0').append('Z');
+
+		return result.toString();
 	}
 
 	public static String escapeXml(final String xml) {
