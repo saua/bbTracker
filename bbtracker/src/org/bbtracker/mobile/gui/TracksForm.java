@@ -11,11 +11,13 @@ import javax.microedition.lcdui.Choice;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.List;
 import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.Track;
 import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.IconManager;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore;
@@ -62,29 +64,36 @@ public class TracksForm extends List implements CommandListener {
 
 	private void loadNames() throws RecordStoreException {
 		deleteAll();
+		final Image icon = IconManager.getInstance().getListImage("track");
 		final TrackStore store = TrackStore.getInstance();
 		final String[] trackNames = store.getTrackNames();
 		for (int i = 0; i < trackNames.length; i++) {
-			append(trackNames[i], null);
+			append(trackNames[i], icon);
 		}
 	}
 
 	public void commandAction(final Command command, final Displayable displayable) {
-		if (command == deleteCommand) {
+		if (command == cancelCommand) {
+			BBTracker.getInstance().showMainCanvas();
+			return;
+		}
+		final int index = getSelectedIndex();
+		if (index == -1) {
+			BBTracker.alert(new Alert("No Track selected", "A track has to be selected for this action", null,
+					AlertType.INFO), this);
+		} else if (command == deleteCommand) {
 			try {
-				TrackStore.getInstance().deleteTrack(getSelectedIndex());
+				TrackStore.getInstance().deleteTrack(index);
 				loadNames();
 			} catch (final RecordStoreException e) {
 				BBTracker.nonFatal(e, "deleting track", null);
 				return;
 			}
 			return;
-		} else if (command == cancelCommand) {
-			BBTracker.getInstance().showMainCanvas();
 		} else {
 			final Track track;
 			try {
-				track = TrackStore.getInstance().getTrack(getSelectedIndex());
+				track = TrackStore.getInstance().getTrack(index);
 			} catch (final RecordStoreException e) {
 				BBTracker.nonFatal(e, "loading track", this);
 				return;
