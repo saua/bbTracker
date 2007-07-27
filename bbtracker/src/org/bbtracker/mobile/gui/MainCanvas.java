@@ -23,8 +23,6 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final StatusTile statusTile;
 
-	private final Command waypointCommand = new Command("Add Waypoint", Command.ITEM, 0);
-
 	private final Command newTrackCommand = new Command("New Track", Command.ITEM, 2);
 
 	private final Command tracksCommand = new Command("Tracks", Command.ITEM, 2);
@@ -42,7 +40,6 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		trackTile = new TrackTile(track);
 		statusTile = new StatusTile(manager);
 
-		addCommand(waypointCommand);
 		addCommand(newTrackCommand);
 		addCommand(tracksCommand);
 		addCommand(optionsCommand);
