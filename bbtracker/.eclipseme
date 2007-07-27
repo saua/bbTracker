@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<eclipsemeMetadata jad="bbtracker.jad" version="1.6.8">
+<eclipsemeMetadata jad="bbtracker.jad" version="1.7.3">
    <device group="Sun Java(TM) Wireless Toolkit 2.5.1 for CLDC" name="QwertyDevice"/>
    <signing signProject="false"/>
 </eclipsemeMetadata>
