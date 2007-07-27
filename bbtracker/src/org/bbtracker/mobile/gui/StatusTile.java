@@ -12,11 +12,7 @@ public class StatusTile extends Tile {
 	private static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
 			"W";
 
-	private static final String MAX_SPEED_STRING = "888.8 km/h";
-
 	private static final String MAX_COURSE_STRING = "399" + Utils.DEGREE;
-
-	private static final String MAX_ELEVATION_STRING = "8888m";
 
 	private static final int MARGIN = 2;
 
@@ -28,23 +24,13 @@ public class StatusTile extends Tile {
 
 	private final int latWidth;
 
-	private final int speedWidth;
-
 	private final int courseWidth;
-
-	private final int elevationWidth;
 
 	public StatusTile(final TrackManager manager) {
 		this.manager = manager;
 		font = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, Font.SIZE_SMALL);
 		latWidth = font.stringWidth(MAX_DEGREE_STRING);
-		System.out.println(latWidth);
-		speedWidth = font.stringWidth(MAX_SPEED_STRING);
-		System.out.println(speedWidth);
 		courseWidth = font.stringWidth(MAX_COURSE_STRING);
-		System.out.println(courseWidth);
-		elevationWidth = font.stringWidth(MAX_ELEVATION_STRING);
-		System.out.println(elevationWidth);
 	}
 
 	protected void doPaint(final Graphics g) {
