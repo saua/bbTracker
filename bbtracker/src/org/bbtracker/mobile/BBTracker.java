@@ -16,7 +16,7 @@ import org.bbtracker.mobile.gui.MainCanvas;
 import org.bbtracker.mobile.gui.NewTrackForm;
 
 public class BBTracker extends MIDlet {
-	private static final String NAME = "BBTracker";
+	private static final String NAME = "bbTracker";
 
 	private static String version;
 
