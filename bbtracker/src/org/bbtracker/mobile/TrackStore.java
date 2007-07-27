@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import javax.microedition.rms.RecordComparator;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -41,7 +42,7 @@ public class TrackStore {
 			RecordStore rs = null;
 			try {
 				rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
-				final RecordEnumeration enumeration = rs.enumerateRecords(null, null, false);
+				final RecordEnumeration enumeration = rs.enumerateRecords(null, new TrackTrecordComparator(), false);
 				final int s = enumeration.numRecords();
 				indices = new int[s];
 				names = new String[s];
@@ -167,4 +168,30 @@ public class TrackStore {
 			}
 		}
 	}
+
+	private static class TrackTrecordComparator implements RecordComparator {
+		public int compare(final byte[] data1, final byte[] data2) {
+			final long date1 = getDate(data1);
+			final long date2 = getDate(data2);
+			if (date1 > date2) {
+				return RecordComparator.FOLLOWS;
+			} else if (date1 < date2) {
+				return RecordComparator.PRECEDES;
+			} else {
+				return RecordComparator.EQUIVALENT;
+			}
+		}
+
+		private long getDate(final byte[] data) {
+			// The beginning of each track is the version, the name (as with writeUTF() followed by the timestamp (as
+			// with writeLong)
+			final int offset = (((data[4] & 0xff) << 8) | (data[5] & 0xff)) + 8;
+			long value = 0;
+			for (int i = 0; i < 4; i++) {
+				value = (value << 8) | (data[offset + i] & 0xff);
+			}
+			return value;
+		}
+	}
+
 }
