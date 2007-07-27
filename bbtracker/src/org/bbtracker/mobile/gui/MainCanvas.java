@@ -142,4 +142,17 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		}
 		BBTracker.getDisplay().setCurrent(nextDisplayable);
 	}
+
+	protected void keyReleased(final int keyCode) {
+		final int gameAction = getGameAction(keyCode);
+		if (gameAction == LEFT) {
+			manager.changeCurrentPoint(-1);
+		} else if (gameAction == RIGHT) {
+			manager.changeCurrentPoint(+1);
+		} else if (gameAction == DOWN) {
+			manager.changeCurrentPoint(-10);
+		} else if (gameAction == UP) {
+			manager.changeCurrentPoint(+10);
+		}
+	}
 }

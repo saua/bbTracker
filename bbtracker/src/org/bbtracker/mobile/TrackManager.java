@@ -65,6 +65,36 @@ public class TrackManager implements LocationListener {
 		return currentPointIndex;
 	}
 
+	public boolean changeCurrentPoint(final int offset) {
+		if (track == null) {
+			return false;
+		}
+
+		int newValue;
+		if (currentPoint == null) {
+			if (offset >= 0) {
+				newValue = offset;
+			} else {
+				newValue = track.getPointCount() + 1 + offset;
+			}
+		} else {
+			newValue = currentPointIndex + offset;
+		}
+		if (newValue < 0) {
+			newValue = 0;
+		} else if (newValue >= track.getPointCount()) {
+			newValue = track.getPointCount() - 1;
+		}
+
+		final boolean changed = (newValue != currentPointIndex);
+		if (changed) {
+			currentPointIndex = newValue;
+			currentPoint = track.getPoint(currentPointIndex);
+			fireCurrentPointChanged();
+		}
+		return changed;
+	}
+
 	public Track getTrack() {
 		return track;
 	}
@@ -85,10 +115,16 @@ public class TrackManager implements LocationListener {
 					coordinates.getLongitude(), coordinates.getAltitude(), location.getSpeed(), location.getCourse(),
 					false);
 			if (track != null) {
-				currentPointIndex = track.getPointCount();
+				final int pointCount = track.getPointCount();
+				if (currentPointIndex == pointCount - 1) {
+					// activate the new point only, when the last point is currently selected.
+					currentPointIndex = pointCount;
+					currentPoint = trackPoint;
+				}
 				boundsChanged = track.addPoint(trackPoint);
+			} else {
+				currentPoint = trackPoint;
 			}
-			currentPoint = trackPoint;
 			fireNewPoint(currentPoint, boundsChanged, newSegment);
 			fireCurrentPointChanged();
 			providerStateChanged(provider, provider.getState());
