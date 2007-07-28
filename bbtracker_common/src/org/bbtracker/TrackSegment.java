@@ -9,13 +9,13 @@ import java.util.Vector;
 public class TrackSegment {
 	private final Vector points;
 
-	transient double minLatitude = Double.MAX_VALUE;
+	transient double minLatitude = Double.POSITIVE_INFINITY;
 
-	transient double maxLatitude = Double.MIN_VALUE;
+	transient double maxLatitude = Double.NEGATIVE_INFINITY;
 
-	transient double minLongitude = Double.MAX_VALUE;
+	transient double minLongitude = Double.POSITIVE_INFINITY;
 
-	transient double maxLongitude = Double.MIN_VALUE;
+	transient double maxLongitude = Double.NEGATIVE_INFINITY;
 
 	transient double length = 0;
 

@@ -16,13 +16,13 @@ public class Track {
 
 	private transient int pointCount;
 
-	private transient double minLatitude = Double.MAX_VALUE;
+	private transient double minLatitude = Double.POSITIVE_INFINITY;
 
-	private transient double maxLatitude = Double.MIN_VALUE;
+	private transient double maxLatitude = Double.NEGATIVE_INFINITY;
 
-	private transient double minLongitude = Double.MAX_VALUE;
+	private transient double minLongitude = Double.POSITIVE_INFINITY;
 
-	private transient double maxLongitude = Double.MIN_VALUE;
+	private transient double maxLongitude = Double.NEGATIVE_INFINITY;
 
 	public Track(final String name) {
 		this.name = name;
