@@ -34,7 +34,7 @@ public class ImperialUnitConverter extends UnitConverter {
 			final int feet = (int) (length * METER_TO_FOOT_FACTOR);
 			return feet + "ft";
 		} else {
-			return String.valueOf(((int) (miles / 100)) / 10f) + "mi";
+			return String.valueOf(((int) (miles * 10)) / 10f) + "mi";
 		}
 	}
 
