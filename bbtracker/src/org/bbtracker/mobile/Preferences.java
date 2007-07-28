@@ -12,6 +12,10 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 
+import org.bbtracker.ImperialUnitConverter;
+import org.bbtracker.MetricUnitConverter;
+import org.bbtracker.UnitConverter;
+
 public class Preferences {
 	private static final String RECORD_STORE_NAME = "Preferences";
 
@@ -23,7 +27,17 @@ public class Preferences {
 
 	public static String[] START_ACTIONS = new String[] { "Do nothing", "Initialize GPS", "Start new track" };
 
+	public static final int EXPORT_KML = 0;
+
+	public static final int EXPORT_GPx = 1;
+
 	public static String[] EXPORT_FORMATS = new String[] { "KML (Google Earth)", "GPX" };
+
+	public static final int UNITS_METRIC = 0;
+
+	public static final int UNITS_IMPERIAL = 1;
+
+	public static String[] UNITS = new String[] { "Metric (km/h, km, m)", "Imperial (mph, miles, feet)" };
 
 	private static Preferences instance;
 
@@ -49,7 +63,11 @@ public class Preferences {
 
 	private int exportFormats = 0x03; // export format 0 and 1 are set
 
+	private int units = UNITS_METRIC;
+
 	private String exportDirectory;
+
+	private UnitConverter unitConverter;
 
 	private Preferences() {
 	}
@@ -68,6 +86,57 @@ public class Preferences {
 
 	public void setStartAction(final int startAction) {
 		this.startAction = startAction;
+	}
+
+	public String getExportDirectory() {
+		return exportDirectory;
+	}
+
+	public void setExportDirectory(final String exportDirectory) {
+		this.exportDirectory = exportDirectory;
+	}
+
+	public void setExportFormat(final int index, final boolean value) {
+		if (index >= EXPORT_FORMATS.length || index < 0) {
+			throw new IllegalArgumentException();
+		}
+		if (value) {
+			exportFormats |= 1 << index;
+		} else {
+			exportFormats &= ~(1 << index);
+		}
+	}
+
+	public boolean getExportFormat(final int index) {
+		return (exportFormats & (1 << index)) != 0;
+	}
+
+	public int getUnits() {
+		return units;
+	}
+
+	public void setUnits(final int units) {
+		if (units != UNITS_METRIC && units != UNITS_IMPERIAL) {
+			throw new IllegalArgumentException();
+		}
+		this.units = units;
+		unitConverter = null;
+	}
+
+	public UnitConverter getUnitsConverter() {
+		if (unitConverter == null) {
+			switch (units) {
+			case UNITS_METRIC:
+				unitConverter = new MetricUnitConverter();
+				break;
+			case UNITS_IMPERIAL:
+				unitConverter = new ImperialUnitConverter();
+				break;
+			default:
+				throw new IllegalStateException();
+			}
+		}
+		return unitConverter;
 	}
 
 	public int getNextTrackNumber() {
@@ -102,6 +171,7 @@ public class Preferences {
 				exportDirectory = in.readUTF();
 			}
 			exportFormats = in.readInt();
+			units = in.readInt();
 
 			in.close();
 		} catch (final RecordStoreNotFoundException e) {
@@ -139,6 +209,7 @@ public class Preferences {
 				out.writeUTF(exportDirectory);
 			}
 			out.writeInt(exportFormats);
+			out.writeInt(units);
 
 			out.close();
 			final byte[] data = baos.toByteArray();
@@ -166,28 +237,5 @@ public class Preferences {
 				}
 			}
 		}
-	}
-
-	public String getExportDirectory() {
-		return exportDirectory;
-	}
-
-	public void setExportDirectory(final String exportDirectory) {
-		this.exportDirectory = exportDirectory;
-	}
-
-	public void setExportFormat(final int index, final boolean value) {
-		if (index >= EXPORT_FORMATS.length || index < 0) {
-			throw new IllegalArgumentException();
-		}
-		if (value) {
-			exportFormats |= 1 << index;
-		} else {
-			exportFormats &= ~(1 << index);
-		}
-	}
-
-	public boolean getExportFormat(final int index) {
-		return (exportFormats & (1 << index)) != 0;
 	}
 }

@@ -5,7 +5,9 @@ import javax.microedition.lcdui.Graphics;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
+import org.bbtracker.UnitConverter;
 import org.bbtracker.Utils;
+import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
 public class StatusTile extends Tile {
@@ -49,30 +51,31 @@ public class StatusTile extends Tile {
 		} else {
 			point = (pi + 1) + "/" + track.getPointCount();
 		}
-		final String lon;
-		final String lat;
-		final String speed;
-		final String course;
-		final String elevation;
+		double lonValue = Double.NaN;
+		double latValue = Double.NaN;
+		float speedValue = Float.NaN;
+		float courseValue = Float.NaN;
+		float elevationValue = Float.NaN;
+		double lengthValue = Double.NaN;
 		if (p != null) {
-			lon = Utils.longitudeToString(p.getLongitude());
-			lat = Utils.latitudeToString(p.getLatitude());
-			speed = Utils.speedToString(p.getSpeed());
-			course = Utils.courseToString(p.getCourse());
-			elevation = Utils.elevationToString(p.getElevation());
-		} else {
-			lon = "-";
-			lat = "-";
-			speed = "- km/h";
-			course = "-" + Utils.DEGREE;
-			elevation = "-m";
+			lonValue = p.getLongitude();
+			latValue = p.getLatitude();
+			speedValue = p.getSpeed();
+			courseValue = p.getCourse();
+			elevationValue = p.getElevation();
 		}
-		final String length;
 		if (track != null) {
-			length = Utils.distanceToString(track.getLength());
-		} else {
-			length = "-m";
+			lengthValue = track.getLength();
 		}
+
+		final String lon = Utils.longitudeToString(lonValue);
+		final String lat = Utils.latitudeToString(latValue);
+		final String course = Utils.courseToString(courseValue);
+
+		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
+		final String speed = unit.speedToString(speedValue);
+		final String elevation = unit.elevationToString(elevationValue);
+		final String length = unit.distanceToString(lengthValue);
 
 		int y = MARGIN;
 

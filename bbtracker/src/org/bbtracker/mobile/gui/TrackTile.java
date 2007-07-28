@@ -9,6 +9,8 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.TrackSegment;
 import org.bbtracker.Utils;
+import org.bbtracker.UnitConverter.ScaleConfiguration;
+import org.bbtracker.mobile.Preferences;
 
 public class TrackTile extends Tile {
 	private static final int MARKED_POINT_COLOR = 0x00bb0000;
@@ -29,17 +31,19 @@ public class TrackTile extends Tile {
 
 	private static final int SCALE_HEIGTH = 5;
 
+	private final Track track;
+
 	private double minimumLongitude, minimumLatitude;
 
 	private double scale;
-
-	private final Track track;
 
 	private TrackPoint currentPoint;
 
 	private int scaleSizeInPixel;
 
-	private int scaleSize;
+	private String scaleLabelCenter;
+
+	private String scaleLabelRight;
 
 	public TrackTile(final Track track) {
 		this.track = track;
@@ -86,22 +90,28 @@ public class TrackTile extends Tile {
 		final double widthInMeter = Utils
 				.distance(minimumLatitude, minimumLongitude, minimumLatitude, maximumLongitude);
 		if (widthInMeter < 1) {
-			scaleSize = 0;
+			scaleSizeInPixel = 0;
 			return;
 		}
 
-		final int metersAvailableForScale = (int) (widthInMeter * 0.9);
+		final double availableLengthInMeter = widthInMeter * 0.9;
 
-		scaleSize = 1;
-		while (scaleSize < metersAvailableForScale / 10) {
-			scaleSize = scaleSize * 10;
+		final ScaleConfiguration conf = Preferences.getInstance().getUnitsConverter().getScaleConfiguration(
+				availableLengthInMeter);
+
+		switch (conf.lengthInUnits) {
+		case 1:
+			scaleLabelCenter = "0.5";
+			break;
+		case 5:
+			scaleLabelCenter = "2.5";
+			break;
+		default:
+			scaleLabelCenter = String.valueOf(conf.lengthInUnits / 2);
 		}
-		if (scaleSize * 5 < metersAvailableForScale) {
-			scaleSize = scaleSize * 5;
-		} else if (scaleSize * 2 < metersAvailableForScale) {
-			scaleSize = scaleSize * 2;
-		}
-		scaleSizeInPixel = (int) (scaleSize * (width / widthInMeter));
+		scaleLabelRight = conf.lengthInUnits + " " + conf.unit;
+
+		scaleSizeInPixel = (int) ((conf.lengthInMeter / widthInMeter) * width);
 	}
 
 	protected void onResize() {
@@ -115,8 +125,7 @@ public class TrackTile extends Tile {
 			g.drawString("No Track ...", 2, 2, Graphics.TOP | Graphics.RIGHT);
 			return;
 		}
-		final int segmentCount = track.getSegmentCount();
-		if (segmentCount < 1 || track.getSegment(0).getPointCount() == 0) {
+		if (track.getPointCount() == 0) {
 			return;
 		}
 		if (Double.isNaN(minimumLongitude)) {
@@ -182,46 +191,21 @@ public class TrackTile extends Tile {
 	}
 
 	private void drawScale(final Graphics g) {
-		if (scaleSize == 0) {
+		if (scaleSizeInPixel == 0) {
 			return;
 		}
 
-		String unit;
-		int displayScaleSize;
-
-		if (scaleSize >= 1000) {
-			unit = "km";
-			displayScaleSize = scaleSize / 1000;
-		} else {
-			unit = "m";
-			displayScaleSize = scaleSize;
-		}
-
-		final String leftLabel = "0";
-		final String middleLabel;
-		switch (displayScaleSize) {
-		case 1:
-			middleLabel = "0.5";
-			break;
-		case 5:
-			middleLabel = "2.5";
-			break;
-		default:
-			middleLabel = String.valueOf(displayScaleSize / 2);
-		}
-		final String rightLabel = displayScaleSize + " " + unit;
-
 		final Font font = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
 
-		final int left = (font.stringWidth(leftLabel) / 2) + 2;
+		final int left = (font.stringWidth("0") / 2) + 2;
 		g.setFont(font);
 		g.setColor(0x00000000);
 		g.drawRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel, SCALE_HEIGTH);
 		g.fillRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel / 2, SCALE_HEIGTH);
 
 		final int textBottom = height - 4 - SCALE_HEIGTH;
-		g.drawString(leftLabel, left, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
-		g.drawString(middleLabel, left + (scaleSizeInPixel / 2), textBottom, Graphics.BOTTOM | Graphics.HCENTER);
-		g.drawString(rightLabel, left + scaleSizeInPixel, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
+		g.drawString("0", left, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
+		g.drawString(scaleLabelCenter, left + (scaleSizeInPixel / 2), textBottom, Graphics.BOTTOM | Graphics.HCENTER);
+		g.drawString(scaleLabelRight, left + scaleSizeInPixel, textBottom, Graphics.BOTTOM | Graphics.HCENTER);
 	}
 }

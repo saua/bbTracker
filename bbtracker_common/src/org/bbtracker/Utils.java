@@ -15,8 +15,6 @@ public final class Utils {
 	// U+2033 = Double Prime
 	public static final char SECOND = '\u2033';
 
-	private static final float MS_TO_KMH_FACTOR = 3.6f;
-
 	private static final double WGS84_A = 6378137;
 
 	private static final double WGS84_B = 6356752.3142;
@@ -36,6 +34,9 @@ public final class Utils {
 	}
 
 	public static String degreesToString(final double value, final char positiveChar, final char negativeChar) {
+		if (Double.isNaN(value)) {
+			return "-";
+		}
 		char c;
 		double d;
 		if (value < 0) {
@@ -130,24 +131,6 @@ public final class Utils {
 		return s;
 	}
 
-	/**
-	 * @param speed
-	 *            the speed in m/s
-	 * @return a human readable String containing the speed in km/h.
-	 */
-	public static String speedToString(final float speed) {
-		final float value = speed * MS_TO_KMH_FACTOR;
-		return String.valueOf(((int) (value * 10)) / 10f) + " km/h";
-	}
-
-	public static String courseToString(final float course) {
-		if (Float.isNaN(course)) {
-			return "???" + DEGREE;
-		} else {
-			return String.valueOf((int) (Math.floor(course + 0.5d))) + DEGREE;
-		}
-	}
-
 	public static String dateToString(final Date date) {
 		final String orig = date.toString();
 		final int size = orig.length();
@@ -202,15 +185,16 @@ public final class Utils {
 		return escaped.toString();
 	}
 
-	public static String elevationToString(final float elevation) {
-		return ((int) elevation) + "m";
-	}
-
-	public static String distanceToString(final double length) {
-		if (length < 1000) {
-			return ((int) length) + "m";
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.bbtracker.UnitConverter#courseToString(float)
+	 */
+	public static String courseToString(final float course) {
+		if (Float.isNaN(course)) {
+			return "???" + DEGREE;
 		} else {
-			return String.valueOf(((int) (length / 100)) / 10f) + "km";
+			return String.valueOf((int) (Math.floor(course + 0.5d))) + DEGREE;
 		}
 	}
 }

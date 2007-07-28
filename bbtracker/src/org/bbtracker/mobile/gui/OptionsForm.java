@@ -33,6 +33,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final ChoiceGroup exportFormatGroup;
 
+	private final ChoiceGroup unitsGroup;
+
 	public OptionsForm(final TrackManager trackManager) {
 		super("Options");
 
@@ -42,8 +44,13 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 		sampleField = new TextField("Sample Interval in seconds: ", String.valueOf(pref.getSampleInterval()), 5,
 				TextField.NUMERIC);
-		startTypeGroup = new ChoiceGroup("Startup action: ", Choice.EXCLUSIVE, Preferences.START_ACTIONS, null);
+
+		unitsGroup = new ChoiceGroup("Units: ", Choice.POPUP, Preferences.UNITS, null);
+		unitsGroup.setSelectedIndex(pref.getUnits(), true);
+
+		startTypeGroup = new ChoiceGroup("Startup action: ", Choice.POPUP, Preferences.START_ACTIONS, null);
 		startTypeGroup.setSelectedIndex(pref.getStartAction(), true);
+
 		directoryField = new TextField("Export directory: ", pref.getExportDirectory(), 100, TextField.URL);
 		browseCommand = new Command("Browse", Command.ITEM, 1);
 		directoryField.addCommand(browseCommand);
@@ -55,6 +62,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		}
 
 		append(sampleField);
+		append(unitsGroup);
 		append(startTypeGroup);
 		append(directoryField);
 		append(exportFormatGroup);
@@ -79,6 +87,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 					pref.setExportFormat(i, exportFormatGroup.isSelected(i));
 				}
+
+				pref.setUnits(unitsGroup.getSelectedIndex());
 
 				pref.store();
 			} catch (final NumberFormatException e) {
