@@ -1,4 +1,5 @@
 package org.bbtracker;
+
 /*
  * mMath.java
  *
@@ -35,8 +36,6 @@ public class MMath {
 	static final double q0 = .89678597403663861962481162e3;
 
 	static final double PIO2 = 1.5707963267948966135E0;
-
-	static final double nan = (0.0 / 0.0);
 
 	// reduce
 	private static double mxatan(final double arg) {
@@ -97,7 +96,7 @@ public class MMath {
 			sign++;
 		}
 		if (arg > 1) {
-			return nan;
+			return Double.NaN;
 		}
 		temp = Math.sqrt(1 - arg * arg);
 		if (arg > 0.7) {
@@ -114,7 +113,7 @@ public class MMath {
 	// implementation of acos
 	public static double acos(final double arg) {
 		if (arg > 1 || arg < -1) {
-			return nan;
+			return Double.NaN;
 		}
 		return PIO2 - asin(arg);
 	}
