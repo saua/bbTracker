@@ -158,7 +158,7 @@ public class Track {
 	}
 
 	private void updateMaxCoordinates(final double lat, final double lon) {
-		if (lat > minLatitude) {
+		if (lat > maxLatitude) {
 			maxLatitude = lat;
 		}
 		if (lon > maxLongitude) {
