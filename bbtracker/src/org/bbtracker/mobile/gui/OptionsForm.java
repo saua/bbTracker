@@ -53,7 +53,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 		directoryField = new TextField("Export directory: ", pref.getExportDirectory(), 100, TextField.URL);
 		browseCommand = new Command("Browse", Command.ITEM, 1);
-		directoryField.addCommand(browseCommand);
+		directoryField.setDefaultCommand(browseCommand);
 		directoryField.setItemCommandListener(this);
 
 		exportFormatGroup = new ChoiceGroup("Export to: ", Choice.MULTIPLE, Preferences.EXPORT_FORMATS, null);
@@ -68,8 +68,9 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		append(exportFormatGroup);
 
 		okCommand = new Command("OK", Command.OK, 0);
-		addCommand(okCommand);
 		cancelCommand = new Command("Cancel", Command.CANCEL, 1);
+
+		addCommand(okCommand);
 		addCommand(cancelCommand);
 		setCommandListener(this);
 	}
