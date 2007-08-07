@@ -11,10 +11,10 @@ public class ImperialUnitConverter extends UnitConverter {
 
 	public String speedToString(final float speed) {
 		if (Float.isNaN(speed)) {
-			return "- mph";
+			return "-mph";
 		}
 		final float mph = speed * MS_TO_MPH_FACTOR;
-		return String.valueOf(((int) (mph * 10)) / 10f) + " mph";
+		return String.valueOf(((int) (mph * 10)) / 10f) + "mph";
 	}
 
 	public String elevationToString(final float elevation) {

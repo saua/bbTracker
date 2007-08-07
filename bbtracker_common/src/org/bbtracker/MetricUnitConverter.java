@@ -8,10 +8,10 @@ public class MetricUnitConverter extends UnitConverter {
 
 	public String speedToString(final float speed) {
 		if (Float.isNaN(speed)) {
-			return "- km/h";
+			return "-km/h";
 		}
 		final float value = speed * MS_TO_KMH_FACTOR;
-		return String.valueOf(((int) (value * 10)) / 10f) + " km/h";
+		return String.valueOf(((int) (value * 10)) / 10f) + "km/h";
 	}
 
 	public String elevationToString(final float elevation) {
