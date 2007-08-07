@@ -35,7 +35,7 @@ public class BrowseForm extends List implements CommandListener {
 		this.path = path.length() == 0 ? null : path;
 		this.callback = callback;
 
-		selectCommand = new Command("Select", Command.OK, 1);
+		selectCommand = new Command("Select", Command.ITEM, 1);
 		cancelCommand = new Command("Cancel", Command.CANCEL, 2);
 		setSelectCommand(selectCommand);
 		addCommand(cancelCommand);
