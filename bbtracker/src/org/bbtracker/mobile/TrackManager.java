@@ -71,19 +71,20 @@ public class TrackManager implements LocationListener {
 		}
 
 		int newValue;
+		final int pointCount = track.getPointCount();
 		if (currentPoint == null) {
 			if (offset >= 0) {
 				newValue = offset;
 			} else {
-				newValue = track.getPointCount() + 1 + offset;
+				newValue = pointCount + 1 + offset;
 			}
 		} else {
 			newValue = currentPointIndex + offset;
 		}
 		if (newValue < 0) {
 			newValue = 0;
-		} else if (newValue >= track.getPointCount()) {
-			newValue = track.getPointCount() - 1;
+		} else if (newValue >= pointCount) {
+			newValue = pointCount - 1;
 		}
 
 		final boolean changed = (newValue != currentPointIndex);
@@ -156,7 +157,9 @@ public class TrackManager implements LocationListener {
 	}
 
 	public void addPointListener(final TrackListener listener) {
-		listeners.addElement(listener);
+		if (!listeners.contains(listener)) {
+			listeners.addElement(listener);
+		}
 	}
 
 	public void removePointListener(final TrackListener listener) {
