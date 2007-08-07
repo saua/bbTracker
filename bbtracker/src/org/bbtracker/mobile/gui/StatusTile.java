@@ -11,28 +11,69 @@ import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
 public class StatusTile extends Tile {
+
+	/*
+	 * The MAX_* constants represent the string values that each field can take that take up the maximum amount of
+	 * horizontal space.
+	 */
 	private static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
 			"W";
 
 	private static final String MAX_COURSE_STRING = "399" + Utils.DEGREE;
 
+	private static final String MAX_SPEED_STRING = "999.9km/h";
+
+	private static final String MAX_ELEVATION_STRING = "9999m";
+
+	private static final String MAX_LENGTH_STRING = "9999.9km";
+
+	private static final String MAX_POINT_STRING = "9999/9999";
+
 	private static final int MARGIN = 2;
 
-	private static final int GAP = 5;
+	private static final int MINIMAL_GAP = 5;
 
 	private final TrackManager manager;
 
-	private final Font font;
+	private Font font;
 
-	private final int latWidth;
+	private int latWidth;
 
-	private final int courseWidth;
+	private int courseWidth;
+
+	private int speedWidth;
+
+	private int elevationWidth;
+
+	private int lengthWidth;
+
+	private int pointWidth;
+
+	private boolean twoLineLayout = true;
 
 	public StatusTile(final TrackManager manager) {
 		this.manager = manager;
-		font = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+		setFontSize(Font.SIZE_MEDIUM);
+	}
+
+	private void setFontSize(final int fontSize) {
+		font = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, fontSize);
 		latWidth = font.stringWidth(MAX_DEGREE_STRING);
 		courseWidth = font.stringWidth(MAX_COURSE_STRING);
+		speedWidth = font.stringWidth(MAX_SPEED_STRING);
+		elevationWidth = font.stringWidth(MAX_ELEVATION_STRING);
+		lengthWidth = font.stringWidth(MAX_LENGTH_STRING);
+		pointWidth = font.stringWidth(MAX_POINT_STRING);
+		twoLineLayout = fitsTwoLineLayout(width);
+	}
+
+	protected void onResize() {
+		twoLineLayout = fitsTwoLineLayout(width);
+	}
+
+	protected boolean fitsTwoLineLayout(final int width) {
+		final int twoLineWidth = (MARGIN + MINIMAL_GAP + latWidth) * 2 + lengthWidth;
+		return width >= twoLineWidth;
 	}
 
 	protected void doPaint(final Graphics g) {
@@ -77,23 +118,55 @@ public class StatusTile extends Tile {
 		final String elevation = unit.elevationToString(elevationValue);
 		final String length = unit.distanceToString(lengthValue);
 
-		int y = MARGIN;
+		final int line1 = MARGIN;
+		final int line2 = line1 + font.getHeight();
+		final int latLonWidth; // the space available for latitude and longitude combined, it's also used for
+		// speed/course/elevation
+		if (twoLineLayout) {
+			final int spareSpace = width - (MARGIN * 2 + latWidth * 2 + Math.max(lengthWidth, pointWidth));
+			latLonWidth = latWidth * 2 + spareSpace / 2;
+		} else {
+			latLonWidth = width - 2 * MARGIN;
+		}
 
-		final int lonPos = MARGIN + latWidth;
-		final int latPos = MARGIN + latWidth * 2 + GAP;
-		final int rightPos = width - MARGIN;
+		// longitude / latitude (always on line 1)
+		g.drawString(lon, MARGIN + latLonWidth / 2, line1, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(lat, MARGIN + latLonWidth, line1, Graphics.TOP | Graphics.RIGHT);
 
-		g.drawString(lon, lonPos, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(lat, latPos, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(length, rightPos, y, Graphics.TOP | Graphics.RIGHT);
-		y += font.getHeight();
-		g.drawString(speed, lonPos, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(course, lonPos + GAP + GAP + courseWidth, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(elevation, latPos, y, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(point, rightPos, y, Graphics.TOP | Graphics.RIGHT);
+		final int spaceForCourse = latLonWidth - speedWidth - elevationWidth;
+		final int courseX = MARGIN + speedWidth + (spaceForCourse + courseWidth) / 2;
+
+		// speed / course / elevation (always on line 2)
+		g.drawString(speed, MARGIN + speedWidth, line2, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(course, courseX, line2, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(elevation, MARGIN + latLonWidth, line2, Graphics.TOP | Graphics.RIGHT);
+
+		final int lengthX;
+		int lengthY;
+		final int pointX;
+		int pointY;
+
+		if (twoLineLayout) {
+			lengthX = width - MARGIN;
+			lengthY = line1;
+			pointX = lengthX;
+			pointY = line2;
+		} else {
+			lengthX = width / 2;
+			lengthY = line2 + font.getHeight();
+			pointX = width - MARGIN;
+			pointY = lengthY;
+		}
+		g.drawString(length, lengthX, lengthY, Graphics.TOP | Graphics.RIGHT);
+		g.drawString(point, pointX, pointY, Graphics.TOP | Graphics.RIGHT);
 	}
 
-	public int getPreferredHeight() {
-		return (MARGIN + font.getHeight()) * 2;
+	public void showNotify() {
+		// nothing to do
+	}
+
+	public int getPreferredHeight(final int width) {
+		final int lineCount = fitsTwoLineLayout(width) ? 2 : 3;
+		return MARGIN + font.getHeight() * lineCount + MARGIN;
 	}
 }

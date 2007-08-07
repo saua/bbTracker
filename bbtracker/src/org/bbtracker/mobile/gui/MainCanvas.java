@@ -51,7 +51,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	protected void sizeChanged(final int w, final int h) {
 		super.sizeChanged(w, h);
 
-		final int statusHeight = statusTile.getPreferredHeight();
+		final int statusHeight = statusTile.getPreferredHeight(w);
 		trackTile.resize(0, 0, w, h - (statusHeight + 1));
 		statusTile.resize(0, h - statusHeight, w, statusHeight);
 	}
