@@ -24,6 +24,12 @@ public class Track {
 
 	private transient double maxLongitude = Double.NEGATIVE_INFINITY;
 
+	private transient float maxSpeed = Float.NaN;
+
+	private transient float minElevation = Float.NaN;
+
+	private transient float maxElevation = Float.NaN;
+
 	public Track(final String name) {
 		this.name = name;
 		creationDate = new Date();
@@ -55,7 +61,7 @@ public class Track {
 	}
 
 	public TrackPoint getPoint(final int nr) {
-		if (nr < 0 || nr > pointCount) {
+		if (nr < 0 || nr >= pointCount) {
 			throw new IndexOutOfBoundsException("no such point: " + nr + ", must be >= 0 and < " + pointCount);
 		}
 		int i = nr;
@@ -109,6 +115,18 @@ public class Track {
 		return length;
 	}
 
+	public float getMaxSpeed() {
+		return maxSpeed;
+	}
+
+	public float getMaxElevation() {
+		return maxElevation;
+	}
+
+	public float getMinElevation() {
+		return minElevation;
+	}
+
 	public boolean addPoint(final TrackPoint point) {
 		final int segmentCount = segments.size();
 		final TrackSegment currentSegment;
@@ -117,25 +135,51 @@ public class Track {
 		} else {
 			currentSegment = (TrackSegment) segments.elementAt(segmentCount - 1);
 		}
+		point.setIndex(pointCount);
 		final boolean boundsChanged = currentSegment.addPoint(point);
 		if (boundsChanged) {
 			final double lat = point.getLatitude();
 			final double lon = point.getLongitude();
-			if (lat < minLatitude) {
-				minLatitude = lat;
-			}
-			if (lat > maxLatitude) {
-				maxLatitude = lat;
-			}
-			if (lon < minLongitude) {
-				minLongitude = lon;
-			}
-			if (lon > maxLongitude) {
-				maxLongitude = lon;
-			}
+			updateMinCoordinates(lat, lon);
+			updateMaxCoordinates(lat, lon);
 		}
+		updateSpeedAndElevation(point.getSpeed(), point.getElevation());
 		pointCount++;
 		return boundsChanged;
+	}
+
+	private void updateMinCoordinates(final double lat, final double lon) {
+		if (lat > maxLatitude) {
+			maxLatitude = lat;
+		}
+		if (lon > maxLongitude) {
+			maxLongitude = lon;
+		}
+	}
+
+	private void updateMaxCoordinates(final double lat, final double lon) {
+		if (lat < minLatitude) {
+			minLatitude = lat;
+		}
+		if (lon < minLongitude) {
+			minLongitude = lon;
+		}
+	}
+
+	private void updateSpeedAndElevation(final float speed, final float elevation) {
+		if (!Float.isNaN(speed) && (Float.isNaN(maxSpeed) || speed > maxSpeed)) {
+			maxSpeed = speed;
+		}
+		if (!Float.isNaN(elevation)) {
+			if (Float.isNaN(minElevation) || elevation < minElevation) {
+				minElevation = elevation;
+			}
+			if (Float.isNaN(maxElevation) || elevation > maxElevation) {
+				maxElevation = elevation;
+			}
+
+		}
+
 	}
 
 	public TrackSegment newSegment() {
@@ -172,21 +216,18 @@ public class Track {
 		final Date creationDate = new Date(in.readLong());
 		final int segmentCount = in.readInt();
 		final Track track = new Track(name.length() == 0 ? null : name, segmentCount);
+		int p = 0;
 		for (int i = 0; i < segmentCount; i++) {
 			final TrackSegment segment = TrackSegment.readFromStream(in);
 			track.segments.addElement(segment);
 			track.pointCount += segment.getPointCount();
-			if (segment.minLatitude < track.minLatitude) {
-				track.minLatitude = segment.minLatitude;
-			}
-			if (segment.maxLatitude > track.maxLatitude) {
-				track.maxLatitude = segment.maxLatitude;
-			}
-			if (segment.minLongitude < track.minLongitude) {
-				track.minLongitude = segment.minLongitude;
-			}
-			if (segment.maxLongitude > track.maxLongitude) {
-				track.maxLongitude = segment.maxLongitude;
+			track.updateMinCoordinates(segment.minLatitude, segment.minLongitude);
+			track.updateMaxCoordinates(segment.maxLatitude, segment.maxLongitude);
+			final Enumeration points = segment.getPoints();
+			while (points.hasMoreElements()) {
+				final TrackPoint point = (TrackPoint) points.nextElement();
+				point.setIndex(p++);
+				track.updateSpeedAndElevation(point.getSpeed(), point.getElevation());
 			}
 		}
 		track.creationDate = creationDate;

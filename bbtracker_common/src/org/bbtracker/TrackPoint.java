@@ -23,6 +23,8 @@ public class TrackPoint {
 
 	private boolean standing = false;
 
+	private transient int index;
+
 	public TrackPoint(final long timestamp, final double latitude, final double longitude, final float elevation,
 			final float speed, final float course, final boolean interpolated) {
 		this.timestamp = timestamp;
@@ -107,6 +109,14 @@ public class TrackPoint {
 		this.standing = standing;
 	}
 
+	void setIndex(final int index) {
+		this.index = index;
+	}
+
+	public int getIndex() {
+		return index;
+	}
+
 	public void writeToStream(final DataOutputStream out) throws IOException {
 		out.writeLong(timestamp);
 		out.writeDouble(latitude);
@@ -144,5 +154,4 @@ public class TrackPoint {
 
 		return Utils.distance(lat1, lon1, lat2, lon2);
 	}
-
 }
