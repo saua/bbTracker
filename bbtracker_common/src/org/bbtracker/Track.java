@@ -149,20 +149,20 @@ public class Track {
 	}
 
 	private void updateMinCoordinates(final double lat, final double lon) {
-		if (lat > maxLatitude) {
-			maxLatitude = lat;
-		}
-		if (lon > maxLongitude) {
-			maxLongitude = lon;
-		}
-	}
-
-	private void updateMaxCoordinates(final double lat, final double lon) {
 		if (lat < minLatitude) {
 			minLatitude = lat;
 		}
 		if (lon < minLongitude) {
 			minLongitude = lon;
+		}
+	}
+
+	private void updateMaxCoordinates(final double lat, final double lon) {
+		if (lat > minLatitude) {
+			maxLatitude = lat;
+		}
+		if (lon > maxLongitude) {
+			maxLongitude = lon;
 		}
 	}
 
