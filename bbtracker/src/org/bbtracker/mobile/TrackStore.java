@@ -174,16 +174,16 @@ public class TrackStore {
 			final long date1 = getDate(data1);
 			final long date2 = getDate(data2);
 			if (date1 > date2) {
-				return RecordComparator.FOLLOWS;
-			} else if (date1 < date2) {
 				return RecordComparator.PRECEDES;
+			} else if (date1 < date2) {
+				return RecordComparator.FOLLOWS;
 			} else {
 				return RecordComparator.EQUIVALENT;
 			}
 		}
 
 		private long getDate(final byte[] data) {
-			// The beginning of each track is the version, the name (as with writeUTF() followed by the timestamp (as
+			// The beginning of each track is the version, the name (as with writeUTF()) followed by the timestamp (as
 			// with writeLong)
 			final int offset = (((data[4] & 0xff) << 8) | (data[5] & 0xff)) + 8;
 			long value = 0;
