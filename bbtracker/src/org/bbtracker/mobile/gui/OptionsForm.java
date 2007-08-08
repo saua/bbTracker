@@ -23,6 +23,7 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
@@ -52,6 +53,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final ChoiceGroup unitsGroup;
 
+	private final ChoiceGroup statusFontSizeGroup;
+
 	public OptionsForm(final TrackManager trackManager) {
 		super("Options");
 
@@ -64,6 +67,24 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 		unitsGroup = new ChoiceGroup("Units: ", Choice.POPUP, Preferences.UNITS, null);
 		unitsGroup.setSelectedIndex(pref.getUnits(), true);
+
+		statusFontSizeGroup = new ChoiceGroup("Status text size: ", Choice.POPUP, new String[] { "Small", "Medium",
+				"Large" }, null);
+		int selectedFontSizeItem;
+		switch (pref.getStatusFontSize()) {
+		case Font.SIZE_SMALL:
+			selectedFontSizeItem = 0;
+			break;
+		case Font.SIZE_MEDIUM:
+			selectedFontSizeItem = 1;
+			break;
+		case Font.SIZE_LARGE:
+			selectedFontSizeItem = 2;
+			break;
+		default:
+			selectedFontSizeItem = 1;
+		}
+		statusFontSizeGroup.setSelectedIndex(selectedFontSizeItem, true);
 
 		startTypeGroup = new ChoiceGroup("Startup action: ", Choice.POPUP, Preferences.START_ACTIONS, null);
 		startTypeGroup.setSelectedIndex(pref.getStartAction(), true);
@@ -80,6 +101,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 		append(sampleField);
 		append(unitsGroup);
+		append(statusFontSizeGroup);
 		append(startTypeGroup);
 		append(directoryField);
 		append(exportFormatGroup);
@@ -107,6 +129,22 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				}
 
 				pref.setUnits(unitsGroup.getSelectedIndex());
+
+				final int newFontSize;
+				switch (statusFontSizeGroup.getSelectedIndex()) {
+				case 0:
+					newFontSize = Font.SIZE_SMALL;
+					break;
+				case 1:
+					newFontSize = Font.SIZE_MEDIUM;
+					break;
+				case 2:
+					newFontSize = Font.SIZE_LARGE;
+					break;
+				default:
+					throw new IllegalStateException();
+				}
+				pref.setStatusFontSize(newFontSize);
 
 				pref.store();
 			} catch (final NumberFormatException e) {

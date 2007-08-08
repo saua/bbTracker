@@ -23,6 +23,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import javax.microedition.lcdui.Font;
 import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
@@ -84,6 +85,8 @@ public class Preferences {
 	private int exportFormats = 0x03; // export format 0 and 1 are set
 
 	private int units = UNITS_METRIC;
+
+	private int statusFontSize = Font.SIZE_MEDIUM;
 
 	private String exportDirectory;
 
@@ -163,6 +166,14 @@ public class Preferences {
 		return unitConverter;
 	}
 
+	public int getStatusFontSize() {
+		return statusFontSize;
+	}
+
+	public void setStatusFontSize(final int statusFontSize) {
+		this.statusFontSize = statusFontSize;
+	}
+
 	public int getNextTrackNumber() {
 		return trackNumber++;
 	}
@@ -198,6 +209,7 @@ public class Preferences {
 			}
 			exportFormats = in.readInt();
 			units = in.readInt();
+			statusFontSize = in.readInt();
 
 			in.close();
 		} catch (final RecordStoreNotFoundException e) {
@@ -236,6 +248,7 @@ public class Preferences {
 			}
 			out.writeInt(exportFormats);
 			out.writeInt(units);
+			out.writeInt(statusFontSize);
 
 			out.close();
 			final byte[] data = baos.toByteArray();

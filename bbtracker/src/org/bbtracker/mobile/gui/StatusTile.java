@@ -191,6 +191,7 @@ public class StatusTile extends Tile {
 	}
 
 	public int getPreferredHeight(final int width) {
+		setFontSize(Preferences.getInstance().getStatusFontSize());
 		final int lineCount;
 		if (fitsTwoLineLayout(width)) {
 			lineCount = 2;

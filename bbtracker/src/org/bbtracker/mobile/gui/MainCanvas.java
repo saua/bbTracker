@@ -214,6 +214,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	protected void showNotify() {
 		super.showNotify();
 		manager.addPointListener(this);
+		updateTileSize();
 		for (int i = 0; i < visibleTiles.length && visibleTiles[i] != null; i++) {
 			visibleTiles[i].showNotify();
 		}
