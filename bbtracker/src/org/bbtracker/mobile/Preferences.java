@@ -25,11 +25,14 @@ public class Preferences {
 
 	public static final int START_ACTION_NEWTRACK = 2;
 
-	public static String[] START_ACTIONS = new String[] { "Do nothing", "Initialize GPS", "Start new track" };
+	public static final int START_ACTION_TRACKS_SCREEN = 3;
+
+	public static String[] START_ACTIONS = new String[] { "Do nothing", "Initialize GPS", "Start new track",
+			"Open Track Screen" };
 
 	public static final int EXPORT_KML = 0;
 
-	public static final int EXPORT_GPx = 1;
+	public static final int EXPORT_GPX = 1;
 
 	public static String[] EXPORT_FORMATS = new String[] { "KML (Google Earth)", "GPX" };
 
@@ -93,7 +96,11 @@ public class Preferences {
 	}
 
 	public void setExportDirectory(final String exportDirectory) {
-		this.exportDirectory = exportDirectory;
+		if (exportDirectory == null || exportDirectory.length() == 0) {
+			this.exportDirectory = null;
+		} else {
+			this.exportDirectory = exportDirectory;
+		}
 	}
 
 	public void setExportFormat(final int index, final boolean value) {
@@ -169,6 +176,8 @@ public class Preferences {
 			trackNumber = in.readInt();
 			if (in.readByte() != 0) {
 				exportDirectory = in.readUTF();
+			} else {
+				exportDirectory = null;
 			}
 			exportFormats = in.readInt();
 			units = in.readInt();

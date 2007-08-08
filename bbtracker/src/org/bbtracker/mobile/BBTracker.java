@@ -1,5 +1,7 @@
 package org.bbtracker.mobile;
 
+import java.util.Timer;
+
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -14,6 +16,7 @@ import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.mobile.gui.MainCanvas;
 import org.bbtracker.mobile.gui.NewTrackForm;
+import org.bbtracker.mobile.gui.TracksForm;
 
 public class BBTracker extends MIDlet {
 	private static final String NAME = "bbTracker";
@@ -28,6 +31,8 @@ public class BBTracker extends MIDlet {
 
 	private final MainCanvas mainCanvas;
 
+	private final Timer timer;
+
 	private boolean firstStart = true;
 
 	public BBTracker() {
@@ -36,9 +41,13 @@ public class BBTracker extends MIDlet {
 		version = getAppProperty("MIDlet-Version");
 		fullname = NAME + " " + version;
 
+		timer = new Timer();
+
 		trackManager = new TrackManager();
 
 		mainCanvas = new MainCanvas(trackManager);
+
+		TrackStore.getInstance();
 
 		try {
 			switch (Preferences.getInstance().getStartAction()) {
@@ -46,7 +55,7 @@ public class BBTracker extends MIDlet {
 			case Preferences.START_ACTION_NEWTRACK:
 				trackManager.initLocationProvider();
 				break;
-			case Preferences.START_ACTION_NOTHING:
+			default:
 				break;
 			}
 		} catch (final LocationException e) {
@@ -68,37 +77,8 @@ public class BBTracker extends MIDlet {
 		}
 	}
 
-	protected void destroyApp(final boolean force) throws MIDletStateChangeException {
-		shutdown(true);
-	}
-
-	protected void pauseApp() {
-	}
-
-	protected void startApp() throws MIDletStateChangeException {
-		if (firstStart) {
-			if (Preferences.getInstance().getStartAction() == Preferences.START_ACTION_NEWTRACK) {
-				Display.getDisplay(this).setCurrent(new NewTrackForm(trackManager));
-			} else {
-				showMainCanvas();
-			}
-			firstStart = false;
-		} else {
-			showMainCanvas();
-		}
-
-	}
-
-	public static Display getDisplay() {
-		return Display.getDisplay(instance);
-	}
-
 	public static String getFullName() {
 		return fullname;
-	}
-
-	public static BBTracker getInstance() {
-		return instance;
 	}
 
 	public static String getName() {
@@ -109,15 +89,23 @@ public class BBTracker extends MIDlet {
 		return version;
 	}
 
+	public static BBTracker getInstance() {
+		return instance;
+	}
+
+	public static Display getDisplay() {
+		return Display.getDisplay(instance);
+	}
+
+	public static Timer getTimer() {
+		return instance.timer;
+	}
+
 	public static void nonFatal(final Throwable t, final String action, final Displayable next) {
 		log(t);
 		final Alert alert = new Alert("Non-fatal Exception", "Non-fatal Exception while " + action + ": " +
 				t.getMessage(), null, AlertType.WARNING);
 		alert(alert, next);
-	}
-
-	public static void alert(final Alert alert, final Displayable next) {
-		getDisplay().setCurrent(alert, next != null ? next : getInstance().mainCanvas);
 	}
 
 	public static void fatal(final Throwable t, final String action) {
@@ -137,17 +125,47 @@ public class BBTracker extends MIDlet {
 		getDisplay().setCurrent(errorForm);
 	}
 
+	public static void alert(final Alert alert, final Displayable next) {
+		getDisplay().setCurrent(alert, next != null ? next : getInstance().mainCanvas);
+	}
+
 	public void showMainCanvas() {
 		getDisplay().setCurrent(mainCanvas);
 	}
 
 	public static void log(final Throwable e) {
-		// used only for debugging
+		log(e.toString());
 		e.printStackTrace();
 	}
 
 	public static void log(final String m) {
-		// used only for debugging
 		System.err.println(m);
+	}
+
+	protected void destroyApp(final boolean force) throws MIDletStateChangeException {
+		shutdown(true);
+	}
+
+	protected void pauseApp() {
+	}
+
+	protected void startApp() throws MIDletStateChangeException {
+		if (firstStart) {
+			firstStart = false;
+			final int startAction = Preferences.getInstance().getStartAction();
+			if (startAction == Preferences.START_ACTION_NEWTRACK) {
+				Display.getDisplay(this).setCurrent(new NewTrackForm(trackManager));
+			} else if (startAction == Preferences.START_ACTION_TRACKS_SCREEN) {
+				try {
+					Display.getDisplay(this).setCurrent(new TracksForm(trackManager));
+				} catch (final RecordStoreException e) {
+					nonFatal(e, "Opening Track Screen", mainCanvas);
+				}
+			} else {
+				showMainCanvas();
+			}
+		} else {
+			showMainCanvas();
+		}
 	}
 }
