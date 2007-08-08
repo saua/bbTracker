@@ -58,6 +58,7 @@ public class TrackTile extends PlotterTile {
 		}
 
 		final Font font = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_SMALL);
+		g.setFont(font);
 
 		final int textBottom = height - 4 - SCALE_HEIGTH;
 		int left = 0;
@@ -73,7 +74,6 @@ public class TrackTile extends PlotterTile {
 			g.drawString(label, left + (int) (scaleSizeInPixel * location), textBottom, Graphics.BOTTOM |
 					Graphics.HCENTER);
 		}
-		g.setFont(font);
 		g.setColor(0x00000000);
 		g.drawRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel, SCALE_HEIGTH);
 		g.fillRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel / 2, SCALE_HEIGTH);
