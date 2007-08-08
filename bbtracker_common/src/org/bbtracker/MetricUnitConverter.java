@@ -11,7 +11,7 @@ public class MetricUnitConverter extends UnitConverter {
 			return "-km/h";
 		}
 		final float value = speed * MS_TO_KMH_FACTOR;
-		return String.valueOf(((int) (value * 10)) / 10f) + "km/h";
+		return Utils.floatToString(value, false) + "km/h";
 	}
 
 	public String elevationToString(final float elevation) {
@@ -27,21 +27,33 @@ public class MetricUnitConverter extends UnitConverter {
 		} else if (length < METER_TO_KM_FACTOR) {
 			return ((int) length) + "m";
 		} else {
-			return String.valueOf(((int) (length / 100)) / 10f) + "km";
+			return Utils.doubleToString(length / 1000, false) + "km";
 		}
 	}
 
-	public ScaleConfiguration getScaleConfiguration(final double lengthInMeter) {
+	public ScaleConfiguration getScaleDistance(final double lengthInMeter) {
 		final int scaleSize = getRoundScaleSize((int) lengthInMeter);
 		final ScaleConfiguration conf = new ScaleConfiguration();
+		int lengthInUnits;
 		if (scaleSize >= 1000) {
 			conf.unit = "km";
-			conf.lengthInUnits = scaleSize / 1000;
+			lengthInUnits = scaleSize / 1000;
 		} else {
 			conf.unit = "m";
-			conf.lengthInUnits = scaleSize;
+			lengthInUnits = scaleSize;
 		}
-		conf.lengthInMeter = scaleSize;
+		conf.lengthInSourceUnits = scaleSize;
+		conf.labelLocation = new float[] { 0.0f, 0.5f, 1.0f };
+		conf.labelValue = new float[] { 0f, lengthInUnits / 2f, lengthInUnits };
 		return conf;
+	}
+
+	public ScaleConfiguration getScaleElevation(final int min, final int max) {
+		return getScaleConfiguration("m", min, max);
+	}
+
+	public ScaleConfiguration getScaleSpeed(final double maxSpeed) {
+		System.out.println(maxSpeed);
+		return getScaleConfiguration("km/h", 0f, (float) (maxSpeed * MS_TO_KMH_FACTOR));
 	}
 }

@@ -14,7 +14,7 @@ public class ImperialUnitConverter extends UnitConverter {
 			return "-mph";
 		}
 		final float mph = speed * MS_TO_MPH_FACTOR;
-		return String.valueOf(((int) (mph * 10)) / 10f) + "mph";
+		return Utils.floatToString(mph, false) + "mph";
 	}
 
 	public String elevationToString(final float elevation) {
@@ -34,11 +34,11 @@ public class ImperialUnitConverter extends UnitConverter {
 			final int feet = (int) (length * METER_TO_FOOT_FACTOR);
 			return feet + "ft";
 		} else {
-			return String.valueOf(((int) (miles * 10)) / 10f) + "mi";
+			return Utils.doubleToString(miles, false) + "mi";
 		}
 	}
 
-	public ScaleConfiguration getScaleConfiguration(final double lengthInMeter) {
+	public ScaleConfiguration getScaleDistance(final double lengthInMeter) {
 		final double lengthInFoot = lengthInMeter * METER_TO_FOOT_FACTOR;
 		double factor = METER_TO_FOOT_FACTOR;
 		final ScaleConfiguration conf = new ScaleConfiguration();
@@ -54,8 +54,18 @@ public class ImperialUnitConverter extends UnitConverter {
 			available = (int) (lengthInFoot / FEET_IN_A_MILE);
 		}
 
-		conf.lengthInUnits = getRoundScaleSize(available);
-		conf.lengthInMeter = conf.lengthInUnits / factor;
+		final int lengthInUnits = getRoundScaleSize(available);
+		conf.lengthInSourceUnits = lengthInUnits / factor;
+		conf.labelLocation = new float[] { 0.0f, 0.5f, 1.0f };
+		conf.labelValue = new float[] { 0f, lengthInUnits / 2, lengthInUnits };
 		return conf;
+	}
+
+	public ScaleConfiguration getScaleElevation(final int min, final int max) {
+		return getScaleConfiguration("ft", min * METER_TO_FOOT_FACTOR, max * METER_TO_FOOT_FACTOR);
+	}
+
+	public ScaleConfiguration getScaleSpeed(final double maxSpeed) {
+		return getScaleConfiguration("mph", 0, (float) (maxSpeed * MS_TO_MPH_FACTOR));
 	}
 }
