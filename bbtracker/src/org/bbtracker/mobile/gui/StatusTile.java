@@ -7,6 +7,7 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.UnitConverter;
 import org.bbtracker.Utils;
+import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
@@ -69,11 +70,18 @@ public class StatusTile extends Tile {
 
 	protected void onResize() {
 		twoLineLayout = fitsTwoLineLayout(width);
+		if (!twoLineLayout && width < ((MARGIN + latWidth) * 2 + MINIMAL_GAP)) {
+			BBTracker.log("onResize: Setting Font size to small, because even three lines overlap!");
+			setFontSize(Font.SIZE_SMALL);
+		}
 	}
 
 	protected boolean fitsTwoLineLayout(final int width) {
-		final int twoLineWidth = (MARGIN + MINIMAL_GAP + latWidth) * 2 + lengthWidth;
-		return width >= twoLineWidth;
+		return width >= (MARGIN + MINIMAL_GAP + latWidth) * 2 + lengthWidth;
+	}
+
+	protected boolean fitsThreeLineLayout(final int width) {
+		return width >= (MARGIN + latWidth) * 2 + MINIMAL_GAP;
 	}
 
 	protected void doPaint(final Graphics g) {
@@ -166,7 +174,16 @@ public class StatusTile extends Tile {
 	}
 
 	public int getPreferredHeight(final int width) {
-		final int lineCount = fitsTwoLineLayout(width) ? 2 : 3;
+		final int lineCount;
+		if (fitsTwoLineLayout(width)) {
+			lineCount = 2;
+		} else {
+			lineCount = 3;
+			if (!fitsThreeLineLayout(width)) {
+				BBTracker.log("getPreferredHeight: Setting Font size to small, because even three lines overlap!");
+				setFontSize(Font.SIZE_SMALL);
+			}
+		}
 		return MARGIN + font.getHeight() * lineCount + MARGIN;
 	}
 }
