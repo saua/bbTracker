@@ -41,16 +41,14 @@ public class TracksForm extends List implements CommandListener {
 
 		this.trackManager = trackManager;
 
-		selectCommand = new Command("Select", Command.OK, 0);
+		selectCommand = new Command("Display", "Display selected Track", Command.ITEM, 0);
+		exportCommand = new Command("Export", "Export selected Track", Command.ITEM, 2);
+		deleteCommand = new Command("Delete", "Delete selected Track", Command.ITEM, 3);
+		cancelCommand = new Command("Cancel", "Return to previous screen", Command.CANCEL, 1);
+
 		addCommand(selectCommand);
-
-		exportCommand = new Command("Export", Command.ITEM, 2);
 		addCommand(exportCommand);
-
-		deleteCommand = new Command("Delete", Command.ITEM, 3);
 		addCommand(deleteCommand);
-
-		cancelCommand = new Command("Cancel", Command.CANCEL, 1);
 		addCommand(cancelCommand);
 
 		setSelectCommand(selectCommand);
@@ -107,7 +105,7 @@ public class TracksForm extends List implements CommandListener {
 				if (dir == null) {
 					final Alert alert = new Alert("No export directory defined!",
 							"Please define an export directory in the options screen.", null, AlertType.WARNING);
-					BBTracker.alert(alert, null);
+					BBTracker.alert(alert, this);
 					return;
 				}
 				int count;
