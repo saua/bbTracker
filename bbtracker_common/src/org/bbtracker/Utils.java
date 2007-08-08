@@ -185,16 +185,42 @@ public final class Utils {
 		return escaped.toString();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see org.bbtracker.UnitConverter#courseToString(float)
-	 */
 	public static String courseToString(final float course) {
 		if (Float.isNaN(course)) {
 			return "???" + DEGREE;
 		} else {
 			return String.valueOf((int) (Math.floor(course + 0.5d))) + DEGREE;
 		}
+	}
+
+	/**
+	 * Converts a given double value to a String with a single digit after that decimal point and optionally strips ".0"
+	 * if present.
+	 */
+	public static String doubleToString(final double value, final boolean stripDotZero) {
+		return fixedPointToString((long) (value * 10), stripDotZero);
+	}
+
+	/**
+	 * Converts a given float value to a String with a single digit after that decimal point and optionally strips ".0"
+	 * if present.
+	 */
+	public static String floatToString(final float value, final boolean stripDotZero) {
+		return fixedPointToString((long) (value * 10), stripDotZero);
+	}
+
+	private static String fixedPointToString(final long value, final boolean stripDotZero) {
+		final String string = String.valueOf(value);
+		final int stringLength = string.length();
+		final StringBuffer result = new StringBuffer(stringLength + 1);
+		result.append(string.substring(0, stringLength - 1));
+		if (result.length() == 0) {
+			result.append("0");
+		}
+		if (!(stripDotZero && string.endsWith("0"))) {
+			result.append('.');
+			result.append(string.charAt(stringLength - 1));
+		}
+		return result.toString();
 	}
 }
