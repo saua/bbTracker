@@ -19,6 +19,8 @@ package org.bbtracker.mobile.gui;
 
 import java.util.TimerTask;
 
+import javax.microedition.lcdui.Alert;
+import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
@@ -224,7 +226,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	public void commandAction(final Command command, final Displayable displayable) {
 		Displayable nextDisplayable = null;
 		if (command == exitCommand) {
-			BBTracker.getInstance().shutdown(true);
+			exitAction();
 		} else if (command == switchViewCommand) {
 			nextTileConfiguration();
 		} else {
@@ -243,6 +245,29 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			}
 			BBTracker.getDisplay().setCurrent(nextDisplayable);
 		}
+	}
+
+	private void exitAction() {
+		final boolean isTracking = manager.getState() == TrackManager.STATE_TRACKING;
+		String question = "Do you really want to quit?";
+		if (isTracking) {
+			question += "\nThe current Track will be finished and saved.";
+		}
+		final Alert alert = new Alert("Really Quit?", question, null, AlertType.CONFIRMATION);
+		final Command quitCommand = new Command("Quit", Command.OK, 1);
+		alert.addCommand(quitCommand);
+		alert.addCommand(new Command("Cancel", Command.CANCEL, 0));
+		alert.setCommandListener(new CommandListener() {
+
+			public void commandAction(final Command cmd, final Displayable current) {
+				if (cmd == quitCommand) {
+					BBTracker.getInstance().shutdown(true);
+				} else {
+					BBTracker.getDisplay().setCurrent(MainCanvas.this);
+				}
+			}
+		});
+		BBTracker.alert(alert, this);
 	}
 
 	protected void keyReleased(final int keyCode) {
