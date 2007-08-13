@@ -17,6 +17,12 @@
  */
 package org.bbtracker.mobile.gui;
 
+import java.io.IOException;
+
+import javax.microedition.io.Connector;
+import javax.microedition.io.file.FileConnection;
+import javax.microedition.lcdui.Alert;
+import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Choice;
 import javax.microedition.lcdui.ChoiceGroup;
 import javax.microedition.lcdui.Command;
@@ -93,7 +99,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		}
 		startTypeGroup.setSelectedIndex(startAction, true);
 
-		directoryField = new TextField("Export directory: ", pref.getExportDirectory(), 100, TextField.URL);
+		directoryField = new TextField("Track directory: ", pref.getExportDirectory(), 100, TextField.URL);
 		browseCommand = new Command("Browse", Command.ITEM, 1);
 		directoryField.setDefaultCommand(browseCommand);
 		directoryField.setItemCommandListener(this);
@@ -120,46 +126,103 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	public void commandAction(final Command command, final Displayable source) {
 		if (command == okCommand) {
-			final Preferences pref = Preferences.getInstance();
+			final String message = validatePreferences();
+			if (message == null) {
+				savePreferences();
+				BBTracker.getInstance().showMainCanvas();
+			} else {
+				final Alert alert = new Alert("Validate Preferences!", message, null, AlertType.CONFIRMATION);
+				final Command continueCommand = new Command("Continue", "Continue and ignore warnings", Command.OK, 1);
+				alert.addCommand(new Command("Cancel", "Return to Options Screen", Command.CANCEL, 0));
+				alert.addCommand(continueCommand);
+				alert.setCommandListener(new CommandListener() {
+					public void commandAction(final Command cmd, final Displayable displayable) {
+						if (cmd == continueCommand) {
+							savePreferences();
+							BBTracker.getInstance().showMainCanvas();
+						} else {
+							BBTracker.getDisplay().setCurrent(OptionsForm.this);
+						}
+					}
+				});
+				BBTracker.alert(alert, null);
+			}
+		} else if (command == cancelCommand) {
+			BBTracker.getInstance().showMainCanvas();
+		}
+	}
+
+	private String validatePreferences() {
+		final String exportDir = directoryField.getString();
+		if (exportDir == null || exportDir.length() == 0) {
+			return "No export directory has been selected!";
+		} else {
+			FileConnection connection = null;
 			try {
-				final int sampleInterval = Integer.parseInt(sampleField.getString());
-				pref.setSampleInterval(sampleInterval);
-				trackManager.updateSampleInterval();
-				pref.setStartAction(startTypeGroup.getSelectedIndex());
-				pref.setExportDirectory(directoryField.getString());
-
-				for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
-					pref.setExportFormat(i, exportFormatGroup.isSelected(i));
+				connection = (FileConnection) Connector.open("file:///" + exportDir, Connector.READ);
+				if (!connection.exists()) {
+					return "The directory identified by <" + exportDir + "> does not exist.";
+				} else if (!connection.isDirectory()) {
+					return "The file identified by <" + exportDir + "> is not a directory.";
+				} else if (!connection.canWrite()) {
+					return "The directory identified by <" + exportDir + "> is not writeable.";
 				}
-
-				pref.setUnits(unitsGroup.getSelectedIndex());
-
-				final int newFontSize;
-				switch (statusFontSizeGroup.getSelectedIndex()) {
-				case 0:
-					newFontSize = Font.SIZE_SMALL;
-					break;
-				case 1:
-					newFontSize = Font.SIZE_MEDIUM;
-					break;
-				case 2:
-					newFontSize = Font.SIZE_LARGE;
-					break;
-				default:
-					throw new IllegalStateException();
+			} catch (final IOException e) {
+				return "Could not verify track directory <" + exportDir + ">: " + e.getMessage();
+			} catch (final IllegalArgumentException e) {
+				return "Malformed track directory <" + exportDir + ">!";
+			} finally {
+				if (connection != null) {
+					try {
+						connection.close();
+					} catch (final IOException ignored) {
+						// ignore
+					}
 				}
-				pref.setStatusFontSize(newFontSize);
-
-				pref.store();
-			} catch (final NumberFormatException e) {
-				// should not happen
-				BBTracker.log(e);
-			} catch (final RecordStoreException e) {
-				BBTracker.nonFatal(e, "storing preferences", null);
-				return;
 			}
 		}
-		BBTracker.getInstance().showMainCanvas();
+		return null;
+	}
+
+	private void savePreferences() {
+		final Preferences pref = Preferences.getInstance();
+		try {
+			final int sampleInterval = Integer.parseInt(sampleField.getString());
+			pref.setSampleInterval(sampleInterval);
+			trackManager.updateSampleInterval();
+			pref.setStartAction(startTypeGroup.getSelectedIndex());
+			pref.setExportDirectory(directoryField.getString());
+
+			for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
+				pref.setExportFormat(i, exportFormatGroup.isSelected(i));
+			}
+
+			pref.setUnits(unitsGroup.getSelectedIndex());
+
+			final int newFontSize;
+			switch (statusFontSizeGroup.getSelectedIndex()) {
+			case 0:
+				newFontSize = Font.SIZE_SMALL;
+				break;
+			case 1:
+				newFontSize = Font.SIZE_MEDIUM;
+				break;
+			case 2:
+				newFontSize = Font.SIZE_LARGE;
+				break;
+			default:
+				throw new IllegalStateException();
+			}
+			pref.setStatusFontSize(newFontSize);
+
+			pref.store();
+		} catch (final NumberFormatException e) {
+			// should not happen
+			BBTracker.log(e);
+		} catch (final RecordStoreException e) {
+			BBTracker.nonFatal(e, "storing preferences", null);
+			return;
+		}
 	}
 
 	public void commandAction(final Command command, final Item item) {
