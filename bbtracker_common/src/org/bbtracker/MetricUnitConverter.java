@@ -70,7 +70,6 @@ public class MetricUnitConverter extends UnitConverter {
 	}
 
 	public ScaleConfiguration getScaleSpeed(final double maxSpeed) {
-		System.out.println(maxSpeed);
 		return getScaleConfiguration("km/h", 0f, (float) (maxSpeed * MS_TO_KMH_FACTOR));
 	}
 }
