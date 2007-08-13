@@ -37,6 +37,8 @@ import org.bbtracker.UnitConverter;
 public class Preferences {
 	private static final String RECORD_STORE_NAME = "Preferences";
 
+	public static final int START_ACTION_SHOW_OPTIONS = -1;
+
 	public static final int START_ACTION_NOTHING = 0;
 
 	public static final int START_ACTION_INIT_GPS = 1;
@@ -44,6 +46,8 @@ public class Preferences {
 	public static final int START_ACTION_NEWTRACK = 2;
 
 	public static final int START_ACTION_TRACKS_SCREEN = 3;
+
+	public static final int DEFAULT_START_ACTION = START_ACTION_INIT_GPS;
 
 	public static String[] START_ACTIONS = new String[] { "Do nothing", "Initialize GPS", "Start new track",
 			"Open Track Screen" };
@@ -78,7 +82,7 @@ public class Preferences {
 
 	private int sampleInterval = 5;
 
-	private int startAction = START_ACTION_INIT_GPS;
+	private int startAction = DEFAULT_START_ACTION;
 
 	private int trackNumber = 1;
 
@@ -213,10 +217,13 @@ public class Preferences {
 
 			in.close();
 		} catch (final RecordStoreNotFoundException e) {
-			// ignore, don't load anything
+			// ignore, don't load anything, but show options screen
+			startAction = START_ACTION_SHOW_OPTIONS;
 		} catch (final InvalidRecordIDException e) {
-			// ignore, don't load anything
+			// ignore, don't load anything, but show options screen
+			startAction = START_ACTION_SHOW_OPTIONS;
 		} catch (final IOException e) {
+			startAction = START_ACTION_SHOW_OPTIONS;
 			throw new RecordStoreException(e.getMessage());
 		} finally {
 			if (rs != null) {

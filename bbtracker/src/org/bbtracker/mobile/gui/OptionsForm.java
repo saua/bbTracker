@@ -87,7 +87,11 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		statusFontSizeGroup.setSelectedIndex(selectedFontSizeItem, true);
 
 		startTypeGroup = new ChoiceGroup("Startup action: ", Choice.POPUP, Preferences.START_ACTIONS, null);
-		startTypeGroup.setSelectedIndex(pref.getStartAction(), true);
+		int startAction = pref.getStartAction();
+		if (startAction == Preferences.START_ACTION_SHOW_OPTIONS) {
+			startAction = Preferences.DEFAULT_START_ACTION;
+		}
+		startTypeGroup.setSelectedIndex(startAction, true);
 
 		directoryField = new TextField("Export directory: ", pref.getExportDirectory(), 100, TextField.URL);
 		browseCommand = new Command("Browse", Command.ITEM, 1);

@@ -33,6 +33,7 @@ import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.mobile.gui.MainCanvas;
 import org.bbtracker.mobile.gui.NewTrackForm;
+import org.bbtracker.mobile.gui.OptionsForm;
 import org.bbtracker.mobile.gui.TracksForm;
 
 public class BBTracker extends MIDlet {
@@ -68,6 +69,7 @@ public class BBTracker extends MIDlet {
 
 		try {
 			switch (Preferences.getInstance().getStartAction()) {
+			case Preferences.START_ACTION_SHOW_OPTIONS:
 			case Preferences.START_ACTION_INIT_GPS:
 			case Preferences.START_ACTION_NEWTRACK:
 				trackManager.initLocationProvider();
@@ -170,15 +172,21 @@ public class BBTracker extends MIDlet {
 		if (firstStart) {
 			firstStart = false;
 			final int startAction = Preferences.getInstance().getStartAction();
-			if (startAction == Preferences.START_ACTION_NEWTRACK) {
+			switch (startAction) {
+			case Preferences.START_ACTION_SHOW_OPTIONS:
+				Display.getDisplay(this).setCurrent(new OptionsForm(trackManager));
+				break;
+			case Preferences.START_ACTION_NEWTRACK:
 				Display.getDisplay(this).setCurrent(new NewTrackForm(trackManager));
-			} else if (startAction == Preferences.START_ACTION_TRACKS_SCREEN) {
+				break;
+			case Preferences.START_ACTION_TRACKS_SCREEN:
 				try {
 					Display.getDisplay(this).setCurrent(new TracksForm(trackManager));
 				} catch (final RecordStoreException e) {
 					nonFatal(e, "Opening Track Screen", mainCanvas);
 				}
-			} else {
+				break;
+			default:
 				showMainCanvas();
 			}
 		} else {
