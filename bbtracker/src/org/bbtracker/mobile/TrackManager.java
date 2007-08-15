@@ -18,6 +18,7 @@
 package org.bbtracker.mobile;
 
 import java.util.Enumeration;
+import java.util.TimerTask;
 import java.util.Vector;
 
 import javax.microedition.lcdui.Alert;
@@ -61,6 +62,10 @@ public class TrackManager {
 
 	private final Vector listeners = new Vector();
 
+	private int gpsRecoveryEscalation = 0;
+
+	private final TimerTask gpsRecoveryTask = new GpsRecoveryTask();
+
 	private final LocationListener locationListener = new LocationListener() {
 		public void locationUpdated(final LocationProvider provider, final Location location) {
 			if (state == STATE_STATIC) {
@@ -97,7 +102,12 @@ public class TrackManager {
 		}
 
 		public void providerStateChanged(final LocationProvider provider, final int newState) {
-			// TODO fix issue #10
+			if (newState == LocationProvider.AVAILABLE) {
+				gpsRecoveryTask.cancel();
+				gpsRecoveryEscalation = 0;
+			} else if (newState == LocationProvider.TEMPORARILY_UNAVAILABLE) {
+				BBTracker.getTimer().schedule(gpsRecoveryTask, 100);
+			}
 			switch (newState) {
 			case LocationProvider.OUT_OF_SERVICE:
 				trackInterrupted = true;
@@ -395,5 +405,34 @@ public class TrackManager {
 		final TrackStoreEntry e = array[i1];
 		array[i1] = array[i2];
 		array[i2] = e;
+	}
+
+	private class GpsRecoveryTask extends TimerTask {
+		private static final long FIRST_DELAY = 2 * 60;
+
+		private static final long DELAY_PER_LEVEL = 2 * 60;
+
+		public void run() {
+			gpsRecoveryEscalation++;
+			if (gpsRecoveryEscalation == 1) {
+				provider.reset();
+				updateSampleInterval();
+				BBTracker.getTimer().schedule(this, FIRST_DELAY);
+			} else {
+				provider.setLocationListener(null, -1, -1, -1);
+				provider = null;
+				try {
+					final int oldState = state;
+					state = STATE_NOT_INITIALIZED;
+					initLocationProvider();
+					state = oldState;
+				} catch (final LocationException e) {
+					BBTracker.log(e);
+					BBTracker.getTimer().schedule(this, DELAY_PER_LEVEL * gpsRecoveryEscalation);
+					fireStateChanged();
+				}
+			}
+		}
+
 	}
 }
