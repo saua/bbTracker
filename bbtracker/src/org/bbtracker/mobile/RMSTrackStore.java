@@ -68,9 +68,6 @@ public class RMSTrackStore implements TrackStore {
 	}
 
 	public void saveTrack(final Track track) throws TrackStoreException {
-		if (true) {
-			throw new TrackStoreException("foo");
-		}
 		RecordStore rs = null;
 		try {
 			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
