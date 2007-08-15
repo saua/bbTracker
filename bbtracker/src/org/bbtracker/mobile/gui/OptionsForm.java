@@ -99,7 +99,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		}
 		startTypeGroup.setSelectedIndex(startAction, true);
 
-		directoryField = new TextField("Track directory: ", pref.getExportDirectory(), 100, TextField.URL);
+		directoryField = new TextField("Track directory: ", pref.getTrackDirectory(), 100, TextField.URL);
 		browseCommand = new Command("Browse", Command.ITEM, 1);
 		directoryField.setDefaultCommand(browseCommand);
 		directoryField.setItemCommandListener(this);
@@ -191,7 +191,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			pref.setSampleInterval(sampleInterval);
 			trackManager.updateSampleInterval();
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
-			pref.setExportDirectory(directoryField.getString());
+			pref.setTrackDirectory(directoryField.getString());
 
 			for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 				pref.setExportFormat(i, exportFormatGroup.isSelected(i));

@@ -92,7 +92,7 @@ public class Preferences {
 
 	private int statusFontSize = Font.SIZE_MEDIUM;
 
-	private String exportDirectory;
+	private String trackDirectory;
 
 	private UnitConverter unitConverter;
 
@@ -115,15 +115,15 @@ public class Preferences {
 		this.startAction = startAction;
 	}
 
-	public String getExportDirectory() {
-		return exportDirectory;
+	public String getTrackDirectory() {
+		return trackDirectory;
 	}
 
-	public void setExportDirectory(final String exportDirectory) {
-		if (exportDirectory == null || exportDirectory.length() == 0) {
-			this.exportDirectory = null;
+	public void setTrackDirectory(final String trackDirectory) {
+		if (trackDirectory == null || trackDirectory.length() == 0) {
+			this.trackDirectory = null;
 		} else {
-			this.exportDirectory = exportDirectory;
+			this.trackDirectory = trackDirectory;
 		}
 	}
 
@@ -207,9 +207,9 @@ public class Preferences {
 			sampleInterval = in.readInt();
 			trackNumber = in.readInt();
 			if (in.readByte() != 0) {
-				exportDirectory = in.readUTF();
+				trackDirectory = in.readUTF();
 			} else {
-				exportDirectory = null;
+				trackDirectory = null;
 			}
 			exportFormats = in.readInt();
 			units = in.readInt();
@@ -247,11 +247,11 @@ public class Preferences {
 			out.writeShort(startAction);
 			out.writeInt(sampleInterval);
 			out.writeInt(trackNumber);
-			if (exportDirectory == null) {
+			if (trackDirectory == null) {
 				out.writeByte(0);
 			} else {
 				out.writeByte(1);
-				out.writeUTF(exportDirectory);
+				out.writeUTF(trackDirectory);
 			}
 			out.writeInt(exportFormats);
 			out.writeInt(units);

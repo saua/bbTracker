@@ -33,7 +33,7 @@ import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.gui.MainCanvas;
-import org.bbtracker.mobile.gui.NewTrackForm;
+import org.bbtracker.mobile.gui.TrackNameForm;
 import org.bbtracker.mobile.gui.OptionsForm;
 import org.bbtracker.mobile.gui.TracksForm;
 
@@ -152,7 +152,6 @@ public class BBTracker extends MIDlet {
 	}
 
 	public static void log(final Throwable e) {
-		log(e.toString());
 		e.printStackTrace();
 	}
 
@@ -176,7 +175,7 @@ public class BBTracker extends MIDlet {
 				Display.getDisplay(this).setCurrent(new OptionsForm(trackManager));
 				break;
 			case Preferences.START_ACTION_NEWTRACK:
-				Display.getDisplay(this).setCurrent(new NewTrackForm(trackManager));
+				Display.getDisplay(this).setCurrent(new TrackNameForm(trackManager));
 				break;
 			case Preferences.START_ACTION_TRACKS_SCREEN:
 				try {

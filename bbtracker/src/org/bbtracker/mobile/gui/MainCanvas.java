@@ -249,7 +249,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			} else if (command == optionsCommand) {
 				nextDisplayable = new OptionsForm(manager);
 			} else if (command == newTrackCommand) {
-				nextDisplayable = new NewTrackForm(manager);
+				nextDisplayable = new TrackNameForm(manager);
 				if (manager.getState() == TrackManager.STATE_TRACKING) {
 					final Alert alert = new Alert("Stop tracking?", "The track <" + manager.getTrack().getName() +
 							"> is currently beeing recorded. Save that track and start a new one?", null,

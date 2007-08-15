@@ -113,7 +113,7 @@ public class TrackManager {
 
 	public TrackManager() {
 		state = STATE_NOT_INITIALIZED;
-		trackStores = new TrackStore[] { new RMSTrackStore() };
+		trackStores = new TrackStore[] { new FileTrackStore(), new RMSTrackStore() };
 	}
 
 	public void initLocationProvider() throws LocationException {
@@ -331,7 +331,7 @@ public class TrackManager {
 			offset += entries[i].length;
 		}
 
-		quicksort(result, 0, entries.length);
+		quicksort(result, 0, result.length - 1);
 
 		return result;
 	}

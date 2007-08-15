@@ -24,26 +24,53 @@ import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.location.LocationException;
 
+import org.bbtracker.Track;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
-public class NewTrackForm extends Form implements CommandListener {
-	private final TrackManager trackManager;
+public class TrackNameForm extends Form implements CommandListener {
 
 	private final Command okCommand = new Command("Ok", Command.OK, 0);
 
 	private final Command cancelCommand = new Command("Cancel", Command.CANCEL, 1);
 
-	private final TextField nameField;
+	private TextField nameField;
 
-	public NewTrackForm(final TrackManager trackManager) {
+	private final TrackManager trackManager;
+
+	private final Track track;
+
+	/**
+	 * Creates a TrackNameForm used to create new tracks.
+	 */
+	public TrackNameForm(final TrackManager trackManager) {
 		super("New Track");
 
 		this.trackManager = trackManager;
+		track = null;
 
 		final String initialName = "Track " + Preferences.getInstance().getNextTrackNumber();
-		nameField = new TextField("Name: ", initialName, 32, TextField.ANY);
+		initGui(initialName);
+	}
+
+	/**
+	 * Creates a TrackNameForm used to rename existing tracks.
+	 * 
+	 * @param track
+	 *            the track to rename
+	 */
+	public TrackNameForm(final Track track) {
+		super("Rename Track");
+
+		this.track = track;
+		trackManager = null;
+
+		initGui(track.getName());
+	}
+
+	private void initGui(final String trackName) {
+		nameField = new TextField("Name: ", trackName, 32, TextField.ANY);
 
 		append(nameField);
 
@@ -55,11 +82,16 @@ public class NewTrackForm extends Form implements CommandListener {
 
 	public void commandAction(final Command command, final Displayable displayable) {
 		if (command == okCommand) {
-			try {
-				trackManager.newTrack(nameField.getString());
-				BBTracker.getInstance().showMainCanvas();
-			} catch (final LocationException e) {
-				BBTracker.nonFatal(e, "Starting new track", null);
+			if (trackManager != null) {
+				// new track
+				try {
+					trackManager.newTrack(nameField.getString());
+					BBTracker.getInstance().showMainCanvas();
+				} catch (final LocationException e) {
+					BBTracker.nonFatal(e, "Starting new track", null);
+				}
+			} else {
+				track.setName(nameField.getString());
 			}
 		} else if (command == cancelCommand) {
 			BBTracker.getInstance().showMainCanvas();

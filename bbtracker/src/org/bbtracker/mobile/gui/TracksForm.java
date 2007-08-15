@@ -114,7 +114,7 @@ public class TracksForm extends List implements CommandListener {
 		} else {
 			if (command == selectCommand) {
 				try {
-					trackManager.saveTrack();
+					trackManager.maybeSaveTrack();
 				} catch (final TrackStoreException e) {
 					TrackManager.showSaveFailedAlert(e, this);
 					return;
@@ -135,7 +135,7 @@ public class TracksForm extends List implements CommandListener {
 				BBTracker.getInstance().showMainCanvas();
 			} else if (command == exportCommand) {
 				final Preferences preferences = Preferences.getInstance();
-				final String dir = preferences.getExportDirectory();
+				final String dir = preferences.getTrackDirectory();
 				if (dir == null) {
 					final Alert alert = new Alert("No track directory defined!",
 							"Please define an export directory in the options screen.", null, AlertType.WARNING);
