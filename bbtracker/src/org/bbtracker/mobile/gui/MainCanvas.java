@@ -27,12 +27,12 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
-import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.TrackListener;
 import org.bbtracker.mobile.TrackManager;
+import org.bbtracker.mobile.TrackStore.TrackStoreException;
 
 public class MainCanvas extends Canvas implements TrackListener, CommandListener {
 	private static final int DEFAULT_STATUS_TIMEOUT = 5 * 1000;
@@ -52,6 +52,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	private final StatusTile statusTile;
 
 	private final Command newTrackCommand;
+
+	private final Command stopTrackingCommand;
 
 	private final Command tracksCommand;
 
@@ -79,8 +81,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 		switchViewCommand = new Command("Switch View", Command.SCREEN, 0);
 		newTrackCommand = new Command("New Track", "Start a new Track", Command.SCREEN, 1);
-		tracksCommand = new Command("Tracks", "Open Track Manager", Command.SCREEN, 2);
-		optionsCommand = new Command("Options", Command.SCREEN, 3);
+		stopTrackingCommand = new Command("Stop tracking", "Stop recording the current Track", Command.STOP, 2);
+		tracksCommand = new Command("Tracks", "Open Track Manager", Command.SCREEN, 3);
+		optionsCommand = new Command("Options", Command.SCREEN, 4);
 		aboutCommand = new Command("About", Command.SCREEN, 5);
 		exitCommand = new Command("Exit", Command.EXIT, 6);
 
@@ -172,6 +175,11 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	public void stateChanged(final int newState) {
+		if (newState == TrackManager.STATE_TRACKING) {
+			addCommand(stopTrackingCommand);
+		} else {
+			removeCommand(stopTrackingCommand);
+		}
 		updateStatusText(newState);
 		for (int i = 0; i < visibleTiles.length && visibleTiles[i] != null; i++) {
 			visibleTiles[i].stateChanged(newState);
@@ -220,28 +228,72 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		for (int i = 0; i < visibleTiles.length && visibleTiles[i] != null; i++) {
 			visibleTiles[i].showNotify();
 		}
-		updateStatusText(manager.getState());
+		final int state = manager.getState();
+		if (state == TrackManager.STATE_TRACKING) {
+			addCommand(stopTrackingCommand);
+		} else {
+			removeCommand(stopTrackingCommand);
+		}
+		updateStatusText(state);
 	}
 
 	public void commandAction(final Command command, final Displayable displayable) {
-		Displayable nextDisplayable = null;
 		if (command == exitCommand) {
 			exitAction();
 		} else if (command == switchViewCommand) {
 			nextTileConfiguration();
 		} else {
+			final Displayable nextDisplayable;
 			if (command == aboutCommand) {
 				nextDisplayable = new AboutForm();
 			} else if (command == optionsCommand) {
 				nextDisplayable = new OptionsForm(manager);
 			} else if (command == newTrackCommand) {
 				nextDisplayable = new NewTrackForm(manager);
+				if (manager.getState() == TrackManager.STATE_TRACKING) {
+					final Alert alert = new Alert("Stop tracking?", "The track <" + manager.getTrack().getName() +
+							"> is currently beeing recorded. Save that track and start a new one?", null,
+							AlertType.CONFIRMATION);
+					final Command startNewTrack = new Command("Start new Track", Command.OK, 1);
+					alert.addCommand(startNewTrack);
+					alert.addCommand(new Command("Continue tracking", Command.CANCEL, 0));
+					alert.setCommandListener(new CommandListener() {
+
+						public void commandAction(final Command cmd, final Displayable current) {
+							if (cmd == startNewTrack) {
+								try {
+									manager.saveTrack();
+									BBTracker.getDisplay().setCurrent(nextDisplayable);
+								} catch (final TrackStoreException e) {
+									TrackManager.showSaveFailedAlert(e, MainCanvas.this);
+								}
+							} else {
+								BBTracker.getDisplay().setCurrent(MainCanvas.this);
+							}
+						}
+					});
+					BBTracker.alert(alert, null);
+					return;
+				}
 			} else if (command == tracksCommand) {
 				try {
 					nextDisplayable = new TracksForm(manager);
-				} catch (final RecordStoreException e) {
+				} catch (final TrackStoreException e) {
 					BBTracker.nonFatal(e, "getting list of stored tracks", this);
+					return;
 				}
+			} else if (command == stopTrackingCommand) {
+				try {
+					manager.saveTrack();
+				} catch (final TrackStoreException e) {
+					TrackManager.showSaveFailedAlert(e, MainCanvas.this);
+					return;
+				}
+				nextDisplayable = this;
+			} else {
+				BBTracker.log("Unknown command: " + command + " <" + command.getLabel() + "/" + command.getLongLabel() +
+						">");
+				nextDisplayable = this;
 			}
 			BBTracker.getDisplay().setCurrent(nextDisplayable);
 		}
@@ -251,7 +303,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		final boolean isTracking = manager.getState() == TrackManager.STATE_TRACKING;
 		String question = "Do you really want to quit?";
 		if (isTracking) {
-			question += "\nThe current Track will be finished and saved.";
+			question += "\nRecording the current Track <" + manager.getTrack().getName() +
+					"> will stop and it will be saved.";
 		}
 		final Alert alert = new Alert("Really Quit?", question, null, AlertType.CONFIRMATION);
 		final Command quitCommand = new Command("Quit", Command.OK, 1);
@@ -261,6 +314,29 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 			public void commandAction(final Command cmd, final Displayable current) {
 				if (cmd == quitCommand) {
+					if (isTracking) {
+						try {
+							manager.saveTrack();
+						} catch (final TrackStoreException e) {
+							final Alert saveFailedAlert = new Alert("Failed to save track!", "Failed to safe track:\n" +
+									e.getMessage(), null, AlertType.ERROR);
+							final Command quitAnywayCommand = new Command("Quit", "Quit anyway", Command.OK, 1);
+							saveFailedAlert
+									.addCommand(new Command("Cancel", "Return to Main Screen", Command.CANCEL, 0));
+							saveFailedAlert.addCommand(quitAnywayCommand);
+							saveFailedAlert.setCommandListener(new CommandListener() {
+								public void commandAction(final Command cmd, final Displayable displayable) {
+									if (cmd == quitAnywayCommand) {
+										BBTracker.getInstance().shutdown(true);
+									} else {
+										BBTracker.getInstance().showMainCanvas();
+									}
+								}
+							});
+							BBTracker.alert(saveFailedAlert, null);
+							return;
+						}
+					}
 					BBTracker.getInstance().shutdown(true);
 				} else {
 					BBTracker.getDisplay().setCurrent(MainCanvas.this);
@@ -272,19 +348,23 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	protected void keyReleased(final int keyCode) {
 		final int gameAction = getGameAction(keyCode);
-		switch (gameAction) {
-		case LEFT:
-			manager.changeCurrentPoint(-1);
-			break;
-		case RIGHT:
-			manager.changeCurrentPoint(+1);
-			break;
-		case DOWN:
-			manager.changeCurrentPoint(-10);
-			break;
-		case UP:
-			manager.changeCurrentPoint(+10);
-			break;
+		if (keyCode == ' ') {
+			nextTileConfiguration();
+		} else {
+			switch (gameAction) {
+			case LEFT:
+				manager.changeCurrentPoint(-1);
+				break;
+			case RIGHT:
+				manager.changeCurrentPoint(+1);
+				break;
+			case DOWN:
+				manager.changeCurrentPoint(-10);
+				break;
+			case UP:
+				manager.changeCurrentPoint(+10);
+				break;
+			}
 		}
 	}
 

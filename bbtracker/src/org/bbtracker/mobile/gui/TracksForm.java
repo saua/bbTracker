@@ -30,14 +30,15 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.List;
-import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.Track;
+import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.IconManager;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
-import org.bbtracker.mobile.TrackStore;
+import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
+import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.exporter.GpxTrackExporter;
 import org.bbtracker.mobile.exporter.KmlTrackExporter;
 import org.bbtracker.mobile.exporter.TrackExporter;
@@ -53,7 +54,9 @@ public class TracksForm extends List implements CommandListener {
 
 	private final Command cancelCommand;
 
-	public TracksForm(final TrackManager trackManager) throws RecordStoreException {
+	private TrackStoreEntry[] entries;
+
+	public TracksForm(final TrackManager trackManager) throws TrackStoreException {
 		super("Tracks", Choice.IMPLICIT);
 
 		this.trackManager = trackManager;
@@ -72,18 +75,16 @@ public class TracksForm extends List implements CommandListener {
 
 		setCommandListener(this);
 
-		trackManager.maybeSafeTrack();
-
-		loadNames();
+		loadEntries();
 	}
 
-	private void loadNames() throws RecordStoreException {
+	private void loadEntries() throws TrackStoreException {
 		deleteAll();
+		entries = trackManager.getEntries();
 		final Image icon = IconManager.getInstance().getListImage("track");
-		final TrackStore store = TrackStore.getInstance();
-		final String[] trackNames = store.getTrackNames();
-		for (int i = 0; i < trackNames.length; i++) {
-			append(trackNames[i], icon);
+		for (int i = 0; i < entries.length; i++) {
+			final String description = entries[i].getName() + " (" + Utils.dateToString(entries[i].getDate()) + ")";
+			append(description, icon);
 		}
 	}
 
@@ -96,21 +97,37 @@ public class TracksForm extends List implements CommandListener {
 		if (index == -1) {
 			BBTracker.alert(new Alert("No Track selected", "A track has to be selected for this action", null,
 					AlertType.INFO), this);
-		} else if (command == deleteCommand) {
-			try {
-				TrackStore.getInstance().deleteTrack(index);
-				loadNames();
-			} catch (final RecordStoreException e) {
-				BBTracker.nonFatal(e, "deleting track", null);
-				return;
-			}
 			return;
+		}
+
+		final TrackStoreEntry tse = entries[index];
+		if (command == deleteCommand) {
+			try {
+				tse.deleteTrack();
+				loadEntries();
+			} catch (final TrackStoreException e) {
+				BBTracker.log(e);
+				final Alert alert = new Alert("Couldn't delete Track.", "The track " + tse.getName() +
+						" couldn't be deleted: " + e.getMessage(), null, AlertType.INFO);
+				BBTracker.alert(alert, this);
+			}
 		} else {
+			if (command == selectCommand) {
+				try {
+					trackManager.saveTrack();
+				} catch (final TrackStoreException e) {
+					TrackManager.showSaveFailedAlert(e, this);
+					return;
+				}
+			}
 			final Track track;
 			try {
-				track = TrackStore.getInstance().getTrack(index);
-			} catch (final RecordStoreException e) {
-				BBTracker.nonFatal(e, "loading track", this);
+				track = tse.loadTrack();
+			} catch (final TrackStoreException e) {
+				BBTracker.log(e);
+				final Alert alert = new Alert("Couldn't load Track.", "The track " + tse.getName() +
+						" couldn't be loaded: " + e.getMessage(), null, AlertType.INFO);
+				BBTracker.alert(alert, this);
 				return;
 			}
 			if (command == selectCommand) {
@@ -120,7 +137,7 @@ public class TracksForm extends List implements CommandListener {
 				final Preferences preferences = Preferences.getInstance();
 				final String dir = preferences.getExportDirectory();
 				if (dir == null) {
-					final Alert alert = new Alert("No export directory defined!",
+					final Alert alert = new Alert("No track directory defined!",
 							"Please define an export directory in the options screen.", null, AlertType.WARNING);
 					BBTracker.alert(alert, this);
 					return;

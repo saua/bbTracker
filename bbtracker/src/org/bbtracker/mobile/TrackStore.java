@@ -17,198 +17,71 @@
  */
 package org.bbtracker.mobile;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
-import javax.microedition.rms.RecordComparator;
-import javax.microedition.rms.RecordEnumeration;
-import javax.microedition.rms.RecordStore;
-import javax.microedition.rms.RecordStoreException;
-import javax.microedition.rms.RecordStoreNotFoundException;
+import java.util.Date;
 
 import org.bbtracker.Track;
 
-public class TrackStore {
-	private static final String RECORD_STORE_NAME = "Tracks";
+public interface TrackStore {
+	public TrackStoreEntry[] getEntries() throws TrackStoreException;
 
-	private static TrackStore instance;
+	public void saveTrack(final Track track) throws TrackStoreException;
 
-	private Track lastStoredTrack;
-
-	private int lastStoredTrackIndex;
-
-	private int[] indices;
-
-	private String[] names;
-
-	public static synchronized TrackStore getInstance() {
-		if (instance == null) {
-			instance = new TrackStore();
+	public static class TrackStoreException extends Exception {
+		public TrackStoreException(final Throwable t) {
+			super(t.toString());
 		}
-		return instance;
+
+		public TrackStoreException(final String message) {
+			super(message);
+		}
 	}
 
-	private TrackStore() {
-	}
+	public static abstract class TrackStoreEntry {
+		private final Date date;
 
-	public String[] getTrackNames() throws RecordStoreException {
-		if (names == null) {
-			RecordStore rs = null;
-			try {
-				rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
-				final RecordEnumeration enumeration = rs.enumerateRecords(null, new TrackTrecordComparator(), false);
-				final int s = enumeration.numRecords();
-				indices = new int[s];
-				names = new String[s];
-				int i = 0;
-				while (enumeration.hasNextElement()) {
-					final byte[] data = enumeration.nextRecord();
-					try {
-						final DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data));
-						names[i] = Track.readDescriptionFromStream(dis);
-						dis.close();
-					} catch (final IOException e) {
-						names[i] = "Unreadable track record";
-					}
-					i++;
-				}
-				enumeration.reset();
-				i = 0;
-				while (enumeration.hasNextElement()) {
-					indices[i++] = enumeration.nextRecordId();
-				}
-				enumeration.destroy();
-			} catch (final RecordStoreNotFoundException e) {
-				names = new String[0];
-				indices = new int[0];
-			} finally {
-				if (rs != null) {
-					try {
-						rs.closeRecordStore();
-					} catch (final RecordStoreException e) {
-						// ignore
-					}
-				}
+		private final String name;
+
+		public TrackStoreEntry(final String name, final Date date) {
+			this.name = name;
+			this.date = date;
+		}
+
+		public Date getDate() {
+			return date;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public abstract Track loadTrack() throws TrackStoreException;
+
+		public abstract void deleteTrack() throws TrackStoreException;
+
+		public boolean equals(final Object obj) {
+			if (obj == this) {
+				return true;
+			} else if (obj == null || obj.getClass() != getClass()) {
+				return false;
 			}
+			final TrackStoreEntry other = (TrackStoreEntry) obj;
+			return other.getDate().equals(getDate()) && other.getName().equals(getName());
 		}
-		return names;
-	}
 
-	public Track getTrack(final int index) throws RecordStoreException {
-		if (indices == null) {
-			throw new IllegalStateException("Must not call getTrack() without calling getTrackNames() before!");
+		public int hashCode() {
+			return getClass().hashCode() ^ getDate().hashCode() ^ getName().hashCode();
 		}
-		RecordStore rs = null;
-		DataInputStream dis = null;
-		try {
-			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
-			final byte[] data = rs.getRecord(indices[index]);
-			final Track track;
-			dis = new DataInputStream(new ByteArrayInputStream(data));
-			track = Track.readFromStream(dis);
-			dis.close();
-			return track;
-		} catch (final IOException e) {
-			throw new RecordStoreException(e.getMessage());
-		} finally {
-			if (rs != null) {
-				try {
-					rs.closeRecordStore();
-				} catch (final RecordStoreException e) {
-					// ignore
-				}
-			}
-			if (dis != null) {
-				try {
-					dis.close();
-				} catch (final IOException e) {
-					// ignore
-				}
-			}
-		}
-	}
 
-	public void store(final Track track) throws RecordStoreException {
-		RecordStore rs = null;
-		try {
-			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
-
-			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			final DataOutputStream out = new DataOutputStream(baos);
-
-			track.writeToStream(out);
-
-			out.close();
-			final byte[] data = baos.toByteArray();
-
-			if (track == lastStoredTrack) {
-				rs.setRecord(lastStoredTrackIndex, data, 0, data.length);
+		public int compareTo(final TrackStoreEntry other) {
+			final long thisTime = getDate().getTime();
+			final long otherTime = other.getDate().getTime();
+			if (thisTime < otherTime) {
+				return -1;
+			} else if (thisTime > otherTime) {
+				return 1;
 			} else {
-				lastStoredTrack = track;
-				lastStoredTrackIndex = rs.addRecord(data, 0, data.length);
-			}
-
-			indices = null;
-			names = null;
-		} catch (final IOException e) {
-			throw new RecordStoreException(e.getMessage());
-		} finally {
-			if (rs != null) {
-				try {
-					rs.closeRecordStore();
-				} catch (final RecordStoreException e) {
-					// ignore
-				}
+				return getName().compareTo(other.getName());
 			}
 		}
 	}
-
-	public void deleteTrack(final int selectedIndex) throws RecordStoreException {
-		RecordStore rs = null;
-		try {
-			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
-
-			rs.deleteRecord(indices[selectedIndex]);
-
-			indices = null;
-			names = null;
-		} finally {
-			if (rs != null) {
-				try {
-					rs.closeRecordStore();
-				} catch (final RecordStoreException e) {
-					// ignore
-				}
-			}
-		}
-	}
-
-	private static class TrackTrecordComparator implements RecordComparator {
-		public int compare(final byte[] data1, final byte[] data2) {
-			final long date1 = getDate(data1);
-			final long date2 = getDate(data2);
-			if (date1 > date2) {
-				return RecordComparator.PRECEDES;
-			} else if (date1 < date2) {
-				return RecordComparator.FOLLOWS;
-			} else {
-				return RecordComparator.EQUIVALENT;
-			}
-		}
-
-		private long getDate(final byte[] data) {
-			// The beginning of each track is the version, the name (as with writeUTF()) followed by the timestamp (as
-			// with writeLong)
-			final int offset = (((data[4] & 0xff) << 8) | (data[5] & 0xff)) + 8;
-			long value = 0;
-			for (int i = 0; i < 4; i++) {
-				value = (value << 8) | (data[offset + i] & 0xff);
-			}
-			return value;
-		}
-	}
-
 }

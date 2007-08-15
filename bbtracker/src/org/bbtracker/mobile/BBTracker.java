@@ -31,6 +31,7 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import javax.microedition.rms.RecordStoreException;
 
+import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.gui.MainCanvas;
 import org.bbtracker.mobile.gui.NewTrackForm;
 import org.bbtracker.mobile.gui.OptionsForm;
@@ -64,8 +65,6 @@ public class BBTracker extends MIDlet {
 		trackManager = new TrackManager();
 
 		mainCanvas = new MainCanvas(trackManager);
-
-		TrackStore.getInstance();
 
 		try {
 			switch (Preferences.getInstance().getStartAction()) {
@@ -182,7 +181,7 @@ public class BBTracker extends MIDlet {
 			case Preferences.START_ACTION_TRACKS_SCREEN:
 				try {
 					Display.getDisplay(this).setCurrent(new TracksForm(trackManager));
-				} catch (final RecordStoreException e) {
+				} catch (final TrackStoreException e) {
 					nonFatal(e, "Opening Track Screen", mainCanvas);
 				}
 				break;

@@ -251,14 +251,21 @@ public class Track {
 		return track;
 	}
 
-	public static String readDescriptionFromStream(final DataInputStream in) throws IOException {
+	public static String readNameFromStream(final DataInputStream in) throws IOException {
 		final int version = in.readInt();
 		if (version != streamVersion) {
 			return "Wrong version! Got " + version + " instead of " + streamVersion + "!";
 		}
 		final String name = in.readUTF();
-		final Date creationDate = new Date(in.readLong());
 
-		return name + " (" + Utils.dateToString(creationDate) + ")";
+		return name;
+	}
+
+	/**
+	 * Can only be used immediately after {@link #readDateFromStream(DataInputStream)}
+	 */
+	public static Date readDateFromStream(final DataInputStream in) throws IOException {
+		final Date creationDate = new Date(in.readLong());
+		return creationDate;
 	}
 }
