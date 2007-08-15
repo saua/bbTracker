@@ -75,9 +75,9 @@ public interface TrackStore {
 		public int compareTo(final TrackStoreEntry other) {
 			final long thisTime = getDate().getTime();
 			final long otherTime = other.getDate().getTime();
-			if (thisTime < otherTime) {
+			if (thisTime > otherTime) {
 				return -1;
-			} else if (thisTime > otherTime) {
+			} else if (thisTime < otherTime) {
 				return 1;
 			} else {
 				return getName().compareTo(other.getName());
