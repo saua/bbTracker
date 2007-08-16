@@ -153,24 +153,24 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	}
 
 	private String validatePreferences() {
-		final String exportDir = directoryField.getString();
-		if (exportDir == null || exportDir.length() == 0) {
-			return "No export directory has been selected!";
+		final String trackDir = directoryField.getString();
+		if (trackDir == null || trackDir.length() == 0) {
+			return "No track directory has been selected!";
 		} else {
 			FileConnection connection = null;
 			try {
-				connection = (FileConnection) Connector.open("file:///" + exportDir, Connector.READ);
+				connection = (FileConnection) Connector.open("file:///" + trackDir, Connector.READ);
 				if (!connection.exists()) {
-					return "The directory identified by <" + exportDir + "> does not exist.";
+					return "The directory identified by <" + trackDir + "> does not exist.";
 				} else if (!connection.isDirectory()) {
-					return "The file identified by <" + exportDir + "> is not a directory.";
+					return "The file identified by <" + trackDir + "> is not a directory.";
 				} else if (!connection.canWrite()) {
-					return "The directory identified by <" + exportDir + "> is not writeable.";
+					return "The directory identified by <" + trackDir + "> is not writeable.";
 				}
 			} catch (final IOException e) {
-				return "Could not verify track directory <" + exportDir + ">: " + e.getMessage();
+				return "Could not verify track directory <" + trackDir + ">: " + e.getMessage();
 			} catch (final IllegalArgumentException e) {
-				return "Malformed track directory <" + exportDir + ">!";
+				return "Malformed track directory <" + trackDir + ">!";
 			} finally {
 				if (connection != null) {
 					try {
