@@ -144,6 +144,10 @@ public class TrackManager {
 
 		int newValue;
 		final int pointCount = track.getPointCount();
+		if (pointCount == 0) {
+			return false;
+		}
+
 		if (currentPoint == null) {
 			if (offset >= 0) {
 				newValue = offset;
