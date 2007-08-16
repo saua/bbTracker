@@ -124,6 +124,9 @@ public class Preferences {
 			this.trackDirectory = null;
 		} else {
 			this.trackDirectory = trackDirectory;
+			if (!this.trackDirectory.endsWith("/")) {
+				this.trackDirectory += "/";
+			}
 		}
 	}
 

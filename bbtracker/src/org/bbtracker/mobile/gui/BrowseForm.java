@@ -130,7 +130,14 @@ public class BrowseForm extends List implements CommandListener {
 						path = path.substring(0, slashIndex);
 					}
 				} else {
-					path = path == null ? selected : path + selected;
+					if (path == null) {
+						path = selected;
+					} else {
+						if (!path.endsWith("/")) {
+							path += "/";
+						}
+						path += selected;
+					}
 				}
 				updateContent();
 			}
