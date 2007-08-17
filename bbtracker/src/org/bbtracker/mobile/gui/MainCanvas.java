@@ -348,7 +348,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	protected void keyReleased(final int keyCode) {
 		final int gameAction = getGameAction(keyCode);
-		if (keyCode == ' ') {
+		if (keyCode == ' ' || keyCode == '0') {
 			nextTileConfiguration();
 		} else {
 			switch (gameAction) {
