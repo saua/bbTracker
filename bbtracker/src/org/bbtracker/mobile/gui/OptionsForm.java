@@ -187,9 +187,14 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	private void savePreferences() {
 		final Preferences pref = Preferences.getInstance();
 		try {
-			final int sampleInterval = Integer.parseInt(sampleField.getString());
-			pref.setSampleInterval(sampleInterval);
-			trackManager.updateSampleInterval();
+			try {
+				final int sampleInterval = Integer.parseInt(sampleField.getString());
+				pref.setSampleInterval(sampleInterval);
+				trackManager.updateSampleInterval();
+			} catch (final NumberFormatException e) {
+				// should not happen
+				BBTracker.log(e);
+			}
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
 			pref.setTrackDirectory(directoryField.getString());
 
@@ -216,9 +221,6 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			pref.setStatusFontSize(newFontSize);
 
 			pref.store();
-		} catch (final NumberFormatException e) {
-			// should not happen
-			BBTracker.log(e);
 		} catch (final RecordStoreException e) {
 			BBTracker.nonFatal(e, "storing preferences", null);
 			return;
