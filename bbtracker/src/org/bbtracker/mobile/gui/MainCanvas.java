@@ -80,9 +80,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		statusTile = new StatusTile(manager);
 
 		switchViewCommand = new Command("Switch View", Command.SCREEN, 0);
-		newTrackCommand = new Command("New Track", "Start a new Track", Command.SCREEN, 1);
-		stopTrackingCommand = new Command("Stop tracking", "Stop recording the current Track", Command.STOP, 2);
-		tracksCommand = new Command("Tracks", "Open Track Manager", Command.SCREEN, 3);
+		newTrackCommand = new Command("New Track", Command.SCREEN, 1);
+		stopTrackingCommand = new Command("Stop tracking", Command.STOP, 2);
+		tracksCommand = new Command("Track Manager", Command.SCREEN, 3);
 		optionsCommand = new Command("Options", Command.SCREEN, 4);
 		aboutCommand = new Command("About", Command.SCREEN, 5);
 		exitCommand = new Command("Exit", Command.EXIT, 6);
