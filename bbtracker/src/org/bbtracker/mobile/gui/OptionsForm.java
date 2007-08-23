@@ -193,10 +193,11 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				trackManager.updateSampleInterval();
 			} catch (final NumberFormatException e) {
 				// should not happen
-				BBTracker.log(e);
+				BBTracker.log(this, e, "parsing sampleInterval: " + sampleField.getString());
 			}
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
 			pref.setTrackDirectory(directoryField.getString());
+			BBTracker.initLog();
 
 			for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 				pref.setExportFormat(i, exportFormatGroup.isSelected(i));

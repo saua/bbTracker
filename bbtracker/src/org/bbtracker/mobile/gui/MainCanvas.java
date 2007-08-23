@@ -291,8 +291,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 				}
 				nextDisplayable = this;
 			} else {
-				BBTracker.log("Unknown command: " + command + " <" + command.getLabel() + "/" + command.getLongLabel() +
-						">");
+				BBTracker.log(this, "Unknown command: " + command + " <" + command.getLabel() + "/" +
+						command.getLongLabel() + ">");
 				nextDisplayable = this;
 			}
 			BBTracker.getDisplay().setCurrent(nextDisplayable);

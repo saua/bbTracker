@@ -17,8 +17,13 @@
  */
 package org.bbtracker.mobile;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.Date;
 import java.util.Timer;
 
+import javax.microedition.io.Connector;
+import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -33,8 +38,8 @@ import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.gui.MainCanvas;
-import org.bbtracker.mobile.gui.TrackNameForm;
 import org.bbtracker.mobile.gui.OptionsForm;
+import org.bbtracker.mobile.gui.TrackNameForm;
 import org.bbtracker.mobile.gui.TracksForm;
 
 public class BBTracker extends MIDlet {
@@ -45,6 +50,8 @@ public class BBTracker extends MIDlet {
 	private static String fullname;
 
 	private static BBTracker instance;
+
+	private static PrintStream logStream;
 
 	private final TrackManager trackManager;
 
@@ -79,9 +86,12 @@ public class BBTracker extends MIDlet {
 		} catch (final LocationException e) {
 			nonFatal(e, "Initializing Location Provider", mainCanvas);
 		}
+
+		initLog();
 	}
 
 	public void shutdown(final boolean destroy) {
+		log(this, "shutdown " + destroy);
 		if (trackManager != null) {
 			trackManager.shutdown();
 		}
@@ -92,6 +102,10 @@ public class BBTracker extends MIDlet {
 		}
 		if (destroy) {
 			notifyDestroyed();
+		}
+		if (logStream != null) {
+			logStream.close();
+			logStream = null;
 		}
 	}
 
@@ -120,14 +134,14 @@ public class BBTracker extends MIDlet {
 	}
 
 	public static void nonFatal(final Throwable t, final String action, final Displayable next) {
-		log(t);
+		log(BBTracker.class, t, "non-fatal " + action);
 		final Alert alert = new Alert("Non-fatal Exception", "Non-fatal Exception while " + action + ": " +
 				t.getMessage(), null, AlertType.WARNING);
 		alert(alert, next);
 	}
 
 	public static void fatal(final Throwable t, final String action) {
-		log(t);
+		log(BBTracker.class, t, "fatal " + action);
 		final BBTracker i = getInstance();
 		i.shutdown(false);
 		final Form errorForm = new Form("Fatal Exception!");
@@ -151,12 +165,74 @@ public class BBTracker extends MIDlet {
 		getDisplay().setCurrent(mainCanvas);
 	}
 
-	public static void log(final Throwable e) {
+	public static void initLog() {
+		if (logStream != null) {
+			return;
+		}
+		final String dirName = Preferences.getInstance().getTrackDirectory();
+		final String logUrl = "file:///" + dirName + "debug.txt";
+		try {
+			final FileConnection fileConnection = (FileConnection) Connector.open(logUrl);
+			if (!(fileConnection.exists() && fileConnection.canWrite())) {
+				fileConnection.close();
+				return;
+			}
+			final OutputStream out = fileConnection.openOutputStream();
+			logStream = new PrintStream(out);
+		} catch (final Throwable e) {
+			log(BBTracker.class, e, "opening " + logUrl);
+		}
+	}
+
+	public static void setLogActive(final boolean logActive) {
+		if (!logActive && logStream != null) {
+			logStream.close();
+			logStream = null;
+		}
+
+		final String dirName = Preferences.getInstance().getTrackDirectory();
+		final String logUrl = "file:///" + dirName + "debug.txt";
+		try {
+			final FileConnection fileConnection = (FileConnection) Connector.open(logUrl);
+			if (logActive) {
+				if (!fileConnection.exists()) {
+					fileConnection.create();
+				}
+				final OutputStream out = fileConnection.openOutputStream();
+				logStream = new PrintStream(out);
+			} else {
+				if (fileConnection.exists()) {
+					fileConnection.delete();
+					fileConnection.close();
+				}
+			}
+		} catch (final Throwable e) {
+			log(BBTracker.class, e, "opening " + logUrl);
+		}
+	}
+
+	public static boolean isLogActive() {
+		return logStream != null;
+	}
+
+	public static void log(final Object source, final Throwable e) {
+		log(source, "Exception: " + e.toString());
+		// this is only useful for debugging in the emulator
 		e.printStackTrace();
 	}
 
-	public static void log(final String m) {
-		System.err.println(m);
+	public static void log(final Object source, final Throwable e, final String message) {
+		log(source, "Exception <" + message + ">: " + e.toString());
+		// this is only useful for debugging in the emulator
+		e.printStackTrace();
+	}
+
+	public static void log(final Object source, final String m) {
+		final String line = new Date() + ": [" + source + "] " + m;
+		System.err.println(line);
+		if (logStream != null) {
+			logStream.println(line);
+		}
 	}
 
 	protected void destroyApp(final boolean force) throws MIDletStateChangeException {
@@ -164,9 +240,11 @@ public class BBTracker extends MIDlet {
 	}
 
 	protected void pauseApp() {
+		log(this, "pauseApp");
 	}
 
 	protected void startApp() throws MIDletStateChangeException {
+		log(this, firstStart ? "first startApp" : "startApp");
 		if (firstStart) {
 			firstStart = false;
 			final int startAction = Preferences.getInstance().getStartAction();

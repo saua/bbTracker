@@ -106,7 +106,7 @@ public class TracksForm extends List implements CommandListener {
 				tse.deleteTrack();
 				loadEntries();
 			} catch (final TrackStoreException e) {
-				BBTracker.log(e);
+				BBTracker.log(this, e, "deleting track and listing tracks");
 				final Alert alert = new Alert("Couldn't delete Track.", "The track " + tse.getName() +
 						" couldn't be deleted: " + e.getMessage(), null, AlertType.INFO);
 				BBTracker.alert(alert, this);
@@ -124,7 +124,7 @@ public class TracksForm extends List implements CommandListener {
 			try {
 				track = tse.loadTrack();
 			} catch (final TrackStoreException e) {
-				BBTracker.log(e);
+				BBTracker.log(this, e, "loading track");
 				final Alert alert = new Alert("Couldn't load Track.", "The track " + tse.getName() +
 						" couldn't be loaded: " + e.getMessage(), null, AlertType.INFO);
 				BBTracker.alert(alert, this);

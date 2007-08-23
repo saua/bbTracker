@@ -90,7 +90,7 @@ public class IconManager {
 			try {
 				icon = Image.createImage(resourceName);
 			} catch (final IOException e) {
-				BBTracker.log("Couldn't read \"" + resourceName + "\": " + e.getMessage());
+				BBTracker.log(this, "Couldn't read \"" + resourceName + "\": " + e.getMessage());
 				icon = NO_ICON;
 			}
 			icons[sizeIndex] = icon;

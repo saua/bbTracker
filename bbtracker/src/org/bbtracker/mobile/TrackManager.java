@@ -279,7 +279,7 @@ public class TrackManager {
 				success = true;
 				break;
 			} catch (final TrackStoreException e) {
-				BBTracker.log(e);
+				BBTracker.log(this, e, "saving track");
 				final String msg = e.getMessage();
 				error = error == null ? msg : error + "\n" + msg;
 			}
@@ -304,7 +304,7 @@ public class TrackManager {
 			provider.setLocationListener(locationListener, sampleInterval, sampleInterval, -1);
 		} catch (final IllegalArgumentException e) {
 			provider.setLocationListener(locationListener, -1, -1, -1);
-			BBTracker.log(e);
+			BBTracker.log(this, e);
 		}
 	}
 
@@ -431,12 +431,11 @@ public class TrackManager {
 					initLocationProvider();
 					state = oldState;
 				} catch (final LocationException e) {
-					BBTracker.log(e);
+					BBTracker.log(this, e);
 					BBTracker.getTimer().schedule(this, DELAY_PER_LEVEL * gpsRecoveryEscalation);
 					fireStateChanged();
 				}
 			}
 		}
-
 	}
 }

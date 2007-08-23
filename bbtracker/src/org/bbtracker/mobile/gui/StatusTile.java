@@ -88,7 +88,7 @@ public class StatusTile extends Tile {
 	protected void onResize() {
 		twoLineLayout = fitsTwoLineLayout(width);
 		if (!twoLineLayout && width < ((MARGIN + latWidth) * 2 + MINIMAL_GAP)) {
-			BBTracker.log("onResize: Setting Font size to small, because even three lines overlap!");
+			BBTracker.log(this, "onResize: Setting Font size to small, because even three lines overlap!");
 			setFontSize(Font.SIZE_SMALL);
 		}
 	}
@@ -198,7 +198,8 @@ public class StatusTile extends Tile {
 		} else {
 			lineCount = 3;
 			if (!fitsThreeLineLayout(width)) {
-				BBTracker.log("getPreferredHeight: Setting Font size to small, because even three lines overlap!");
+				BBTracker
+						.log(this, "getPreferredHeight: Setting Font size to small, because even three lines overlap!");
 				setFontSize(Font.SIZE_SMALL);
 			}
 		}
