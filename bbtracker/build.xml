@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="bbTracker" default="build-all" basedir=".">
+
+	<target name="init">
+		<!--
+		 the build.properties file must contain the definition of
+		 
+		  * wtk.home which must point to the root of an installed WTK 2.x
+		  
+		  When rim.home is set to a directory that contains bin/rapc.jar and
+		  lib/net_rim_api.jar then a COD file is created as well.
+		  
+		  Unless do-obfuscate is set to false then wtk.retroguard.home or
+		  wtk.proguard.home have to be set as described at
+		  http://antenna.sourceforge.net/wtkobfuscate.php
+		  
+		  For the deploy task to work the following properties need to be set:
+		  
+		  deploy.user
+		  deploy.host
+		  deploy.path
+		  
+		-->
+
+		<property file="build.properties" />
+
+		<property name="bbtracker.dir" value="." />
+		<property name="bbtracker_common.dir" value="../bbtracker_common" />
+
+		<property name="bbtracker.src" value="${bbtracker.dir}/src" />
+		<property name="bbtracker.res" value="${bbtracker.dir}/res" />
+		<property name="bbtracker_common.src" value="${bbtracker_common.dir}/src" />
+		<property name="bbtracker_common.res" value="${bbtracker_common.dir}/res" />
+
+		<property name="do-obfuscate" value="true" />
+
+		<property name="build.dir" value="build" />
+		<property name="classes.dir" value="${build.dir}/classes" />
+
+		<property name="wtk.cldc.version" value="1.1" />
+		<property name="wtk.midp.version" value="2.0" />
+		<property name="wtk.locationservices.enabled" value="true" />
+		<property name="wtk.optionalpda.enabled" value="true" />
+
+		<taskdef resource="antenna.properties" classpath="antenna.jar" />
+
+		<!-- that's a bit of a hack to find out MIDlet-Version -->
+		<loadproperties srcfile="bbtracker.jad">
+			<filterchain>
+				<linecontainsregexp>
+					<regexp pattern="^MIDlet-Version" />
+				</linecontainsregexp>
+			</filterchain>
+		</loadproperties>
+		<echo level="info">Building ${MIDlet-Version} of bbTracker</echo>
+	</target>
+
+	<target name="clean" depends="init">
+		<delete dir="${build.dir}" />
+	</target>
+
+	<target name="prepare" depends="clean">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${classes.dir}" />
+	</target>
+
+	<target name="compile" depends="prepare">
+		<wtkbuild destdir="${classes.dir}" source="1.3">
+			<src path="${bbtracker_common.src}" />
+			<src path="${bbtracker.src}" />
+		</wtkbuild>
+	</target>
+
+	<target name="build-jar" depends="compile">
+		<copy file="bbtracker.jad" todir="${build.dir}" />
+		<wtkpackage jarfile="${build.dir}/bbtracker.jar" jadfile="${build.dir}/bbtracker.jad" preverify="true" obfuscate="${do-obfuscate}">
+			<fileset dir="${classes.dir}" />
+			<fileset dir="${bbtracker.res}" />
+			<fileset dir="${bbtracker_common.res}" />
+		</wtkpackage>
+	</target>
+
+	<target name="build-blackberry" depends="build-jar" if="rim.home">
+		<java fork="true" jar="${rim.home}/bin/rapc.jar" dir="${build.dir}">
+			<arg value="import=${rim.home}/lib/net_rim_api.jar" />
+			<arg value="codename=bbtracker" />
+			<arg value="-midlet" />
+			<arg value="-jad=bbtracker.jad" />
+			<arg value="bbtracker.jar" />
+		</java>
+	</target>
+
+	<target name="build-all" depends="build-jar,build-blackberry" />
+
+	<target name="deploy" depends="build-all">
+		<fail unless="deploy.user" />
+		<fail unless="deploy.host" />
+		<fail unless="deploy.path" />
+		<input addproperty="deploy.password" message="Password for ${deploy.user}@${deploy.host}" />
+		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="mkdir ${deploy.path}/${MIDlet-Version}" failonerror="true" />
+		<scp remoteTodir="${deploy.user}@${deploy.host}:${deploy.path}/${MIDlet-Version}">
+			<fileset dir="${build.dir}">
+				<include name="bbtracker.jar"/>
+				<include name="bbtracker.jad"/>
+				<include name="bbtracker.cod"/>
+			</fileset>
+		</scp>
+		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="ln -sf ${deploy.path}/${MIDlet-Version} ${deploy.path}/current" failonerror="true" />
+	</target>
+
+</project>
