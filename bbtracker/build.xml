@@ -105,7 +105,7 @@
 				<include name="bbtracker.cod"/>
 			</fileset>
 		</scp>
-		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="ln -sf ${deploy.path}/${MIDlet-Version} ${deploy.path}/current" failonerror="true" />
+		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="ln -sfT ${deploy.path}/${MIDlet-Version} ${deploy.path}/current" failonerror="true" />
 	</target>
 
 </project>
