@@ -273,6 +273,7 @@ public final class Utils {
 			sb.append(minutes);
 		}
 		sb.append(':');
+		sec -= minutes * 60;
 
 		appendTwoDigits(sb, sec, '0');
 
