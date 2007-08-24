@@ -61,10 +61,10 @@ public class TracksForm extends List implements CommandListener {
 
 		this.trackManager = trackManager;
 
-		selectCommand = new Command("Display", "Display selected Track", Command.ITEM, 0);
-		exportCommand = new Command("Export", "Export selected Track", Command.ITEM, 2);
-		deleteCommand = new Command("Delete", "Delete selected Track", Command.ITEM, 3);
-		cancelCommand = new Command("Cancel", "Return to previous screen", Command.CANCEL, 1);
+		selectCommand = new Command("Display", Command.ITEM, 0);
+		exportCommand = new Command("Export", Command.ITEM, 1);
+		deleteCommand = new Command("Delete", Command.ITEM, 2);
+		cancelCommand = new Command("Cancel", Command.CANCEL, 3);
 
 		addCommand(selectCommand);
 		addCommand(exportCommand);
