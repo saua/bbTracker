@@ -92,7 +92,7 @@ public class Preferences {
 
 	private int statusFontSize = Font.SIZE_MEDIUM;
 
-	private int detailsFontSize = Font.SIZE_LARGE;
+	private int detailsFontSize = Font.SIZE_MEDIUM;
 
 	private String trackDirectory;
 
