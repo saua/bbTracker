@@ -98,7 +98,7 @@
 		<fail unless="deploy.path" />
 		<input addproperty="deploy.password" message="Password for ${deploy.user}@${deploy.host}" />
 		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="mkdir ${deploy.path}/${MIDlet-Version}" failonerror="true" />
-		<scp remoteTodir="${deploy.user}@${deploy.host}:${deploy.path}/${MIDlet-Version}">
+		<scp remoteTodir="${deploy.user}@${deploy.host}:${deploy.path}/${MIDlet-Version}" password="${deploy.password}">
 			<fileset dir="${build.dir}">
 				<include name="bbtracker.jar"/>
 				<include name="bbtracker.jad"/>
