@@ -51,6 +51,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final StatusTile statusTile;
 
+	private final Tile detailsTile;
+
 	private final Command newTrackCommand;
 
 	private final Command stopTrackingCommand;
@@ -78,6 +80,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		elevationProfileTile = new ElevationPlotterTile(manager, DataProvider.TIME);
 		speedProfileTile = new SpeedPlotterTile(manager, DataProvider.TIME);
 		statusTile = new StatusTile(manager);
+		detailsTile = new DetailsTile(manager);
 
 		switchViewCommand = new Command("Switch View", Command.SCREEN, 0);
 		newTrackCommand = new Command("New Track", Command.SCREEN, 1);
@@ -93,6 +96,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		addCommand(optionsCommand);
 		addCommand(aboutCommand);
 		addCommand(exitCommand);
+
 		setCommandListener(this);
 
 		setMainTile(trackTile, true);
@@ -100,7 +104,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	protected void setMainTile(final Tile mainTile, final boolean withStatus) {
 		visibleTiles[0] = mainTile;
-		if (withStatus) {
+		if (withStatus == true) {
 			visibleTiles[1] = statusTile;
 		} else {
 			visibleTiles[1] = null;
@@ -199,7 +203,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	private void nextTileConfiguration() {
-		tileConfiguration = (tileConfiguration + 1) % 3;
+		tileConfiguration = (tileConfiguration + 1) % 4;
 		switch (tileConfiguration) {
 		case 0:
 			setMainTile(trackTile, true);
@@ -212,6 +216,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case 2:
 			setMainTile(speedProfileTile, true);
 			setStatusMessage("Speed over time");
+			break;
+		case 3:
+			setMainTile(detailsTile, false);
+			setStatusMessage("Details");
 			break;
 		}
 	}

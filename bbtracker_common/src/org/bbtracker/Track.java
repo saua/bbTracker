@@ -95,6 +95,13 @@ public class Track {
 		throw new IllegalStateException("pointCount corrupt!");
 	}
 
+	public long getPointOffset(final TrackPoint point) {
+		if (getPointCount() == 0) {
+			throw new IllegalStateException("No points yet, can't calculate point offset.");
+		}
+		return point.getTimestamp() - getPoint(0).getTimestamp();
+	}
+
 	public int getSegmentCount() {
 		return segments.size();
 	}

@@ -41,6 +41,8 @@ import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
 public class OptionsForm extends Form implements CommandListener, ItemCommandListener {
+	private static final String[] FONT_SIZE_NAMES = new String[] { "Small", "Medium", "Large" };
+
 	private final TrackManager trackManager;
 
 	private final Command okCommand;
@@ -61,6 +63,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final ChoiceGroup statusFontSizeGroup;
 
+	private final ChoiceGroup detailsFontSizeGroup;
+
 	public OptionsForm(final TrackManager trackManager) {
 		super("Options");
 
@@ -74,23 +78,13 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		unitsGroup = new ChoiceGroup("Units: ", Choice.POPUP, Preferences.UNITS, null);
 		unitsGroup.setSelectedIndex(pref.getUnits(), true);
 
-		statusFontSizeGroup = new ChoiceGroup("Status text size: ", Choice.POPUP, new String[] { "Small", "Medium",
-				"Large" }, null);
-		int selectedFontSizeItem;
-		switch (pref.getStatusFontSize()) {
-		case Font.SIZE_SMALL:
-			selectedFontSizeItem = 0;
-			break;
-		case Font.SIZE_MEDIUM:
-			selectedFontSizeItem = 1;
-			break;
-		case Font.SIZE_LARGE:
-			selectedFontSizeItem = 2;
-			break;
-		default:
-			selectedFontSizeItem = 1;
-		}
-		statusFontSizeGroup.setSelectedIndex(selectedFontSizeItem, true);
+		statusFontSizeGroup = new ChoiceGroup("Status text size: ", Choice.POPUP, FONT_SIZE_NAMES, null);
+		final int statusFontSizeIndex = getSelectedFontIndex(pref.getStatusFontSize());
+		statusFontSizeGroup.setSelectedIndex(statusFontSizeIndex, true);
+
+		detailsFontSizeGroup = new ChoiceGroup("Details text size: ", Choice.POPUP, FONT_SIZE_NAMES, null);
+		final int detailsFontSizeIndex = getSelectedFontIndex(pref.getDetailsFontSize());
+		detailsFontSizeGroup.setSelectedIndex(detailsFontSizeIndex, true);
 
 		startTypeGroup = new ChoiceGroup("Startup action: ", Choice.POPUP, Preferences.START_ACTIONS, null);
 		int startAction = pref.getStartAction();
@@ -112,6 +106,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		append(sampleField);
 		append(unitsGroup);
 		append(statusFontSizeGroup);
+		append(detailsFontSizeGroup);
 		append(startTypeGroup);
 		append(directoryField);
 		append(exportFormatGroup);
@@ -122,6 +117,42 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		addCommand(okCommand);
 		addCommand(cancelCommand);
 		setCommandListener(this);
+	}
+
+	private int getSelectedFontIndex(final int fontSize) {
+		int selectedIndex;
+		switch (fontSize) {
+		case Font.SIZE_SMALL:
+			selectedIndex = 0;
+			break;
+		case Font.SIZE_MEDIUM:
+			selectedIndex = 1;
+			break;
+		case Font.SIZE_LARGE:
+			selectedIndex = 2;
+			break;
+		default:
+			selectedIndex = 1;
+		}
+		return selectedIndex;
+	}
+
+	private int getFontSize(final int selectedIndex) {
+		int fontSize;
+		switch (selectedIndex) {
+		case 0:
+			fontSize = Font.SIZE_SMALL;
+			break;
+		case 1:
+			fontSize = Font.SIZE_MEDIUM;
+			break;
+		case 2:
+			fontSize = Font.SIZE_LARGE;
+			break;
+		default:
+			throw new IllegalStateException();
+		}
+		return fontSize;
 	}
 
 	public void commandAction(final Command command, final Displayable source) {
@@ -205,21 +236,11 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 			pref.setUnits(unitsGroup.getSelectedIndex());
 
-			final int newFontSize;
-			switch (statusFontSizeGroup.getSelectedIndex()) {
-			case 0:
-				newFontSize = Font.SIZE_SMALL;
-				break;
-			case 1:
-				newFontSize = Font.SIZE_MEDIUM;
-				break;
-			case 2:
-				newFontSize = Font.SIZE_LARGE;
-				break;
-			default:
-				throw new IllegalStateException();
-			}
-			pref.setStatusFontSize(newFontSize);
+			final int statusFontSize = getFontSize(statusFontSizeGroup.getSelectedIndex());
+			pref.setStatusFontSize(statusFontSize);
+
+			final int detailsFontSize = getFontSize(detailsFontSizeGroup.getSelectedIndex());
+			pref.setDetailsFontSize(detailsFontSize);
 
 			pref.store();
 		} catch (final RecordStoreException e) {

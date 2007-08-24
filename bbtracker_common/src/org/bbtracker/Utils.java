@@ -241,4 +241,29 @@ public final class Utils {
 		}
 		return result.toString();
 	}
+
+	public static String durationToString(final long msec) {
+		// i do hope no one uses bbTracker do record tracks that
+		// are longer than Integer.MAX_VALUE seconds.
+		final StringBuffer sb = new StringBuffer(8);
+		int sec = (int) (msec / 1000);
+		if (sec > 60 * 60) {
+			final int hours = sec / (60 * 60);
+			sb.append(hours);
+			sec -= hours * (60 * 60);
+			sb.append(':');
+		}
+
+		final int minutes = sec / 60;
+		if (sb.length() > 0) {
+			appendTwoDigits(sb, minutes, '0');
+		} else {
+			sb.append(minutes);
+		}
+		sb.append(':');
+
+		appendTwoDigits(sb, sec, '0');
+
+		return sb.toString();
+	}
 }

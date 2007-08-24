@@ -92,6 +92,8 @@ public class Preferences {
 
 	private int statusFontSize = Font.SIZE_MEDIUM;
 
+	private int detailsFontSize = Font.SIZE_LARGE;
+
 	private String trackDirectory;
 
 	private UnitConverter unitConverter;
@@ -181,6 +183,14 @@ public class Preferences {
 		this.statusFontSize = statusFontSize;
 	}
 
+	public int getDetailsFontSize() {
+		return detailsFontSize;
+	}
+
+	public void setDetailsFontSize(final int detailsFontSize) {
+		this.detailsFontSize = detailsFontSize;
+	}
+
 	public int getNextTrackNumber() {
 		return trackNumber++;
 	}
@@ -206,19 +216,27 @@ public class Preferences {
 
 			final DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
 
-			startAction = in.readShort();
-			sampleInterval = in.readInt();
-			trackNumber = in.readInt();
-			if (in.readByte() != 0) {
-				trackDirectory = in.readUTF();
-			} else {
-				trackDirectory = null;
+			try {
+				startAction = in.readShort();
+				sampleInterval = in.readInt();
+				trackNumber = in.readInt();
+				if (in.readByte() != 0) {
+					trackDirectory = in.readUTF();
+				} else {
+					trackDirectory = null;
+				}
+				exportFormats = in.readInt();
+				units = in.readInt();
+				statusFontSize = in.readInt();
+				detailsFontSize = in.readInt();
+			} finally {
+				try {
+					in.close();
+				} catch (final IOException ignored) {
+					// ignore
+				}
 			}
-			exportFormats = in.readInt();
-			units = in.readInt();
-			statusFontSize = in.readInt();
 
-			in.close();
 		} catch (final RecordStoreNotFoundException e) {
 			// ignore, don't load anything, but show options screen
 			startAction = START_ACTION_SHOW_OPTIONS;
@@ -259,6 +277,7 @@ public class Preferences {
 			out.writeInt(exportFormats);
 			out.writeInt(units);
 			out.writeInt(statusFontSize);
+			out.writeInt(detailsFontSize);
 
 			out.close();
 			final byte[] data = baos.toByteArray();
