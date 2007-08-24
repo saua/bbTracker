@@ -156,6 +156,18 @@ public final class Utils {
 		return orig.substring(0, 20) + orig.substring(size - 4, size);
 	}
 
+	public static String calendarToCompactString(final Calendar calendar) {
+		final StringBuffer sb = new StringBuffer(15);
+		sb.append(calendar.get(Calendar.YEAR));
+		appendTwoDigits(sb, calendar.get(Calendar.MONTH) + 1, '0');
+		appendTwoDigits(sb, calendar.get(Calendar.DAY_OF_MONTH), '0');
+		sb.append('_');
+		appendTwoDigits(sb, calendar.get(Calendar.HOUR_OF_DAY), '0');
+		appendTwoDigits(sb, calendar.get(Calendar.MINUTE), '0');
+		appendTwoDigits(sb, calendar.get(Calendar.SECOND), '0');
+		return sb.toString();
+	}
+
 	/**
 	 * Calculates a valid xsd:dateTime value from a given date.
 	 * 

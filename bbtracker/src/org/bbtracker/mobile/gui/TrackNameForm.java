@@ -17,6 +17,8 @@
  */
 package org.bbtracker.mobile.gui;
 
+import java.util.Calendar;
+
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
@@ -25,6 +27,7 @@ import javax.microedition.lcdui.TextField;
 import javax.microedition.location.LocationException;
 
 import org.bbtracker.Track;
+import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
@@ -50,7 +53,10 @@ public class TrackNameForm extends Form implements CommandListener {
 		this.trackManager = trackManager;
 		track = null;
 
-		final String initialName = "Track " + Preferences.getInstance().getNextTrackNumber();
+		// get the next track number, although we don't use it
+		// maybe we can use it for some statistic sometime
+		Preferences.getInstance().getNextTrackNumber();
+		final String initialName = Utils.calendarToCompactString(Calendar.getInstance());
 		initGui(initialName);
 	}
 
