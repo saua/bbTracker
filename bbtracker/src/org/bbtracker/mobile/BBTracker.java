@@ -170,6 +170,9 @@ public class BBTracker extends MIDlet {
 			return;
 		}
 		final String dirName = Preferences.getInstance().getTrackDirectory();
+		if (dirName == null) {
+			return;
+		}
 		final String logUrl = "file:///" + dirName + "debug.txt";
 		try {
 			final FileConnection fileConnection = (FileConnection) Connector.open(logUrl);
