@@ -1,0 +1,36 @@
+# Format: J2ME Emulator Waypoints
+# Author: Joachim Sauer
+#   Date: 06/06/2007
+#
+
+DESCRIPTION  J2ME Emulator Waypoints
+EXTENSION    xml
+
+#
+# FILE LAYOUT DEFINITIIONS:
+#
+FIELD_DELIMITER DOUBLEQUOTE
+RECORD_DELIMITER NEWLINE
+BADCHARS <&
+
+PROLOGUE <?xml version="1.0" encoding="UTF-8"?>
+PROLOGUE <waypoints>
+
+EPILOGUE </waypoints>
+
+
+#
+# INDIVIDUAL DATA FIELDS, IN ORDER OF APPEARANCE:
+#
+IFIELD CONSTANT,"	<waypoint time=","%s"
+#Write index as time:
+IFIELD INDEX,"0","%d0"
+#Write real time:
+#IFIELD TIMET_TIME,"","%ld"
+IFIELD CONSTANT," latitude=","%s"
+IFIELD LAT_DECIMAL,"","%f"
+IFIELD CONSTANT," longitude=","%s"
+IFIELD LON_DECIMAL,"","%f"
+IFIELD CONSTANT," altitude=","%s"
+IFIELD ALT_METERS,"","%f"
+IFIELD CONSTANT,"/>","%s"
