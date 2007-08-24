@@ -65,6 +65,7 @@ public final class Utils {
 			c = positiveChar;
 		}
 		final StringBuffer buf = new StringBuffer(13);
+		buf.append(c);
 		final int degrees = (int) Math.floor(d);
 		d = (d - degrees) * 60;
 		final int minutes = (int) Math.floor(d);
@@ -77,7 +78,6 @@ public final class Utils {
 		appendTwoDigits(buf, minutes, ' ').append(MINUTE);
 		appendTwoDigits(buf, seconds, ' ').append('.');
 		appendTwoDigits(buf, hundrethSeconds, '0').append(SECOND);
-		buf.append(c);
 		return buf.toString();
 	}
 
