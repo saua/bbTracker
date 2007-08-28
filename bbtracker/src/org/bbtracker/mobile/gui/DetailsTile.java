@@ -178,6 +178,6 @@ public class DetailsTile extends Tile {
 	}
 
 	public void showNotify() {
-		setFontSize(Preferences.getInstance().getStatusFontSize());
+		setFontSize(Preferences.getInstance().getDetailsFontSize());
 	}
 }
