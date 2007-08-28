@@ -22,7 +22,7 @@ public class FileTrackStore implements TrackStore {
 		try {
 			final Vector result = new Vector();
 			connection = (FileConnection) Connector.open("file:///" + dir, Connector.READ);
-			final Enumeration list = connection.list("*" + EXTENSION, true);
+			final Enumeration list = connection.list("*" + EXTENSION + "*", true);
 			while (list.hasMoreElements()) {
 				final String file = (String) list.nextElement();
 				DataInputStream din = null;
