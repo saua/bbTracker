@@ -37,7 +37,7 @@ public class StatusTile extends Tile {
 	private static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
 			"W";
 
-	private static final String MAX_COURSE_STRING = "399" + Utils.DEGREE;
+	private static final String MAX_COURSE_STRING = "NW";
 
 	private static final String MAX_SPEED_STRING = "999.9km/h";
 
@@ -136,7 +136,7 @@ public class StatusTile extends Tile {
 
 		final String lon = Utils.longitudeToString(lonValue);
 		final String lat = Utils.latitudeToString(latValue);
-		final String course = Utils.courseToString(courseValue);
+		final String course = Utils.courseToHeadingString(courseValue);
 
 		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
 		final String speed = unit.speedToString(speedValue);

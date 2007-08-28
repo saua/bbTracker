@@ -138,7 +138,7 @@ public class DetailsTile extends Tile {
 
 		final String lon = Utils.longitudeToString(lonValue).trim();
 		final String lat = Utils.latitudeToString(latValue).trim();
-		final String course = Utils.courseToString(courseValue);
+		final String course = Utils.courseToHeadingString(courseValue) + " (" + Utils.courseToString(courseValue) + ")";
 
 		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
 		final String speed = unit.speedToString(speedValue);

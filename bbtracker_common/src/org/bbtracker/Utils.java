@@ -223,6 +223,34 @@ public final class Utils {
 		}
 	}
 
+	public static String courseToHeadingString(final float course) {
+		if (Float.isNaN(course)) {
+			return "???";
+		} else {
+			final int courseInt = (int) Math.floor(course + 0.5d);
+			String courseString = "???";
+			if (courseInt < 31 || courseInt >= 331) {
+				courseString = "N";
+			} else if (courseInt < 61) {
+				courseString = "NE";
+			} else if (courseInt < 121) {
+				courseString = "E";
+			} else if (courseInt < 151) {
+				courseString = "SE";
+			} else if (courseInt < 211) {
+				courseString = "S";
+			} else if (courseInt < 241) {
+				courseString = "SW";
+			} else if (courseInt < 301) {
+				courseString = "W";
+			} else {
+				courseString = "NW";
+			}
+			return courseString;
+
+		}
+	}
+
 	/**
 	 * Converts a given double value to a String with a single digit after that decimal point and optionally strips ".0"
 	 * if present.
