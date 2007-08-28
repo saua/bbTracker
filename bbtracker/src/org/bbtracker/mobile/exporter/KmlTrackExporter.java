@@ -1,5 +1,6 @@
 /*
  * Copyright 2007 Joachim Sauer
+ * Copyright 2007 SIB
  * 
  * This file is part of bbTracker.
  * 
@@ -27,15 +28,18 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.TrackSegment;
 import org.bbtracker.Utils;
+import org.bbtracker.UnitConverter;
+import org.bbtracker.mobile.Preferences;
 
 public class KmlTrackExporter implements TrackExporter {
 	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 
 	private static final String KML_HEADER = "<kml xmlns=\"http://earth.google.com/kml/2.1\">\n";
 
-	private static final String STYLE_NAME = "sn_style";
+	private static final String STYLE_NAME = "sn_ylw-pushpin";
 
-	private static final String STYLE_TAG = "\t<Style id=\"" + STYLE_NAME + "\"></Style>\n";
+	private static final String STYLE_TAG = "\t<Style id=\"" + STYLE_NAME + "\">\n" + "<LineStyle>\n" +
+			"<color>63eeee17</color>\n" + "<width>4</width>\n" + "</LineStyle>\n" + "</Style>\n";
 
 	public String getFileName(final Track track) {
 		return track.getName().replace('/', '_') + ".kml";
@@ -45,6 +49,21 @@ public class KmlTrackExporter implements TrackExporter {
 		Writer w = null;
 		try {
 			final String xmlName = Utils.escapeXml(track.getName());
+			// Added 2007 SIB
+			final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
+			final String lengthString = unit.distanceToString(track.getLength());
+			final String timeString;
+			if (track.getPointCount() > 0) {
+				final TrackPoint lastPoint = track.getPoint(track.getPointCount() - 1);
+				final long duration = track.getPointOffset(lastPoint);
+				timeString = Utils.durationToString(duration);
+			} else {
+				timeString = "-";
+			}
+			final String maxElevString = unit.elevationToString(track.getMaxElevation());
+			final String minElevString = unit.elevationToString(track.getMinElevation());
+			final String maxSpeedString = unit.speedToString(track.getMaxSpeed());
+
 			w = new OutputStreamWriter(out, "UTF-8");
 			w.write(XML_HEADER);
 			w.write(KML_HEADER);
@@ -63,6 +82,25 @@ public class KmlTrackExporter implements TrackExporter {
 			w.write("\t\t<styleUrl>#");
 			w.write(STYLE_NAME);
 			w.write("</styleUrl>\n");
+
+			w.write("<description><![CDATA[<table>\n");
+			w.write("<tr><td><b>Total Distance: </b>");
+			w.write(lengthString);
+			w.write("</td></tr>\n");
+			w.write("<tr><td><b>Total Time: </b>");
+			w.write(timeString);
+			w.write("</td></tr>\n");
+			w.write("<tr><td><b>Max Speed: </b>");
+			w.write(maxSpeedString);
+			w.write("</td></tr>\n");
+			w.write("<tr><td><b>Max Elevation: </b>");
+			w.write(maxElevString);
+			w.write("</td></tr>\n");
+			w.write("<tr><td><b>Min Elevation: </b>");
+			w.write(minElevString);
+			w.write("</td></tr>\n");
+			w.write(")</table>]]></description>)");
+
 			w.write("\t\t<LineString>\n\t\t\t<coordinates>\n");
 			final Enumeration segments = track.getSegments();
 			while (segments.hasMoreElements()) {
