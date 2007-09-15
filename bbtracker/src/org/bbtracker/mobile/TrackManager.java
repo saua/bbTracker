@@ -163,6 +163,31 @@ public class TrackManager {
 			newValue = pointCount - 1;
 		}
 
+		return setCurrentPoint(newValue);
+	}
+
+	public boolean changeToLastPoint() {
+		if (track == null) {
+			return false;
+		}
+
+		final int pointCount = track.getPointCount();
+		if (pointCount == 0) {
+			return false;
+		}
+
+		return setCurrentPoint(pointCount - 1);
+	}
+
+	public boolean changeToFirstPoint() {
+		if (track == null || track.getPointCount() == 0) {
+			return false;
+		}
+
+		return setCurrentPoint(0);
+	}
+
+	private boolean setCurrentPoint(final int newValue) {
 		final boolean changed = (newValue != currentPointIndex);
 		if (changed) {
 			currentPointIndex = newValue;

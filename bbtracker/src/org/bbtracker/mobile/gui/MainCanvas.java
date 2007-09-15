@@ -356,9 +356,22 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	protected void keyReleased(final int keyCode) {
 		final int gameAction = getGameAction(keyCode);
-		if (keyCode == ' ' || keyCode == '0') {
+		switch (keyCode) {
+		case ' ':
+		case '0':
 			nextTileConfiguration();
-		} else {
+			break;
+		case 's':
+		case '7':
+			// start
+			manager.changeToFirstPoint();
+			break;
+		case 'e':
+		case '9':
+			// last
+			manager.changeToLastPoint();
+			break;
+		default:
 			switch (gameAction) {
 			case LEFT:
 				manager.changeCurrentPoint(-1);
