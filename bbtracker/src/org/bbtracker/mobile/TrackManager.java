@@ -299,6 +299,9 @@ public class TrackManager {
 	}
 
 	public void updateSampleInterval() {
+		if (provider == null) {
+			return;
+		}
 		final int sampleInterval = Preferences.getInstance().getSampleInterval();
 		try {
 			provider.setLocationListener(locationListener, sampleInterval, sampleInterval, -1);
