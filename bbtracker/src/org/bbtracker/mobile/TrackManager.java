@@ -17,10 +17,14 @@
  */
 package org.bbtracker.mobile;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.TimerTask;
 import java.util.Vector;
 
+import javax.microedition.io.Connector;
+import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Displayable;
@@ -35,6 +39,9 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
+import org.bbtracker.mobile.exporter.GpxTrackExporter;
+import org.bbtracker.mobile.exporter.KmlTrackExporter;
+import org.bbtracker.mobile.exporter.TrackExporter;
 
 public class TrackManager {
 
@@ -376,6 +383,49 @@ public class TrackManager {
 		quicksort(result, 0, result.length - 1);
 
 		return result;
+	}
+
+	public static int exportTrack(final Track track) throws IOException {
+		final Preferences pref = Preferences.getInstance();
+		final String dir = pref.getEffectiveExportDirectory();
+		int exportCount = 0;
+		if (pref.getExportFormat(0)) {
+			export(dir, track, new KmlTrackExporter());
+			exportCount++;
+		}
+		if (pref.getExportFormat(1)) {
+			export(dir, track, new GpxTrackExporter());
+			exportCount++;
+		}
+		return exportCount;
+	}
+
+	private static void export(final String dir, final Track track, final TrackExporter exporter) throws IOException {
+		final String fileName = exporter.getFileName(track);
+		final String fullName = dir.endsWith("/") ? dir + fileName : dir + "/" + fileName;
+		FileConnection connection = null;
+		OutputStream out = null;
+		try {
+			connection = (FileConnection) Connector.open("file:///" + fullName, Connector.READ_WRITE);
+			connection.create();
+			out = connection.openOutputStream();
+			exporter.export(out, track);
+		} finally {
+			if (out != null) {
+				try {
+					out.close();
+				} catch (final IOException ignored) {
+					// ignore
+				}
+			}
+			if (connection != null) {
+				try {
+					connection.close();
+				} catch (final IOException ignored) {
+					// ignore
+				}
+			}
+		}
 	}
 
 	private void fireNewPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {

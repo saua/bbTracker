@@ -18,10 +18,7 @@
 package org.bbtracker.mobile.gui;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
-import javax.microedition.io.Connector;
-import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Choice;
@@ -39,9 +36,6 @@ import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
-import org.bbtracker.mobile.exporter.GpxTrackExporter;
-import org.bbtracker.mobile.exporter.KmlTrackExporter;
-import org.bbtracker.mobile.exporter.TrackExporter;
 
 public class TracksForm extends List implements CommandListener {
 	private final TrackManager trackManager;
@@ -134,68 +128,31 @@ public class TracksForm extends List implements CommandListener {
 				trackManager.setTrack(track);
 				BBTracker.getInstance().showMainCanvas();
 			} else if (command == exportCommand) {
-				final Preferences preferences = Preferences.getInstance();
-				final String dir = preferences.getTrackDirectory();
-				if (dir == null) {
-					final Alert alert = new Alert("No track directory defined!",
-							"Please define an export directory in the options screen.", null, AlertType.WARNING);
-					BBTracker.alert(alert, this);
-					return;
-				}
-				int count;
-				try {
-					count = exportTrack(dir, track);
-				} catch (final IOException e) {
-					BBTracker.nonFatal(e, "exporting track", this);
-					return;
-				}
-
-				final Alert alert = new Alert("Finished exporting", "The track " + track.getName() +
-						" has been exported successfully to " + count + " formats!", null, AlertType.INFO);
-				BBTracker.alert(alert, this);
+				exportTrack(track, this);
 			}
 		}
 	}
 
-	private int exportTrack(final String dir, final Track track) throws IOException {
-		final Preferences pref = Preferences.getInstance();
-		int exportCount = 0;
-		if (pref.getExportFormat(0)) {
-			export(dir, track, new KmlTrackExporter());
-			exportCount++;
+	public static void exportTrack(final Track track, final Displayable next) {
+		final Preferences preferences = Preferences.getInstance();
+		final String dir = preferences.getEffectiveExportDirectory();
+		if (dir == null) {
+			final Alert alert = new Alert("No export directory defined!",
+					"Please define either an export directory or a track directory in the options screen.", null,
+					AlertType.WARNING);
+			BBTracker.alert(alert, next);
+			return;
 		}
-		if (pref.getExportFormat(1)) {
-			export(dir, track, new GpxTrackExporter());
-			exportCount++;
-		}
-		return exportCount;
-	}
-
-	private void export(final String dir, final Track track, final TrackExporter exporter) throws IOException {
-		final String fileName = exporter.getFileName(track);
-		final String fullName = dir.endsWith("/") ? dir + fileName : dir + "/" + fileName;
-		FileConnection connection = null;
-		OutputStream out = null;
+		int count;
 		try {
-			connection = (FileConnection) Connector.open("file:///" + fullName, Connector.READ_WRITE);
-			connection.create();
-			out = connection.openOutputStream();
-			exporter.export(out, track);
-		} finally {
-			if (out != null) {
-				try {
-					out.close();
-				} catch (final IOException ignored) {
-					// ignore
-				}
-			}
-			if (connection != null) {
-				try {
-					connection.close();
-				} catch (final IOException ignored) {
-					// ignore
-				}
-			}
+			count = TrackManager.exportTrack(track);
+		} catch (final IOException e) {
+			BBTracker.nonFatal(e, "exporting track", next);
+			return;
 		}
+
+		final Alert alert = new Alert("Finished exporting", "The track " + track.getName() +
+				" has been exported successfully to " + count + " formats!", null, AlertType.INFO);
+		BBTracker.alert(alert, next);
 	}
 }

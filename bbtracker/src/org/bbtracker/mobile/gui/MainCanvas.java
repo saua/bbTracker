@@ -28,6 +28,7 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
+import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.TrackListener;
@@ -67,6 +68,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final Command exitCommand;
 
+	private final Command exportCommand;
+
 	private String statusMessage = null;
 
 	private long statusMessageEndTime = 0;
@@ -82,13 +85,14 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		statusTile = new StatusTile(manager);
 		detailsTile = new DetailsTile(manager);
 
-		switchViewCommand = new Command("Switch View", Command.SCREEN, 0);
-		newTrackCommand = new Command("New Track", Command.SCREEN, 1);
-		stopTrackingCommand = new Command("Stop tracking", Command.STOP, 2);
-		tracksCommand = new Command("Track Manager", Command.SCREEN, 3);
+		switchViewCommand = new Command("Switch View", Command.SCREEN, 11);
+		newTrackCommand = new Command("Start Track", Command.SCREEN, 1);
+		stopTrackingCommand = new Command("Stop Track", Command.STOP, 2);
+		tracksCommand = new Command("Tracks", Command.SCREEN, 3);
 		optionsCommand = new Command("Options", Command.SCREEN, 4);
 		aboutCommand = new Command("About", Command.SCREEN, 5);
-		exitCommand = new Command("Exit", Command.EXIT, 6);
+		exportCommand = new Command("Export Track", Command.SCREEN, 0);
+		exitCommand = new Command("Exit", Command.EXIT, 11);
 
 		addCommand(switchViewCommand);
 		addCommand(newTrackCommand);
@@ -179,25 +183,28 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	public void stateChanged(final int newState) {
-		if (newState == TrackManager.STATE_TRACKING) {
-			addCommand(stopTrackingCommand);
-		} else {
-			removeCommand(stopTrackingCommand);
-		}
-		updateStatusText(newState);
+		updateState(newState);
 		for (int i = 0; i < visibleTiles.length && visibleTiles[i] != null; i++) {
 			visibleTiles[i].stateChanged(newState);
 		}
 		repaint();
 	}
 
-	protected void updateStatusText(final int newState) {
+	protected void updateState(final int newState) {
 		switch (newState) {
 		case TrackManager.STATE_STATIC:
 			setStatusMessage("Static Track");
+			removeCommand(stopTrackingCommand);
+			addCommand(exportCommand);
 			break;
 		case TrackManager.STATE_TRACKING:
 			setStatusMessage("Tracking");
+			addCommand(stopTrackingCommand);
+			removeCommand(exportCommand);
+			break;
+		default:
+			removeCommand(stopTrackingCommand);
+			removeCommand(exportCommand);
 			break;
 		}
 	}
@@ -237,12 +244,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			visibleTiles[i].showNotify();
 		}
 		final int state = manager.getState();
-		if (state == TrackManager.STATE_TRACKING) {
-			addCommand(stopTrackingCommand);
-		} else {
-			removeCommand(stopTrackingCommand);
-		}
-		updateStatusText(state);
+		updateState(state);
 	}
 
 	public void commandAction(final Command command, final Displayable displayable) {
@@ -250,6 +252,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			exitAction();
 		} else if (command == switchViewCommand) {
 			nextTileConfiguration();
+		} else if (command == exportCommand) {
+			final Track track = manager.getTrack();
+			TracksForm.exportTrack(track, this);
 		} else {
 			final Displayable nextDisplayable;
 			if (command == aboutCommand) {

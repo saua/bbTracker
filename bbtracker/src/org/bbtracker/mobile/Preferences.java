@@ -100,6 +100,8 @@ public class Preferences {
 
 	private String trackDirectory;
 
+	private String exportDirectory;
+
 	private UnitConverter unitConverter;
 
 	private Preferences() {
@@ -125,6 +127,18 @@ public class Preferences {
 		return trackDirectory;
 	}
 
+	public String getExportDirectory() {
+		return exportDirectory;
+	}
+
+	public String getEffectiveExportDirectory() {
+		if (exportDirectory != null) {
+			return exportDirectory;
+		} else {
+			return trackDirectory;
+		}
+	}
+
 	public void setTrackDirectory(final String trackDirectory) {
 		if (trackDirectory == null || trackDirectory.length() == 0) {
 			this.trackDirectory = null;
@@ -132,6 +146,17 @@ public class Preferences {
 			this.trackDirectory = trackDirectory;
 			if (!this.trackDirectory.endsWith("/")) {
 				this.trackDirectory += "/";
+			}
+		}
+	}
+
+	public void setExportDirectory(final String exportDirectory) {
+		if (exportDirectory == null || exportDirectory.length() == 0) {
+			this.exportDirectory = null;
+		} else {
+			this.exportDirectory = exportDirectory;
+			if (!this.exportDirectory.endsWith("/")) {
+				this.exportDirectory += "/";
 			}
 		}
 	}
@@ -227,10 +252,16 @@ public class Preferences {
 				startAction = in.readShort();
 				sampleInterval = in.readInt();
 				trackNumber = in.readInt();
-				if (in.readByte() != 0) {
+				final byte dirFlags = in.readByte();
+				if ((dirFlags & 1) != 0) {
 					trackDirectory = in.readUTF();
 				} else {
 					trackDirectory = null;
+				}
+				if ((dirFlags & 2) != 0) {
+					exportDirectory = in.readUTF();
+				} else {
+					exportDirectory = null;
 				}
 				exportFormats = in.readInt();
 				units = in.readInt();
@@ -246,11 +277,14 @@ public class Preferences {
 
 		} catch (final RecordStoreNotFoundException e) {
 			// ignore, don't load anything, but show options screen
+			BBTracker.log(this, e);
 			startAction = START_ACTION_SHOW_OPTIONS;
 		} catch (final InvalidRecordIDException e) {
 			// ignore, don't load anything, but show options screen
+			BBTracker.log(this, e);
 			startAction = START_ACTION_SHOW_OPTIONS;
 		} catch (final IOException e) {
+			BBTracker.log(this, e);
 			startAction = START_ACTION_SHOW_OPTIONS;
 			throw new RecordStoreException(e.getMessage());
 		} finally {
@@ -275,11 +309,14 @@ public class Preferences {
 			out.writeShort(startAction);
 			out.writeInt(sampleInterval);
 			out.writeInt(trackNumber);
-			if (trackDirectory == null) {
-				out.writeByte(0);
-			} else {
-				out.writeByte(1);
+
+			final byte trackFlags = (byte) ((trackDirectory == null ? 0 : 1) | (exportDirectory == null ? 0 : 2));
+			out.writeByte(trackFlags);
+			if (trackDirectory != null) {
 				out.writeUTF(trackDirectory);
+			}
+			if (exportDirectory != null) {
+				out.writeUTF(exportDirectory);
 			}
 			out.writeInt(exportFormats);
 			out.writeInt(units);

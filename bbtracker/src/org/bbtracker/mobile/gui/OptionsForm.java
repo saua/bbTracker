@@ -49,13 +49,17 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final Command cancelCommand;
 
-	private final Command browseCommand;
+	private final Command browseTrackCommand;
+
+	private final Command browseExportCommand;
 
 	private final TextField sampleField;
 
 	private final ChoiceGroup startTypeGroup;
 
-	private final TextField directoryField;
+	private final TextField trackDirectoryField;
+
+	private final TextField exportDirectoryField;
 
 	private final ChoiceGroup exportFormatGroup;
 
@@ -93,10 +97,16 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		}
 		startTypeGroup.setSelectedIndex(startAction, true);
 
-		directoryField = new TextField("Track directory: ", pref.getTrackDirectory(), 100, TextField.URL);
-		browseCommand = new Command("Browse", Command.ITEM, 1);
-		directoryField.setDefaultCommand(browseCommand);
-		directoryField.setItemCommandListener(this);
+		trackDirectoryField = new TextField("Track directory: ", pref.getTrackDirectory(), 100, TextField.URL);
+		browseTrackCommand = new Command("Browse", Command.ITEM, 1);
+		trackDirectoryField.setDefaultCommand(browseTrackCommand);
+		trackDirectoryField.setItemCommandListener(this);
+
+		exportDirectoryField = new TextField("Export directory (defaults to track directory): ", pref
+				.getExportDirectory(), 100, TextField.URL);
+		browseExportCommand = new Command("Browse", Command.ITEM, 1);
+		exportDirectoryField.setDefaultCommand(browseExportCommand);
+		exportDirectoryField.setItemCommandListener(this);
 
 		exportFormatGroup = new ChoiceGroup("Export to: ", Choice.MULTIPLE, Preferences.EXPORT_FORMATS, null);
 		for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
@@ -108,7 +118,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		append(statusFontSizeGroup);
 		append(detailsFontSizeGroup);
 		append(startTypeGroup);
-		append(directoryField);
+		append(trackDirectoryField);
+		append(exportDirectoryField);
 		append(exportFormatGroup);
 
 		okCommand = new Command("OK", Command.OK, 0);
@@ -184,31 +195,49 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	}
 
 	private String validatePreferences() {
-		final String trackDir = directoryField.getString();
+		final String trackDir = trackDirectoryField.getString();
+
 		if (trackDir == null || trackDir.length() == 0) {
 			return "No track directory has been selected!";
+		}
+
+		String dirResult;
+
+		dirResult = validateDirectory(trackDir);
+		if (dirResult != null) {
+			return dirResult;
+		}
+
+		final String exportDir = exportDirectoryField.getString();
+		if (exportDir != null && exportDir.length() != 0) {
+			dirResult = validateDirectory(exportDir);
+			return dirResult;
 		} else {
-			FileConnection connection = null;
-			try {
-				connection = (FileConnection) Connector.open("file:///" + trackDir, Connector.READ);
-				if (!connection.exists()) {
-					return "The directory identified by <" + trackDir + "> does not exist.";
-				} else if (!connection.isDirectory()) {
-					return "The file identified by <" + trackDir + "> is not a directory.";
-				} else if (!connection.canWrite()) {
-					return "The directory identified by <" + trackDir + "> is not writeable.";
-				}
-			} catch (final IOException e) {
-				return "Could not verify track directory <" + trackDir + ">: " + e.getMessage();
-			} catch (final IllegalArgumentException e) {
-				return "Malformed track directory <" + trackDir + ">!";
-			} finally {
-				if (connection != null) {
-					try {
-						connection.close();
-					} catch (final IOException ignored) {
-						// ignore
-					}
+			return null;
+		}
+	}
+
+	private String validateDirectory(final String dir) {
+		FileConnection connection = null;
+		try {
+			connection = (FileConnection) Connector.open("file:///" + dir, Connector.READ);
+			if (!connection.exists()) {
+				return "The directory identified by <" + dir + "> does not exist.";
+			} else if (!connection.isDirectory()) {
+				return "The file identified by <" + dir + "> is not a directory.";
+			} else if (!connection.canWrite()) {
+				return "The directory identified by <" + dir + "> is not writeable.";
+			}
+		} catch (final IOException e) {
+			return "Could not verify directory <" + dir + ">: " + e.getMessage();
+		} catch (final IllegalArgumentException e) {
+			return "Malformed directory <" + dir + ">!";
+		} finally {
+			if (connection != null) {
+				try {
+					connection.close();
+				} catch (final IOException ignored) {
+					// ignore
 				}
 			}
 		}
@@ -227,7 +256,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				BBTracker.log(this, e, "parsing sampleInterval: " + sampleField.getString());
 			}
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
-			pref.setTrackDirectory(directoryField.getString());
+			pref.setTrackDirectory(trackDirectoryField.getString());
+			pref.setExportDirectory(exportDirectoryField.getString());
 			BBTracker.initLog();
 
 			for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
@@ -250,21 +280,27 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	}
 
 	public void commandAction(final Command command, final Item item) {
-		if (command == browseCommand) {
-			final BrowseForm browser = new BrowseForm("Save Directory", directoryField.getString());
-			final Display display = BBTracker.getDisplay();
-			browser.setCallback(new Runnable() {
-
-				public void run() {
-					final String selectedPath = browser.getPath();
-					if (selectedPath != null) {
-						directoryField.setString(selectedPath);
-					}
-					display.setCurrent(OptionsForm.this);
-				}
-
-			});
-			display.setCurrent(browser);
+		if (command == browseTrackCommand) {
+			showDirectoryBrowser("Track Storage Directory", trackDirectoryField);
+		} else if (command == browseExportCommand) {
+			showDirectoryBrowser("Track Export Directory", exportDirectoryField);
 		}
+	}
+
+	private void showDirectoryBrowser(final String name, final TextField field) {
+		final BrowseForm browser = new BrowseForm(name, field.getString());
+		final Display display = BBTracker.getDisplay();
+		browser.setCallback(new Runnable() {
+
+			public void run() {
+				final String selectedPath = browser.getPath();
+				if (selectedPath != null) {
+					field.setString(selectedPath);
+				}
+				display.setCurrent(OptionsForm.this);
+			}
+
+		});
+		display.setCurrent(browser);
 	}
 }
