@@ -37,7 +37,7 @@ public class StatusTile extends Tile {
 	private static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
 			"W";
 
-	private static final String MAX_COURSE_STRING = "NW";
+	private static final String MAX_COURSE_STRING = "359" + Utils.DEGREE + " NW";
 
 	private static final String MAX_SPEED_STRING = "999.9km/h";
 
@@ -46,6 +46,8 @@ public class StatusTile extends Tile {
 	private static final String MAX_LENGTH_STRING = "9999.9km";
 
 	private static final String MAX_POINT_STRING = "9999/9999";
+
+	private static final String MAX_TIME_STRING = "99:99:99";
 
 	private static final int MARGIN = 2;
 
@@ -67,7 +69,7 @@ public class StatusTile extends Tile {
 
 	private int pointWidth;
 
-	private boolean twoLineLayout = true;
+	private int timeWidth;
 
 	public StatusTile(final TrackManager manager) {
 		this.manager = manager;
@@ -82,22 +84,14 @@ public class StatusTile extends Tile {
 		elevationWidth = font.stringWidth(MAX_ELEVATION_STRING);
 		lengthWidth = font.stringWidth(MAX_LENGTH_STRING);
 		pointWidth = font.stringWidth(MAX_POINT_STRING);
-		twoLineLayout = fitsTwoLineLayout(width);
+		timeWidth = font.stringWidth(MAX_TIME_STRING);
 	}
 
 	protected void onResize() {
-		twoLineLayout = fitsTwoLineLayout(width);
-		if (!twoLineLayout && width < ((MARGIN + latWidth) * 2 + MINIMAL_GAP)) {
-			BBTracker.log(this, "onResize: Setting Font size to small, because even three lines overlap!");
-			setFontSize(Font.SIZE_SMALL);
-		}
+		getPreferredHeight(width);
 	}
 
-	protected boolean fitsTwoLineLayout(final int width) {
-		return width >= (MARGIN + MINIMAL_GAP + latWidth) * 2 + lengthWidth;
-	}
-
-	protected boolean fitsThreeLineLayout(final int width) {
+	protected boolean fitsLayout(final int width) {
 		return width >= (MARGIN + latWidth) * 2 + MINIMAL_GAP;
 	}
 
@@ -123,6 +117,7 @@ public class StatusTile extends Tile {
 		float courseValue = Float.NaN;
 		float elevationValue = Float.NaN;
 		double lengthValue = Double.NaN;
+		long timeValue = -1;
 		if (p != null) {
 			lonValue = p.getLongitude();
 			latValue = p.getLatitude();
@@ -132,58 +127,56 @@ public class StatusTile extends Tile {
 		}
 		if (track != null) {
 			lengthValue = track.getLength();
+			timeValue = track.getPointOffset(p);
 		}
 
 		final String lon = Utils.longitudeToString(lonValue);
 		final String lat = Utils.latitudeToString(latValue);
-		final String course = Utils.courseToHeadingString(courseValue);
+		final String course = Utils.courseToString(courseValue) + " " + Utils.courseToHeadingString(courseValue);
 
 		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
 		final String speed = unit.speedToString(speedValue);
 		final String elevation = unit.elevationToString(elevationValue);
 		final String length = unit.distanceToString(lengthValue);
+		final String time = timeValue == -1 ? "-" : Utils.durationToString(timeValue);
 
 		final int line1 = MARGIN;
 		final int line2 = line1 + font.getHeight();
-		final int latLonWidth; // the space available for latitude and longitude combined, it's also used for
-		// speed/course/elevation
-		if (twoLineLayout) {
-			final int spareSpace = width - (MARGIN * 2 + latWidth * 2 + Math.max(lengthWidth, pointWidth));
-			latLonWidth = latWidth * 2 + spareSpace / 2;
-		} else {
-			latLonWidth = width - 2 * MARGIN;
-		}
+		final int line3 = line2 + font.getHeight();
 
-		// longitude / latitude (always on line 1)
-		g.drawString(lon, MARGIN + latLonWidth / 2, line1, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(lat, MARGIN + latLonWidth, line1, Graphics.TOP | Graphics.RIGHT);
+		final int right = width - MARGIN;
+		int x;
+		int gapWidth;
 
-		final int spaceForCourse = latLonWidth - speedWidth - elevationWidth;
-		final int courseX = MARGIN + speedWidth + (spaceForCourse + courseWidth) / 2;
+		// the space available for text
+		final int availableWidth = width - 2 * MARGIN;
+		final int topRight = Graphics.TOP | Graphics.RIGHT;
 
-		// speed / course / elevation (always on line 2)
-		g.drawString(speed, MARGIN + speedWidth, line2, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(course, courseX, line2, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(elevation, MARGIN + latLonWidth, line2, Graphics.TOP | Graphics.RIGHT);
+		// longitude / latitude
+		x = width / 2;
+		g.drawString(lon, x, line1, topRight);
+		x = right;
+		g.drawString(lat, x, line1, topRight);
 
-		final int lengthX;
-		int lengthY;
-		final int pointX;
-		int pointY;
+		gapWidth = (availableWidth - (speedWidth + elevationWidth + courseWidth)) / 3;
 
-		if (twoLineLayout) {
-			lengthX = width - MARGIN;
-			lengthY = line1;
-			pointX = lengthX;
-			pointY = line2;
-		} else {
-			lengthX = width / 2;
-			lengthY = line2 + font.getHeight();
-			pointX = width - MARGIN;
-			pointY = lengthY;
-		}
-		g.drawString(length, lengthX, lengthY, Graphics.TOP | Graphics.RIGHT);
-		g.drawString(point, pointX, pointY, Graphics.TOP | Graphics.RIGHT);
+		// speed / course / elevation
+		x = MARGIN + speedWidth + gapWidth;
+		g.drawString(speed, x, line2, topRight);
+		x += courseWidth + gapWidth;
+		g.drawString(course, x, line2, topRight);
+		x = right;
+		g.drawString(elevation, x, line2, topRight);
+
+		gapWidth = (availableWidth - (timeWidth + lengthWidth + pointWidth)) / 3;
+
+		// track length / point number
+		x = MARGIN + timeWidth + gapWidth;
+		g.drawString(time, x, line3, topRight);
+		x += lengthWidth + gapWidth;
+		g.drawString(length, x, line3, topRight);
+		x = right;
+		g.drawString(point, x, line3, topRight);
 	}
 
 	public void showNotify() {
@@ -192,17 +185,15 @@ public class StatusTile extends Tile {
 
 	public int getPreferredHeight(final int width) {
 		setFontSize(Preferences.getInstance().getStatusFontSize());
-		final int lineCount;
-		if (fitsTwoLineLayout(width)) {
-			lineCount = 2;
-		} else {
-			lineCount = 3;
-			if (!fitsThreeLineLayout(width)) {
+		if (!fitsLayout(width)) {
+			BBTracker.log(this, "getPreferredHeight: Setting Font size to medium, because layout doesn't fit!");
+			setFontSize(Font.SIZE_MEDIUM);
+			if (!fitsLayout(width)) {
 				BBTracker
-						.log(this, "getPreferredHeight: Setting Font size to small, because even three lines overlap!");
+						.log(this, "getPreferredHeight: Setting Font size to small, because layout still doesn't fit!");
 				setFontSize(Font.SIZE_SMALL);
 			}
 		}
-		return MARGIN + font.getHeight() * lineCount + MARGIN;
+		return MARGIN + font.getHeight() * 3 + MARGIN;
 	}
 }

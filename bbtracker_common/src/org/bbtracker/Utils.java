@@ -225,10 +225,10 @@ public final class Utils {
 
 	public static String courseToHeadingString(final float course) {
 		if (Float.isNaN(course)) {
-			return "???";
+			return "??";
 		} else {
 			final int courseInt = (int) Math.floor(course + 0.5d);
-			String courseString = "???";
+			String courseString = "??";
 			if (courseInt < 31 || courseInt >= 331) {
 				courseString = "N";
 			} else if (courseInt < 61) {
