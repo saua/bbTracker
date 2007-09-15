@@ -32,6 +32,7 @@ import javax.microedition.rms.RecordStoreNotFoundException;
 
 import org.bbtracker.ImperialUnitConverter;
 import org.bbtracker.MetricUnitConverter;
+import org.bbtracker.NauticalUnitConverter;
 import org.bbtracker.UnitConverter;
 
 public class Preferences {
@@ -62,7 +63,10 @@ public class Preferences {
 
 	public static final int UNITS_IMPERIAL = 1;
 
-	public static String[] UNITS = new String[] { "Metric (km/h, km, m)", "Imperial (mph, miles, feet)" };
+	public static final int UNITS_NAUTICAL = 2;
+
+	public static String[] UNITS = new String[] { "Metric (km/h, km, m)", "Imperial (mph, miles, feet)",
+			"Nautical (nm/h, nm, feet)" };
 
 	private static Preferences instance;
 
@@ -152,7 +156,7 @@ public class Preferences {
 	}
 
 	public void setUnits(final int units) {
-		if (units != UNITS_METRIC && units != UNITS_IMPERIAL) {
+		if (units != UNITS_METRIC && units != UNITS_IMPERIAL && units != UNITS_NAUTICAL) {
 			throw new IllegalArgumentException();
 		}
 		this.units = units;
@@ -167,6 +171,9 @@ public class Preferences {
 				break;
 			case UNITS_IMPERIAL:
 				unitConverter = new ImperialUnitConverter();
+				break;
+			case UNITS_NAUTICAL:
+				unitConverter = new NauticalUnitConverter();
 				break;
 			default:
 				throw new IllegalStateException();
