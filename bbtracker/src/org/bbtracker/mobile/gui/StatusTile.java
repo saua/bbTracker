@@ -124,10 +124,12 @@ public class StatusTile extends Tile {
 			speedValue = p.getSpeed();
 			courseValue = p.getCourse();
 			elevationValue = p.getElevation();
+			if (track != null) {
+				timeValue = track.getPointOffset(p);
+			}
 		}
 		if (track != null) {
 			lengthValue = track.getLength();
-			timeValue = track.getPointOffset(p);
 		}
 
 		final String lon = Utils.longitudeToString(lonValue);
