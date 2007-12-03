@@ -78,7 +78,7 @@
 
 	<target name="build-jar" depends="init">
 		<antcall target="compile">
-			<param name="pp.symbols" value="AVOID_FILE_API" />
+			<!-- <param name="pp.symbols" value="AVOID_FILE_API" /> -->
 		</antcall>
 		<copy file="bbtracker.jad" todir="${build.dir}" />
 		<wtkpackage jarfile="${build.dir}/bbtracker.jar" jadfile="${build.dir}/bbtracker.jad" preverify="true" obfuscate="${do-obfuscate}">
