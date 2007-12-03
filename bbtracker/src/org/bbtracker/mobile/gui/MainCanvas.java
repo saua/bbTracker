@@ -68,7 +68,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final Command exitCommand;
 
+	// #ifndef AVOID_FILE_API
 	private final Command exportCommand;
+
+	// #endif
 
 	private String statusMessage = null;
 
@@ -91,7 +94,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		tracksCommand = new Command("Tracks", Command.SCREEN, 3);
 		optionsCommand = new Command("Options", Command.SCREEN, 4);
 		aboutCommand = new Command("About", Command.SCREEN, 5);
+		// #ifndef AVOID_FILE_API
 		exportCommand = new Command("Export Track", Command.SCREEN, 0);
+		// #endif
 		exitCommand = new Command("Exit", Command.EXIT, 11);
 
 		addCommand(switchViewCommand);
@@ -195,16 +200,22 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case TrackManager.STATE_STATIC:
 			setStatusMessage("Static Track");
 			removeCommand(stopTrackingCommand);
+			// #ifndef AVOID_FILE_API
 			addCommand(exportCommand);
+			// #endif
 			break;
 		case TrackManager.STATE_TRACKING:
 			setStatusMessage("Tracking");
 			addCommand(stopTrackingCommand);
+			// #ifndef AVOID_FILE_API
 			removeCommand(exportCommand);
+			// #endif
 			break;
 		default:
 			removeCommand(stopTrackingCommand);
+			// #ifndef AVOID_FILE_API
 			removeCommand(exportCommand);
+			// #endif
 			break;
 		}
 	}
@@ -252,9 +263,11 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			exitAction();
 		} else if (command == switchViewCommand) {
 			nextTileConfiguration();
+			// #ifndef AVOID_FILE_API
 		} else if (command == exportCommand) {
 			final Track track = manager.getTrack();
 			TracksForm.exportTrack(track, this);
+			// #endif
 		} else {
 			final Displayable nextDisplayable;
 			if (command == aboutCommand) {

@@ -1,3 +1,4 @@
+// #ifndef AVOID_FILE_API
 package org.bbtracker.mobile;
 
 import java.io.DataInputStream;
@@ -197,3 +198,4 @@ public class FileTrackStore implements TrackStore {
 		}
 	}
 }
+// #endif

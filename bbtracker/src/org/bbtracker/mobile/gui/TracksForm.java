@@ -127,12 +127,15 @@ public class TracksForm extends List implements CommandListener {
 			if (command == selectCommand) {
 				trackManager.setTrack(track);
 				BBTracker.getInstance().showMainCanvas();
+				// #ifndef AVOID_FILE_API
 			} else if (command == exportCommand) {
 				exportTrack(track, this);
+				// #endif
 			}
 		}
 	}
 
+	// #ifndef AVOID_FILE_API
 	public static void exportTrack(final Track track, final Displayable next) {
 		final Preferences preferences = Preferences.getInstance();
 		final String dir = preferences.getEffectiveExportDirectory();
@@ -155,4 +158,5 @@ public class TracksForm extends List implements CommandListener {
 				" has been exported successfully to " + count + " formats!", null, AlertType.INFO);
 		BBTracker.alert(alert, next);
 	}
+	// #endif
 }

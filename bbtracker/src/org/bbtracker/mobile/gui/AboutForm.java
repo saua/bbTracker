@@ -49,7 +49,9 @@ public class AboutForm extends Form implements CommandListener {
 	private void updateDebugCommands() {
 		removeCommand(activeDebugCommand);
 		removeCommand(deactiveDebugCommand);
-		addCommand(BBTracker.isLogActive() ? deactiveDebugCommand : activeDebugCommand);
+		if (BBTracker.isFileUrlAvailable()) {
+			addCommand(BBTracker.isLogActive() ? deactiveDebugCommand : activeDebugCommand);
+		}
 	}
 
 	public void commandAction(final Command command, final Displayable source) {

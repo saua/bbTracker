@@ -1,3 +1,4 @@
+// #ifndef AVOID_FILE_API
 /*
  * Copyright 2007 Joachim Sauer
  * 
@@ -147,3 +148,4 @@ public class BrowseForm extends List implements CommandListener {
 		}
 	}
 }
+// #endif
