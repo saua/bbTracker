@@ -9,6 +9,12 @@ import javax.microedition.io.Connector;
 public class Log {
 	public static final int MAX_LOG = 25;
 
+	public static final String[] log = new String[MAX_LOG];
+
+	public static int head;
+
+	public static int tail;
+
 	private static PrintStream logStream;
 
 	public static void initLog() {
@@ -83,10 +89,32 @@ public class Log {
 	}
 
 	public static void log(final Object source, final String m) {
-		final String line = new Date() + ": [" + source + "] " + m;
+		final String d = new Date().toString();
+		final String line = d + ": [" + source + "] " + m;
 		System.err.println(line);
 		if (logStream != null) {
 			logStream.println(line);
+		}
+
+		synchronized (log) {
+			final String cn = source.getClass().getName();
+			final String l = d.substring(11, 20) + cn.substring(cn.lastIndexOf('.') + 1) + " " + m;
+			log[tail] = l;
+			tail = (tail + 1) % MAX_LOG;
+			if (tail == head) {
+				head = (head + 1) % MAX_LOG;
+			}
+		}
+	}
+
+	public static String[] getLog() {
+		synchronized (log) {
+			final int length = (tail + MAX_LOG - head) % MAX_LOG;
+			final String[] result = new String[length];
+			for (int i = head, j = 0; i != tail; i = (i + 1) % MAX_LOG, j++) {
+				result[j] = log[i];
+			}
+			return result;
 		}
 	}
 
