@@ -20,6 +20,7 @@ package org.bbtracker.mobile.gui;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.StringItem;
 
@@ -63,10 +64,13 @@ public class AboutForm extends Form implements CommandListener {
 		if (command == backCommand) {
 			BBTracker.getInstance().showMainCanvas();
 		} else if (command == logCommand) {
+			final Font f = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, Font.SIZE_SMALL);
 			final Form logForm = new Form("Debug Log");
 			final String[] l = Log.getLog();
 			for (int i = 0; i < l.length; i++) {
-				logForm.append(l[i] + "\n");
+				final StringItem si = new StringItem(null, l[i]);
+				si.setFont(f);
+				logForm.append(si);
 			}
 			// reuse backCommand and listener
 			logForm.addCommand(backCommand);
