@@ -35,12 +35,14 @@
 		<property name="do-obfuscate" value="true" />
 
 		<property name="build.dir" value="build" />
+		<property name="ppsrc.dir" value="${build.dir}/ppsrc" />
 		<property name="classes.dir" value="${build.dir}/classes" />
 
 		<property name="wtk.cldc.version" value="1.1" />
 		<property name="wtk.midp.version" value="2.0" />
 		<property name="wtk.locationservices.enabled" value="true" />
 		<property name="wtk.optionalpda.enabled" value="true" />
+		<property name="wtk.bluetooth.enabled" value="true" />
 
 		<taskdef resource="antenna.properties" classpath="antenna.jar" />
 
@@ -61,17 +63,23 @@
 
 	<target name="prepare" depends="clean">
 		<mkdir dir="${build.dir}" />
+		<mkdir dir="${ppsrc.dir}" />
 		<mkdir dir="${classes.dir}" />
 	</target>
 
 	<target name="compile" depends="prepare">
-		<wtkbuild destdir="${classes.dir}" source="1.3">
-			<src path="${bbtracker_common.src}" />
-			<src path="${bbtracker.src}" />
-		</wtkbuild>
+		<delete>
+			<fileset dir="${classes.dir}" includes="**/*" />
+		</delete>
+		<wtkpreprocess srcdir="${bbtracker_common.src}" destdir="${ppsrc.dir}" encoding="UTF-8" symbols="${pp.symbols}" />
+		<wtkpreprocess srcdir="${bbtracker.src}" destdir="${ppsrc.dir}" encoding="UTF-8" symbols="${pp.symbols}" />
+		<wtkbuild destdir="${classes.dir}" srcdir="${ppsrc.dir}" source="1.3" />
 	</target>
 
-	<target name="build-jar" depends="compile">
+	<target name="build-jar" depends="init">
+		<antcall target="compile">
+			<param name="pp.symbols" value="AVOID_FILE_API" />
+		</antcall>
 		<copy file="bbtracker.jad" todir="${build.dir}" />
 		<wtkpackage jarfile="${build.dir}/bbtracker.jar" jadfile="${build.dir}/bbtracker.jad" preverify="true" obfuscate="${do-obfuscate}">
 			<fileset dir="${classes.dir}" />
@@ -88,24 +96,38 @@
 			<arg value="-jad=bbtracker.jad" />
 			<arg value="bbtracker.jar" />
 		</java>
-	</target>
+		<echo file="${build.dir}/bbtracker.alx">
+			<![CDATA[<loader version="1.0">
+			<application id="bbTracker">
+				<name>bbTracker </name>
+				<description>bbTracker - GPS tracking for smartphones</description>
+				<version>${MIDlet-Version}</version>
+				<vendor>Joachim Sauer</vendor>
+				<copyright>Copyright 2007 by Joachim Sauer</copyright>
+				<fileset Java="1.0">
+					<files>bbtracker.cod</files>
+				</fileset>
+			</application>
+		</loader>]]></echo>
+</target>
 
-	<target name="build-all" depends="build-jar,build-blackberry" />
+<target name="build-all" depends="build-jar,build-blackberry" />
 
-	<target name="deploy" depends="build-all">
-		<fail unless="deploy.user" />
-		<fail unless="deploy.host" />
-		<fail unless="deploy.path" />
-		<input addproperty="deploy.password" message="Password for ${deploy.user}@${deploy.host}" />
-		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="mkdir ${deploy.path}/${MIDlet-Version}" failonerror="true" />
-		<scp remoteTodir="${deploy.user}@${deploy.host}:${deploy.path}/${MIDlet-Version}" password="${deploy.password}">
-			<fileset dir="${build.dir}">
-				<include name="bbtracker.jar"/>
-				<include name="bbtracker.jad"/>
-				<include name="bbtracker.cod"/>
-			</fileset>
-		</scp>
-		<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="ln -sfT ${deploy.path}/${MIDlet-Version} ${deploy.path}/current" failonerror="true" />
-	</target>
+<target name="deploy" depends="build-all">
+	<fail unless="deploy.user" />
+	<fail unless="deploy.host" />
+	<fail unless="deploy.path" />
+	<input addproperty="deploy.password" message="Password for ${deploy.user}@${deploy.host}" />
+	<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="mkdir ${deploy.path}/${MIDlet-Version}" failonerror="true" />
+	<scp remoteTodir="${deploy.user}@${deploy.host}:${deploy.path}/${MIDlet-Version}" password="${deploy.password}">
+		<fileset dir="${build.dir}">
+			<include name="bbtracker.jar" />
+			<include name="bbtracker.jad" />
+			<include name="bbtracker.cod" />
+			<include name="bbtracker.alx" />
+		</fileset>
+	</scp>
+	<sshexec host="${deploy.host}" username="${deploy.user}" password="${deploy.password}" command="ln -sfT ${deploy.path}/${MIDlet-Version} ${deploy.path}/current" failonerror="true" />
+</target>
 
 </project>
