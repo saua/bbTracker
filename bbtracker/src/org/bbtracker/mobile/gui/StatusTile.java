@@ -24,7 +24,7 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.UnitConverter;
 import org.bbtracker.Utils;
-import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
@@ -188,11 +188,10 @@ public class StatusTile extends Tile {
 	public int getPreferredHeight(final int width) {
 		setFontSize(Preferences.getInstance().getStatusFontSize());
 		if (!fitsLayout(width)) {
-			BBTracker.log(this, "getPreferredHeight: Setting Font size to medium, because layout doesn't fit!");
+			Log.log(this, "getPreferredHeight: Setting Font size to medium, because layout doesn't fit!");
 			setFontSize(Font.SIZE_MEDIUM);
 			if (!fitsLayout(width)) {
-				BBTracker
-						.log(this, "getPreferredHeight: Setting Font size to small, because layout still doesn't fit!");
+				Log.log(this, "getPreferredHeight: Setting Font size to small, because layout still doesn't fit!");
 				setFontSize(Font.SIZE_SMALL);
 			}
 		}

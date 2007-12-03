@@ -32,6 +32,7 @@ import org.bbtracker.Track;
 import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.IconManager;
+import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
@@ -100,7 +101,7 @@ public class TracksForm extends List implements CommandListener {
 				tse.deleteTrack();
 				loadEntries();
 			} catch (final TrackStoreException e) {
-				BBTracker.log(this, e, "deleting track and listing tracks");
+				Log.log(this, e, "deleting track and listing tracks");
 				final Alert alert = new Alert("Couldn't delete Track.", "The track " + tse.getName() +
 						" couldn't be deleted: " + e.getMessage(), null, AlertType.INFO);
 				BBTracker.alert(alert, this);
@@ -118,7 +119,7 @@ public class TracksForm extends List implements CommandListener {
 			try {
 				track = tse.loadTrack();
 			} catch (final TrackStoreException e) {
-				BBTracker.log(this, e, "loading track");
+				Log.log(this, e, "loading track");
 				final Alert alert = new Alert("Couldn't load Track.", "The track " + tse.getName() +
 						" couldn't be loaded: " + e.getMessage(), null, AlertType.INFO);
 				BBTracker.alert(alert, this);

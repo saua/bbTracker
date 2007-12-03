@@ -36,7 +36,7 @@ public class RMSTrackStore implements TrackStore {
 					entries[i] = new RMSTrackStoreEntry(name, date);
 					dis.close();
 				} catch (final IOException e) {
-					BBTracker.log(this, e);
+					Log.log(this, e);
 				}
 				i++;
 			}
@@ -54,7 +54,7 @@ public class RMSTrackStore implements TrackStore {
 		} catch (final RecordStoreNotFoundException e) {
 			return new TrackStoreEntry[0];
 		} catch (final RecordStoreException e) {
-			BBTracker.log(this, e, "listing tracks");
+			Log.log(this, e, "listing tracks");
 			throw new TrackStoreException(e);
 		} finally {
 			if (rs != null) {

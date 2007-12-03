@@ -12,7 +12,7 @@ import javax.bluetooth.ServiceRecord;
 import javax.bluetooth.UUID;
 import javax.obex.HeaderSet;
 
-import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 
 /**
  * This version of BLUElet was modified for bbTracker by Joachim Sauer.
@@ -50,19 +50,19 @@ public class Util {
 	public static void printRemoteDevice(final RemoteDevice dev, final DeviceClass devClass) {
 
 		try {
-			BBTracker.log(Util.class, "Print Remote Device " + dev.getBluetoothAddress());
-			BBTracker.log(Util.class, "Name: " + dev.getFriendlyName(false));
-			BBTracker.log(Util.class, "Auth: " + dev.isAuthenticated() + " Encrypted: " + dev.isEncrypted() +
-					" Trusted: " + dev.isTrustedDevice());
+			Log.log(Util.class, "Print Remote Device " + dev.getBluetoothAddress());
+			Log.log(Util.class, "Name: " + dev.getFriendlyName(false));
+			Log.log(Util.class, "Auth: " + dev.isAuthenticated() + " Encrypted: " + dev.isEncrypted() + " Trusted: " +
+					dev.isTrustedDevice());
 
 			if (devClass != null) {
-				BBTracker.log(Util.class, "MajorDevice:" + majorToName(devClass.getMajorDeviceClass()));
-				BBTracker.log(Util.class, "MinorDevice:" +
+				Log.log(Util.class, "MajorDevice:" + majorToName(devClass.getMajorDeviceClass()));
+				Log.log(Util.class, "MinorDevice:" +
 						minorToName(devClass.getMajorDeviceClass(), devClass.getMinorDeviceClass()));
-				BBTracker.log(Util.class, "ServiceClass:");
+				Log.log(Util.class, "ServiceClass:");
 				final String[] str = Util.majorServiceToName(devClass.getServiceClasses());
 				for (int i = 0; i < str.length; i++) {
-					BBTracker.log(Util.class, "  " + str[i]);
+					Log.log(Util.class, "  " + str[i]);
 				}
 			}
 		} catch (final IOException e) {
@@ -70,17 +70,17 @@ public class Util {
 	}
 
 	public static void printLocalDevice(final LocalDevice dev) {
-		BBTracker.log(Util.class, "Print Local Device " + dev.getBluetoothAddress());
-		BBTracker.log(Util.class, "Name: " + dev.getFriendlyName());
+		Log.log(Util.class, "Print Local Device " + dev.getBluetoothAddress());
+		Log.log(Util.class, "Name: " + dev.getFriendlyName());
 		final DeviceClass devClass = dev.getDeviceClass();
 		if (devClass != null) {
-			BBTracker.log(Util.class, "MajorDevice:" + majorToName(devClass.getMajorDeviceClass()));
-			BBTracker.log(Util.class, "MinorDevice:" +
+			Log.log(Util.class, "MajorDevice:" + majorToName(devClass.getMajorDeviceClass()));
+			Log.log(Util.class, "MinorDevice:" +
 					minorToName(devClass.getMajorDeviceClass(), devClass.getMinorDeviceClass()));
-			BBTracker.log(Util.class, "ServiceClass:");
+			Log.log(Util.class, "ServiceClass:");
 			final String[] str = Util.majorServiceToName(devClass.getServiceClasses());
 			for (int i = 0; i < str.length; i++) {
-				BBTracker.log(Util.class, "  " + str[i]);
+				Log.log(Util.class, "  " + str[i]);
 			}
 		}
 
@@ -88,8 +88,8 @@ public class Util {
 
 	public static void printServiceRecord(final ServiceRecord r) {
 		final int[] ids = r.getAttributeIDs();
-		BBTracker.log(Util.class, "Print Service Record (# of element: " + ids.length + ")");
-		BBTracker.log(Util.class, "Print Service Record URL " +
+		Log.log(Util.class, "Print Service Record (# of element: " + ids.length + ")");
+		Log.log(Util.class, "Print Service Record URL " +
 				r.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false));
 
 		for (int i = 0; i < ids.length; i++) {
@@ -102,7 +102,7 @@ public class Util {
 		final int type = e.getDataType();
 		if (type == DataElement.DATALT || type == DataElement.DATSEQ) {
 			final Enumeration enumeration = (Enumeration) e.getValue();
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + type + " (# of element: " +
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + type + " (# of element: " +
 					e.getSize() + ")");
 			while (enumeration.hasMoreElements()) {
 				final DataElement e2 = (DataElement) enumeration.nextElement();
@@ -112,28 +112,28 @@ public class Util {
 				type == DataElement.INT_1 || type == DataElement.INT_2 || type == DataElement.INT_4 ||
 				type == DataElement.INT_8) {
 			final long v = e.getLong();
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + v);
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + v);
 		} else if (type == DataElement.UUID) {
 			final UUID uuid = (UUID) e.getValue();
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + uuidToName(uuid));
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + uuidToName(uuid));
 		} else if (type == DataElement.U_INT_8 || type == DataElement.U_INT_16 || type == DataElement.INT_16) {
 			final byte[] v = (byte[]) e.getValue();
 			String s = "";
 			for (int i = 0; i < v.length; i++) {
 				s += Integer.toHexString(v[i]);
 			}
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + s);
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + s);
 
 		} else if (type == DataElement.STRING || type == DataElement.URL) {
 			final String v = (String) e.getValue();
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + v);
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + v);
 
 		} else if (type == DataElement.BOOL) {
 			final boolean v = e.getBoolean();
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + String.valueOf(v));
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] " + String.valueOf(v));
 
 		} else if (type == DataElement.NULL) {
-			BBTracker.log(Util.class, indent + "DataElement[" + idToName(id) + "] NULL");
+			Log.log(Util.class, indent + "DataElement[" + idToName(id) + "] NULL");
 
 		}
 
@@ -591,10 +591,10 @@ public class Util {
 
 	public static void printObexHeaderSet(final HeaderSet h) {
 		try {
-			BBTracker.log(Util.class, "Print OBEX Header");
+			Log.log(Util.class, "Print OBEX Header");
 			final int[] ids = h.getHeaderList();
 			for (int i = 0; i < ids.length; i++) {
-				BBTracker.log(Util.class, "ID[" + ids[i] + "]: " + h.getHeader(ids[i]));
+				Log.log(Util.class, "ID[" + ids[i] + "]: " + h.getHeader(ids[i]));
 			}
 		} catch (final Exception ex) {
 			ex.printStackTrace();

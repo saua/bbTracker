@@ -21,7 +21,7 @@ import javax.microedition.midlet.MIDlet;
 
 import net.benhui.btgallery.Util;
 
-import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 
 /**
  * This version of BLUElet was modified for bbTracker by Joachim Sauer.
@@ -138,7 +138,7 @@ public class BLUElet implements CommandListener {
 	 *            String
 	 */
 	public static void log(final String s) {
-		BBTracker.log(BLUElet.class, s);
+		Log.log(BLUElet.class, s);
 	}
 
 	/**
@@ -242,7 +242,7 @@ public class BLUElet implements CommandListener {
 			remotedeviceui.setMsg("[Please Wait...]");
 
 		} catch (final BluetoothStateException e) {
-			BBTracker.log(this, e);
+			Log.log(this, e);
 		}
 
 	}
@@ -284,7 +284,7 @@ public class BLUElet implements CommandListener {
 				display.callSerially(new Worker(ID_DEVICE_SELECTED));
 
 			} catch (final BluetoothStateException ex) {
-				BBTracker.log(this, ex);
+				Log.log(this, ex);
 			}
 
 		}

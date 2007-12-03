@@ -23,7 +23,7 @@ import javax.microedition.location.LocationException;
 import javax.microedition.location.QualifiedCoordinates;
 
 import org.bbtracker.TrackPoint;
-import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 
 public class Jsr179LocationProvider extends LocationProvider {
 	private static final int RECOVERY_DELAY_PER_LEVEL = 2 * 60;
@@ -55,7 +55,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 				setState(TEMPORARILY_UNAVAILABLE);
 				break;
 			default:
-				BBTracker.log(this, "Unknown state from LocationProvider: " + newState);
+				Log.log(this, "Unknown state from LocationProvider: " + newState);
 				return;
 			}
 		}
@@ -81,7 +81,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 			provider.setLocationListener(locationListener, updateInterval, updateInterval, -1);
 		} catch (final IllegalArgumentException e) {
 			provider.setLocationListener(locationListener, -1, -1, -1);
-			BBTracker.log(this, e, "Failed to set updateInterval " + updateInterval + ", using provider default");
+			Log.log(this, e, "Failed to set updateInterval " + updateInterval + ", using provider default");
 		}
 	}
 
@@ -102,7 +102,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 				initLocationProvider();
 				return 0;
 			} catch (final LocationException e) {
-				BBTracker.log(this, e);
+				Log.log(this, e);
 				setState(UNINITIALIZED);
 				fireProviderStateChanged();
 				return RECOVERY_DELAY_PER_LEVEL * escalationLevel;

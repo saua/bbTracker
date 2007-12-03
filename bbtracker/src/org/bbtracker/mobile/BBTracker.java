@@ -17,12 +17,8 @@
  */
 package org.bbtracker.mobile;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.util.Date;
 import java.util.Timer;
 
-import javax.microedition.io.Connector;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -45,7 +41,6 @@ import org.bbtracker.mobile.gui.TrackNameForm;
 import org.bbtracker.mobile.gui.TracksForm;
 
 public class BBTracker extends MIDlet {
-
 	private static final String NAME = "bbTracker";
 
 	private static String version;
@@ -53,8 +48,6 @@ public class BBTracker extends MIDlet {
 	private static String fullname;
 
 	private static BBTracker instance;
-
-	private static PrintStream logStream;
 
 	private static boolean firstStart = true;
 
@@ -82,11 +75,11 @@ public class BBTracker extends MIDlet {
 
 		mainCanvas = new MainCanvas(trackManager);
 
-		initLog();
+		Log.initLog();
 	}
 
 	public void shutdown(final boolean destroy) {
-		log(this, "shutdown " + destroy);
+		Log.log(this, "shutdown " + destroy);
 		if (trackManager != null) {
 			trackManager.shutdown();
 		}
@@ -98,10 +91,7 @@ public class BBTracker extends MIDlet {
 		if (destroy) {
 			notifyDestroyed();
 		}
-		if (logStream != null) {
-			logStream.close();
-			logStream = null;
-		}
+		Log.shutdown();
 	}
 
 	public static String getFullName() {
@@ -129,14 +119,14 @@ public class BBTracker extends MIDlet {
 	}
 
 	public static void nonFatal(final Throwable t, final String action, final Displayable next) {
-		log(BBTracker.class, t, "non-fatal " + action);
+		Log.log(BBTracker.class, t, "non-fatal " + action);
 		final Alert alert = new Alert("Non-fatal Exception", "Non-fatal Exception while " + action + ": " +
 				t.getMessage(), null, AlertType.WARNING);
 		alert(alert, next);
 	}
 
 	public static void fatal(final Throwable t, final String action) {
-		log(BBTracker.class, t, "fatal " + action);
+		Log.log(BBTracker.class, t, "fatal " + action);
 		final BBTracker i = getInstance();
 		i.shutdown(false);
 		final Form errorForm = new Form("Fatal Exception!");
@@ -160,65 +150,6 @@ public class BBTracker extends MIDlet {
 		getDisplay().setCurrent(mainCanvas);
 	}
 
-	public static void initLog() {
-		// #ifndef AVOID_FILE_API
-		if (logStream != null || System.getProperty("microedition.io.file.FileConnection.version") == null) {
-			return;
-		}
-		final String dirName = Preferences.getInstance().getTrackDirectory();
-		if (dirName == null) {
-			return;
-		}
-		final String logUrl = "file:///" + dirName + "debug.txt";
-		try {
-			final javax.microedition.io.file.FileConnection fileConnection = (javax.microedition.io.file.FileConnection) Connector
-					.open(logUrl);
-			if (!(fileConnection.exists() && fileConnection.canWrite())) {
-				fileConnection.close();
-				return;
-			}
-			final OutputStream out = fileConnection.openOutputStream();
-			logStream = new PrintStream(out);
-		} catch (final Throwable e) {
-			log(BBTracker.class, e, "opening " + logUrl);
-		}
-		// #endif
-	}
-
-	public static void setLogActive(final boolean logActive) {
-		if (!logActive && logStream != null) {
-			logStream.close();
-			logStream = null;
-		}
-		// #ifndef AVOID_FILE_API
-
-		final String dirName = Preferences.getInstance().getTrackDirectory();
-		final String logUrl = "file:///" + dirName + "debug.txt";
-		try {
-			final javax.microedition.io.file.FileConnection fileConnection = (javax.microedition.io.file.FileConnection) Connector
-					.open(logUrl);
-			if (logActive) {
-				if (!fileConnection.exists()) {
-					fileConnection.create();
-				}
-				final OutputStream out = fileConnection.openOutputStream();
-				logStream = new PrintStream(out);
-			} else {
-				if (fileConnection.exists()) {
-					fileConnection.delete();
-					fileConnection.close();
-				}
-			}
-		} catch (final Throwable e) {
-			log(BBTracker.class, e, "opening " + logUrl);
-		}
-		// #endif
-	}
-
-	public static boolean isLogActive() {
-		return logStream != null;
-	}
-
 	public static boolean isJsr179Available() {
 		return jsr179Available;
 	}
@@ -231,36 +162,16 @@ public class BBTracker extends MIDlet {
 		return fileUrlAvailable;
 	}
 
-	public static void log(final Object source, final Throwable e) {
-		log(source, "Exception: " + e.toString());
-		// this is only useful for debugging in the emulator
-		e.printStackTrace();
-	}
-
-	public static void log(final Object source, final Throwable e, final String message) {
-		log(source, "Exception <" + message + ">: " + e.toString());
-		// this is only useful for debugging in the emulator
-		e.printStackTrace();
-	}
-
-	public static void log(final Object source, final String m) {
-		final String line = new Date() + ": [" + source + "] " + m;
-		System.err.println(line);
-		if (logStream != null) {
-			logStream.println(line);
-		}
-	}
-
 	protected void destroyApp(final boolean force) throws MIDletStateChangeException {
 		shutdown(true);
 	}
 
 	protected void pauseApp() {
-		log(this, "pauseApp");
+		Log.log(this, "pauseApp");
 	}
 
 	protected void startApp() throws MIDletStateChangeException {
-		log(this, firstStart ? "first startApp" : "startApp");
+		Log.log(this, firstStart ? "first startApp" : "startApp");
 		if (firstStart) {
 			firstStart = false;
 			doFirstStart();
@@ -378,7 +289,7 @@ public class BBTracker extends MIDlet {
 		private void addAPI(final String apiName, final boolean available) {
 			final String msg = apiName + (available ? "" : " NOT") + " available";
 			initForm.append(msg + "\n");
-			log(this, "[API] " + msg);
+			Log.log(this, "[API] " + msg);
 		}
 	}
 }

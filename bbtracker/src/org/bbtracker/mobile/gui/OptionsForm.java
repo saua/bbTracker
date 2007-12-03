@@ -44,6 +44,7 @@ import net.benhui.btgallery.bluelet.BLUElet;
 
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.IconManager;
+import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
@@ -315,13 +316,13 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				trackManager.updateSampleInterval();
 			} catch (final NumberFormatException e) {
 				// should not happen
-				BBTracker.log(this, e, "parsing sampleInterval: " + sampleField.getString());
+				Log.log(this, e, "parsing sampleInterval: " + sampleField.getString());
 			}
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
 			// #ifndef AVOID_FILE_API
 			pref.setTrackDirectory(trackDirectoryField.getString());
 			pref.setExportDirectory(exportDirectoryField.getString());
-			BBTracker.initLog();
+			Log.initLog();
 
 			for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 				pref.setExportFormat(i, exportFormatGroup.isSelected(i));
@@ -402,21 +403,23 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				} else if (command == BLUElet.COMPLETED) {
 					final BLUElet bluelet = BLUElet.instance;
 					final RemoteDevice device = bluelet.getSelectedDevice();
-					final String address = device.getBluetoothAddress();
-					String deviceName;
-					try {
-						deviceName = device.getFriendlyName(false);
-					} catch (IOException e) {
-						deviceName = address;
+					if (device != null) {
+						final String address = device.getBluetoothAddress();
+						String deviceName;
+						try {
+							deviceName = device.getFriendlyName(false);
+						} catch (IOException e) {
+							deviceName = address;
+						}
+						final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
+						bluelet.destroyApp(false);
+						String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+
+						Log.log(this, "Selected Bluetooth Device: " + deviceName + " / " + url);
+						bluetoothUrl = url;
+						bluetoothNameField.setString(deviceName);
 					}
-					final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
-					bluelet.destroyApp(false);
-					String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
-
-					BBTracker.log(this, "Selected Bluetooth Device: " + deviceName + " / " + url);
-					bluetoothUrl = url;
-					bluetoothNameField.setString(deviceName);
-
+					BLUElet.instance.destroyApp(false);
 					BBTracker.getDisplay().setCurrent(OptionsForm.this);
 				}
 			}

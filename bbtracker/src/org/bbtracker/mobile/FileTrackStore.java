@@ -34,13 +34,13 @@ public class FileTrackStore implements TrackStore {
 					final Date date = Track.readDateFromStream(din);
 					result.addElement(new FileTrackStoreEntry(name, date, fileUrl));
 				} catch (final IOException e) {
-					BBTracker.log(this, e, "loading info from " + file);
+					Log.log(this, e, "loading info from " + file);
 				} finally {
 					if (din != null) {
 						try {
 							din.close();
 						} catch (final IOException e) {
-							BBTracker.log(this, e);
+							Log.log(this, e);
 						}
 					}
 				}
@@ -49,7 +49,7 @@ public class FileTrackStore implements TrackStore {
 			result.copyInto(entries);
 			return entries;
 		} catch (final IOException e) {
-			BBTracker.log(this, e, "loading track list");
+			Log.log(this, e, "loading track list");
 			throw new TrackStoreException(e);
 		} finally {
 			if (connection != null) {
@@ -57,7 +57,7 @@ public class FileTrackStore implements TrackStore {
 					connection.close();
 				} catch (final IOException e) {
 					// can't do anything about it
-					BBTracker.log(this, e);
+					Log.log(this, e);
 				}
 			}
 		}
@@ -72,7 +72,7 @@ public class FileTrackStore implements TrackStore {
 			dout = connection.openDataOutputStream();
 			track.writeToStream(dout);
 		} catch (final IOException e) {
-			BBTracker.log(this, e, "saving track");
+			Log.log(this, e, "saving track");
 			throw new TrackStoreException(e);
 		} finally {
 			if (dout != null) {
@@ -87,7 +87,7 @@ public class FileTrackStore implements TrackStore {
 					connection.close();
 				} catch (final IOException e) {
 					// can't do anything about it
-					BBTracker.log(this, e);
+					Log.log(this, e);
 				}
 			}
 		}
@@ -171,7 +171,7 @@ public class FileTrackStore implements TrackStore {
 				final FileConnection connection = (FileConnection) Connector.open(url);
 				connection.delete();
 			} catch (final IOException e) {
-				BBTracker.log(this, e, "deleting track");
+				Log.log(this, e, "deleting track");
 				throw new TrackStoreException("Failed to delete track: " + e.getMessage());
 			}
 		}
@@ -183,7 +183,7 @@ public class FileTrackStore implements TrackStore {
 				final Track track = Track.readFromStream(din);
 				return track;
 			} catch (final IOException e) {
-				BBTracker.log(this, e, "loading track");
+				Log.log(this, e, "loading track");
 				throw new TrackStoreException("Failed to load track: " + e.getMessage());
 			} finally {
 				if (din != null) {
@@ -191,7 +191,7 @@ public class FileTrackStore implements TrackStore {
 						din.close();
 					} catch (final IOException e) {
 						// can't do anything about it
-						BBTracker.log(this, e);
+						Log.log(this, e);
 					}
 				}
 			}

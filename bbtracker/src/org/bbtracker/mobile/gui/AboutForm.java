@@ -24,6 +24,7 @@ import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.StringItem;
 
 import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 
 public class AboutForm extends Form implements CommandListener {
 	private final Command backCommand;
@@ -50,7 +51,7 @@ public class AboutForm extends Form implements CommandListener {
 		removeCommand(activeDebugCommand);
 		removeCommand(deactiveDebugCommand);
 		if (BBTracker.isFileUrlAvailable()) {
-			addCommand(BBTracker.isLogActive() ? deactiveDebugCommand : activeDebugCommand);
+			addCommand(Log.isFileActive() ? deactiveDebugCommand : activeDebugCommand);
 		}
 	}
 
@@ -58,10 +59,10 @@ public class AboutForm extends Form implements CommandListener {
 		if (command == backCommand) {
 			BBTracker.getInstance().showMainCanvas();
 		} else if (command == deactiveDebugCommand) {
-			BBTracker.setLogActive(false);
+			Log.setFileActive(false);
 			updateDebugCommands();
 		} else if (command == activeDebugCommand) {
-			BBTracker.setLogActive(true);
+			Log.setFileActive(true);
 			updateDebugCommands();
 		}
 	}

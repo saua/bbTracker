@@ -29,7 +29,7 @@ import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
-import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 
 public class Gps {
 
@@ -109,7 +109,7 @@ public class Gps {
 			streamConnection = (StreamConnection) Connector.open(url);
 			inputStream = streamConnection.openInputStream();
 		} catch (final IOException ex) {
-			BBTracker.log(this, ex, "Error opening connection to " + url);
+			Log.log(this, ex, "Error opening connection to " + url);
 			throw new LocationException("Error while opening Bluetooth connection: " + ex.getMessage());
 		}
 		mThread = new Thread(new DataReader(inputStream, streamConnection));
@@ -267,14 +267,14 @@ public class Gps {
 					byteArrayOutputStream.close();
 				} catch (final IOException ex) {
 					mThread = null;
-					BBTracker.log(this, ex, "Error while receiving NMEA string");
+					Log.log(this, ex, "Error while receiving NMEA string");
 					continue;
 				}
 
 				try {
 					receiveNmea(s);
 				} catch (final Exception ex) {
-					BBTracker.log(this, ex, "Failed to parse NMEA String <" + s + ">");
+					Log.log(this, ex, "Failed to parse NMEA String <" + s + ">");
 				}
 			}
 			try {

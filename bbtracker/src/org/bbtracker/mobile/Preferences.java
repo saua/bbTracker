@@ -358,14 +358,14 @@ public class Preferences {
 
 		} catch (final RecordStoreNotFoundException e) {
 			// ignore, don't load anything, but show options screen
-			BBTracker.log(this, e);
+			Log.log(this, e);
 			startAction = START_ACTION_SHOW_OPTIONS;
 		} catch (final InvalidRecordIDException e) {
 			// ignore, don't load anything, but show options screen
-			BBTracker.log(this, e);
+			Log.log(this, e);
 			startAction = START_ACTION_SHOW_OPTIONS;
 		} catch (final IOException e) {
-			BBTracker.log(this, e);
+			Log.log(this, e);
 			startAction = START_ACTION_SHOW_OPTIONS;
 			throw new RecordStoreException(e.getMessage());
 		} finally {

@@ -290,7 +290,7 @@ public class TrackManager {
 				success = true;
 				break;
 			} catch (final TrackStoreException e) {
-				BBTracker.log(this, e, "saving track");
+				Log.log(this, e, "saving track");
 				final String msg = e.getMessage();
 				error = error == null ? msg : error + "\n" + msg;
 			}

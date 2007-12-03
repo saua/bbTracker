@@ -31,6 +31,7 @@ import javax.microedition.lcdui.Graphics;
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.TrackListener;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
@@ -317,8 +318,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 				}
 				nextDisplayable = this;
 			} else {
-				BBTracker.log(this, "Unknown command: " + command + " <" + command.getLabel() + "/" +
-						command.getLongLabel() + ">");
+				Log.log(this, "Unknown command: " + command + " <" + command.getLabel() + "/" + command.getLongLabel() +
+						">");
 				nextDisplayable = this;
 			}
 			BBTracker.getDisplay().setCurrent(nextDisplayable);
