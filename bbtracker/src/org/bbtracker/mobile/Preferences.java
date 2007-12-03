@@ -48,6 +48,8 @@ public class Preferences {
 
 	public static final int START_ACTION_TRACKS_SCREEN = 3;
 
+	public static final int START_ACTION_NEW_VERSION = 4;
+
 	public static final int DEFAULT_START_ACTION = START_ACTION_INIT_GPS;
 
 	public static String[] START_ACTIONS = new String[] { "Do nothing", "Initialize GPS", "Start new track",
@@ -67,6 +69,16 @@ public class Preferences {
 
 	public static String[] UNITS = new String[] { "Metric (km/h, km, m)", "Imperial (mph, miles, feet)",
 			"Nautical (nm/h, nm, feet)" };
+
+	public static final int LOCATION_JSR179 = 0;
+
+	public static final int LOCATION_BLUETOOTH = 1;
+
+	public static final int LOCATION_NONE = 2;
+
+	public static final int DEFAULT_LOCATION_PROVIDER = LOCATION_JSR179;
+
+	public static String[] LOCATION_ACCESS = new String[] { "Location API (JSR-179)", "Bluetooth API", "No GPS" };
 
 	private static Preferences instance;
 
@@ -102,9 +114,33 @@ public class Preferences {
 
 	private String exportDirectory;
 
+	private String bluetoothUrl = "";
+
+	private String bluetoothName = "";
+
 	private UnitConverter unitConverter;
 
+	private int locationProvider = DEFAULT_LOCATION_PROVIDER;
+
+	private boolean newVersion = true;
+
 	private Preferences() {
+	}
+
+	public int getLocationProvider() {
+		return locationProvider;
+	}
+
+	public void setLocationProvider(final int locationProvider) {
+		switch (locationProvider) {
+		case LOCATION_BLUETOOTH:
+		case LOCATION_JSR179:
+		case LOCATION_NONE:
+			this.locationProvider = locationProvider;
+			break;
+		default:
+			throw new IllegalArgumentException("Illegal LocationProvider value: " + locationProvider);
+		}
 	}
 
 	public int getSampleInterval() {
@@ -223,8 +259,36 @@ public class Preferences {
 		this.detailsFontSize = detailsFontSize;
 	}
 
+	public String getBluetoothUrl() {
+		return bluetoothUrl;
+	}
+
+	public void setBluetoothUrl(final String bluetoothUrl) {
+		if (bluetoothUrl == null) {
+			this.bluetoothUrl = "";
+		} else {
+			this.bluetoothUrl = bluetoothUrl;
+		}
+	}
+
+	public String getBluetoothName() {
+		return bluetoothName;
+	}
+
+	public void setBluetoothName(final String bluetoothName) {
+		if (bluetoothName == null) {
+			this.bluetoothName = "";
+		} else {
+			this.bluetoothName = bluetoothName;
+		}
+	}
+
 	public int getNextTrackNumber() {
 		return trackNumber++;
+	}
+
+	public boolean isNewVersion() {
+		return newVersion;
 	}
 
 	private void load() throws RecordStoreException {
@@ -249,7 +313,21 @@ public class Preferences {
 			final DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
 
 			try {
-				startAction = in.readShort();
+				short s = in.readShort();
+				if (s == -1) {
+					// new options format begins with -1 followed by string containing version that saved the options
+					final String version = in.readUTF();
+					if (!version.equals(BBTracker.getVersion())) {
+						newVersion = true;
+					} else {
+						newVersion = false;
+					}
+					s = in.readShort();
+				} else {
+					// old options format began with startAction
+					newVersion = true;
+				}
+				startAction = s;
 				sampleInterval = in.readInt();
 				trackNumber = in.readInt();
 				final byte dirFlags = in.readByte();
@@ -267,6 +345,9 @@ public class Preferences {
 				units = in.readInt();
 				statusFontSize = in.readInt();
 				detailsFontSize = in.readInt();
+				locationProvider = in.readInt();
+				bluetoothUrl = in.readUTF();
+				bluetoothName = in.readUTF();
 			} finally {
 				try {
 					in.close();
@@ -306,6 +387,8 @@ public class Preferences {
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			final DataOutputStream out = new DataOutputStream(baos);
 
+			out.writeShort(-1);
+			out.writeUTF(BBTracker.getVersion());
 			out.writeShort(startAction);
 			out.writeInt(sampleInterval);
 			out.writeInt(trackNumber);
@@ -322,6 +405,10 @@ public class Preferences {
 			out.writeInt(units);
 			out.writeInt(statusFontSize);
 			out.writeInt(detailsFontSize);
+
+			out.writeInt(locationProvider);
+			out.writeUTF(bluetoothUrl);
+			out.writeUTF(bluetoothName);
 
 			out.close();
 			final byte[] data = baos.toByteArray();

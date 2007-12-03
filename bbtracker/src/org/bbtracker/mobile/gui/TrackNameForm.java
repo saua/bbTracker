@@ -24,13 +24,13 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.TextField;
-import javax.microedition.location.LocationException;
 
 import org.bbtracker.Track;
 import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
+import org.bbtracker.mobile.gps.LocationException;
 
 public class TrackNameForm extends Form implements CommandListener {
 

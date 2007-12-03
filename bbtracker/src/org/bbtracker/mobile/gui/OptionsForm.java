@@ -19,8 +19,11 @@ package org.bbtracker.mobile.gui;
 
 import java.io.IOException;
 
+import javax.bluetooth.DiscoveryAgent;
+import javax.bluetooth.RemoteDevice;
+import javax.bluetooth.ServiceRecord;
+import javax.bluetooth.UUID;
 import javax.microedition.io.Connector;
-import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Choice;
@@ -31,12 +34,16 @@ import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.rms.RecordStoreException;
 
+import net.benhui.btgallery.bluelet.BLUElet;
+
 import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.IconManager;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
@@ -49,19 +56,33 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final Command cancelCommand;
 
+	// #ifndef AVOID_FILE_API
 	private final Command browseTrackCommand;
 
 	private final Command browseExportCommand;
+
+	// #endif
+
+	private final Command selectBluetoothDeviceCommand;
+
+	private final ChoiceGroup locationProviderGroup;
+
+	private final TextField bluetoothNameField;
+
+	private String bluetoothUrl;
 
 	private final TextField sampleField;
 
 	private final ChoiceGroup startTypeGroup;
 
+	// #ifndef AVOID_FILE_API
 	private final TextField trackDirectoryField;
 
 	private final TextField exportDirectoryField;
 
 	private final ChoiceGroup exportFormatGroup;
+
+	// #endif
 
 	private final ChoiceGroup unitsGroup;
 
@@ -75,6 +96,22 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		this.trackManager = trackManager;
 
 		final Preferences pref = Preferences.getInstance();
+
+		final IconManager iconManager = IconManager.getInstance();
+		final Image[] locationImages = new Image[] {
+				iconManager.getChoiceGroupImage(BBTracker.isJsr179Available() ? "yes" : "no"),
+				iconManager.getChoiceGroupImage(BBTracker.isBluetoothAvailable() ? "yes" : "no"),
+				iconManager.getChoiceGroupImage("yes"), };
+		locationProviderGroup = new ChoiceGroup("Location/GPS: ", Choice.POPUP, Preferences.LOCATION_ACCESS,
+				locationImages);
+		locationProviderGroup.setSelectedIndex(pref.getLocationProvider(), true);
+
+		bluetoothUrl = pref.getBluetoothUrl();
+		selectBluetoothDeviceCommand = new Command("Select GPS device", Command.ITEM, 0);
+		bluetoothNameField = new TextField("GPS device: ", pref.getBluetoothName(), 20, TextField.ANY |
+				TextField.UNEDITABLE);
+		bluetoothNameField.setDefaultCommand(selectBluetoothDeviceCommand);
+		bluetoothNameField.setItemCommandListener(this);
 
 		sampleField = new TextField("Sample Interval in seconds: ", String.valueOf(pref.getSampleInterval()), 5,
 				TextField.NUMERIC);
@@ -97,6 +134,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		}
 		startTypeGroup.setSelectedIndex(startAction, true);
 
+		// #ifndef AVOID_FILE_API
 		trackDirectoryField = new TextField("Track directory: ", pref.getTrackDirectory(), 100, TextField.URL);
 		browseTrackCommand = new Command("Browse", Command.ITEM, 1);
 		trackDirectoryField.setDefaultCommand(browseTrackCommand);
@@ -112,15 +150,22 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 			exportFormatGroup.setSelectedIndex(i, pref.getExportFormat(i));
 		}
+		// #endif
 
+		append(locationProviderGroup);
+		if (BBTracker.isBluetoothAvailable()) {
+			append(bluetoothNameField);
+		}
 		append(sampleField);
 		append(unitsGroup);
 		append(statusFontSizeGroup);
 		append(detailsFontSizeGroup);
 		append(startTypeGroup);
+		// #ifndef AVOID_FILE_API
 		append(trackDirectoryField);
 		append(exportDirectoryField);
 		append(exportFormatGroup);
+		// #endif
 
 		okCommand = new Command("OK", Command.OK, 0);
 		cancelCommand = new Command("Cancel", Command.CANCEL, 1);
@@ -195,32 +240,47 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	}
 
 	private String validatePreferences() {
+		// #ifndef AVOID_FILE_API
 		final String trackDir = trackDirectoryField.getString();
 
 		if (trackDir == null || trackDir.length() == 0) {
 			return "No track directory has been selected!";
 		}
 
-		String dirResult;
+		String dirResult = validateDirectory(trackDir);
+		if (dirResult == null) {
+			final String exportDir = exportDirectoryField.getString();
+			if (exportDir != null && exportDir.length() != 0) {
+				dirResult = validateDirectory(exportDir);
+			}
+		}
+		// #endif
 
-		dirResult = validateDirectory(trackDir);
-		if (dirResult != null) {
-			return dirResult;
+		String restartResult = null;
+		final Preferences pref = Preferences.getInstance();
+		if (locationProviderGroup.getSelectedIndex() != pref.getLocationProvider()) {
+			restartResult = BBTracker.getName() +
+					" needs to be restarted, for location provider changes to take effect!";
 		}
 
-		final String exportDir = exportDirectoryField.getString();
-		if (exportDir != null && exportDir.length() != 0) {
-			dirResult = validateDirectory(exportDir);
+		// #ifndef AVOID_FILE_API
+		if (dirResult == null) {
+			return restartResult;
+		} else if (restartResult == null) {
 			return dirResult;
 		} else {
-			return null;
+			return restartResult + "\n" + dirResult;
 		}
+		// #else
+// @ return restartResult;
+		// #endif
 	}
 
+	// #ifndef AVOID_FILE_API
 	private String validateDirectory(final String dir) {
-		FileConnection connection = null;
+		javax.microedition.io.file.FileConnection connection = null;
 		try {
-			connection = (FileConnection) Connector.open("file:///" + dir, Connector.READ);
+			connection = (javax.microedition.io.file.FileConnection) Connector.open("file:///" + dir, Connector.READ);
 			if (!connection.exists()) {
 				return "The directory identified by <" + dir + "> does not exist.";
 			} else if (!connection.isDirectory()) {
@@ -244,6 +304,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		return null;
 	}
 
+	// #endif
+
 	private void savePreferences() {
 		final Preferences pref = Preferences.getInstance();
 		try {
@@ -256,6 +318,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				BBTracker.log(this, e, "parsing sampleInterval: " + sampleField.getString());
 			}
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
+			// #ifndef AVOID_FILE_API
 			pref.setTrackDirectory(trackDirectoryField.getString());
 			pref.setExportDirectory(exportDirectoryField.getString());
 			BBTracker.initLog();
@@ -263,6 +326,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 				pref.setExportFormat(i, exportFormatGroup.isSelected(i));
 			}
+			// #endif
 
 			pref.setUnits(unitsGroup.getSelectedIndex());
 
@@ -272,6 +336,14 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			final int detailsFontSize = getFontSize(detailsFontSizeGroup.getSelectedIndex());
 			pref.setDetailsFontSize(detailsFontSize);
 
+			final int locationProvider = locationProviderGroup.getSelectedIndex();
+			pref.setLocationProvider(locationProvider);
+
+			pref.setBluetoothUrl(bluetoothUrl);
+
+			final String bluetoothName = bluetoothNameField.getString();
+			pref.setBluetoothName(bluetoothName);
+
 			pref.store();
 		} catch (final RecordStoreException e) {
 			BBTracker.nonFatal(e, "storing preferences", null);
@@ -280,13 +352,25 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	}
 
 	public void commandAction(final Command command, final Item item) {
-		if (command == browseTrackCommand) {
+		if (command == selectBluetoothDeviceCommand) {
+			if (locationProviderGroup.getSelectedIndex() != Preferences.LOCATION_BLUETOOTH) {
+				final Alert alert = new Alert("Not needed!",
+						"This is only needed, when Bluetooth is selected as the location provider.", null,
+						AlertType.INFO);
+				BBTracker.getDisplay().setCurrent(alert, this);
+				return;
+			}
+			showBluetoothBrowser();
+// #ifndef AVOID_FILE_API
+		} else if (command == browseTrackCommand) {
 			showDirectoryBrowser("Track Storage Directory", trackDirectoryField);
 		} else if (command == browseExportCommand) {
 			showDirectoryBrowser("Track Export Directory", exportDirectoryField);
+// #endif
 		}
 	}
 
+	// #ifndef AVOID_FILE_API
 	private void showDirectoryBrowser(final String name, final TextField field) {
 		final BrowseForm browser = new BrowseForm(name, field.getString());
 		final Display display = BBTracker.getDisplay();
@@ -302,5 +386,52 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 		});
 		display.setCurrent(browser);
+	}
+
+	// #endif
+
+	private void showBluetoothBrowser() {
+		final CommandListener commandListener = new CommandListener() {
+
+			public void commandAction(final Command command, final Displayable displayable) {
+				if (command == BLUElet.SELECTED) {
+					// do nothing, wait for COMPLETED
+				} else if (command == BLUElet.BACK) {
+					BBTracker.getDisplay().setCurrent(OptionsForm.this);
+					BLUElet.instance.destroyApp(false);
+				} else if (command == BLUElet.COMPLETED) {
+					final BLUElet bluelet = BLUElet.instance;
+					final RemoteDevice device = bluelet.getSelectedDevice();
+					final String address = device.getBluetoothAddress();
+					String deviceName;
+					try {
+						deviceName = device.getFriendlyName(false);
+					} catch (IOException e) {
+						deviceName = address;
+					}
+					final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
+					bluelet.destroyApp(false);
+					String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+
+					BBTracker.log(this, "Selected Bluetooth Device: " + deviceName + " / " + url);
+					bluetoothUrl = url;
+					bluetoothNameField.setString(deviceName);
+
+					BBTracker.getDisplay().setCurrent(OptionsForm.this);
+				}
+			}
+
+		};
+		final BLUElet mBluelet;
+
+		if (BLUElet.instance == null) {
+			mBluelet = new BLUElet(BBTracker.getInstance(), commandListener);
+			mBluelet.startApp();
+		} else {
+			mBluelet = BLUElet.instance;
+			BLUElet.callback = commandListener;
+		}
+		mBluelet.startInquiry(DiscoveryAgent.GIAC, new UUID[] { new UUID(0x0001) /* new UUID(0x1101) */});
+		BBTracker.getDisplay().setCurrent(mBluelet.getUI());
 	}
 }

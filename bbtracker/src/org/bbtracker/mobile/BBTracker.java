@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.Timer;
 
 import javax.microedition.io.Connector;
-import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
@@ -31,18 +30,22 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
-import javax.microedition.location.LocationException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import javax.microedition.rms.RecordStoreException;
 
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
+import org.bbtracker.mobile.gps.DummyLocationProvider;
+import org.bbtracker.mobile.gps.Jsr179LocationProvider;
+import org.bbtracker.mobile.gps.LocationProvider;
+import org.bbtracker.mobile.gps.SerialLocationProvider;
 import org.bbtracker.mobile.gui.MainCanvas;
 import org.bbtracker.mobile.gui.OptionsForm;
 import org.bbtracker.mobile.gui.TrackNameForm;
 import org.bbtracker.mobile.gui.TracksForm;
 
 public class BBTracker extends MIDlet {
+
 	private static final String NAME = "bbTracker";
 
 	private static String version;
@@ -53,13 +56,19 @@ public class BBTracker extends MIDlet {
 
 	private static PrintStream logStream;
 
+	private static boolean firstStart = true;
+
+	private static boolean jsr179Available = false;
+
+	private static boolean bluetoothAvailable = false;
+
+	private static boolean fileUrlAvailable = false;
+
 	private final TrackManager trackManager;
 
 	private final MainCanvas mainCanvas;
 
 	private final Timer timer;
-
-	private boolean firstStart = true;
 
 	public BBTracker() {
 		instance = this;
@@ -72,20 +81,6 @@ public class BBTracker extends MIDlet {
 		trackManager = new TrackManager();
 
 		mainCanvas = new MainCanvas(trackManager);
-
-		try {
-			switch (Preferences.getInstance().getStartAction()) {
-			case Preferences.START_ACTION_SHOW_OPTIONS:
-			case Preferences.START_ACTION_INIT_GPS:
-			case Preferences.START_ACTION_NEWTRACK:
-				trackManager.initLocationProvider();
-				break;
-			default:
-				break;
-			}
-		} catch (final LocationException e) {
-			nonFatal(e, "Initializing Location Provider", mainCanvas);
-		}
 
 		initLog();
 	}
@@ -166,7 +161,8 @@ public class BBTracker extends MIDlet {
 	}
 
 	public static void initLog() {
-		if (logStream != null) {
+		// #ifndef AVOID_FILE_API
+		if (logStream != null || System.getProperty("microedition.io.file.FileConnection.version") == null) {
 			return;
 		}
 		final String dirName = Preferences.getInstance().getTrackDirectory();
@@ -175,7 +171,8 @@ public class BBTracker extends MIDlet {
 		}
 		final String logUrl = "file:///" + dirName + "debug.txt";
 		try {
-			final FileConnection fileConnection = (FileConnection) Connector.open(logUrl);
+			final javax.microedition.io.file.FileConnection fileConnection = (javax.microedition.io.file.FileConnection) Connector
+					.open(logUrl);
 			if (!(fileConnection.exists() && fileConnection.canWrite())) {
 				fileConnection.close();
 				return;
@@ -185,6 +182,7 @@ public class BBTracker extends MIDlet {
 		} catch (final Throwable e) {
 			log(BBTracker.class, e, "opening " + logUrl);
 		}
+		// #endif
 	}
 
 	public static void setLogActive(final boolean logActive) {
@@ -192,11 +190,13 @@ public class BBTracker extends MIDlet {
 			logStream.close();
 			logStream = null;
 		}
+		// #ifndef AVOID_FILE_API
 
 		final String dirName = Preferences.getInstance().getTrackDirectory();
 		final String logUrl = "file:///" + dirName + "debug.txt";
 		try {
-			final FileConnection fileConnection = (FileConnection) Connector.open(logUrl);
+			final javax.microedition.io.file.FileConnection fileConnection = (javax.microedition.io.file.FileConnection) Connector
+					.open(logUrl);
 			if (logActive) {
 				if (!fileConnection.exists()) {
 					fileConnection.create();
@@ -212,10 +212,23 @@ public class BBTracker extends MIDlet {
 		} catch (final Throwable e) {
 			log(BBTracker.class, e, "opening " + logUrl);
 		}
+		// #endif
 	}
 
 	public static boolean isLogActive() {
 		return logStream != null;
+	}
+
+	public static boolean isJsr179Available() {
+		return jsr179Available;
+	}
+
+	public static boolean isBluetoothAvailable() {
+		return bluetoothAvailable;
+	}
+
+	public static boolean isFileUrlAvailable() {
+		return fileUrlAvailable;
 	}
 
 	public static void log(final Object source, final Throwable e) {
@@ -250,26 +263,122 @@ public class BBTracker extends MIDlet {
 		log(this, firstStart ? "first startApp" : "startApp");
 		if (firstStart) {
 			firstStart = false;
-			final int startAction = Preferences.getInstance().getStartAction();
-			switch (startAction) {
-			case Preferences.START_ACTION_SHOW_OPTIONS:
-				Display.getDisplay(this).setCurrent(new OptionsForm(trackManager));
-				break;
-			case Preferences.START_ACTION_NEWTRACK:
-				Display.getDisplay(this).setCurrent(new TrackNameForm(trackManager));
-				break;
-			case Preferences.START_ACTION_TRACKS_SCREEN:
-				try {
-					Display.getDisplay(this).setCurrent(new TracksForm(trackManager));
-				} catch (final TrackStoreException e) {
-					nonFatal(e, "Opening Track Screen", mainCanvas);
-				}
-				break;
-			default:
-				showMainCanvas();
-			}
+			doFirstStart();
 		} else {
 			showMainCanvas();
+		}
+	}
+
+	private void doFirstStart() {
+		final Form initForm = new Form("Initializing...");
+		initForm.append("Initializing " + getFullName() + "...");
+		getDisplay().setCurrent(initForm);
+		final Runnable run = new Initializer(initForm);
+		new Thread(run).start();
+	}
+
+	private final class Initializer implements Runnable {
+		private final Form initForm;
+
+		private Initializer(final Form initForm) {
+			this.initForm = initForm;
+		}
+
+		public void run() {
+			// GPS
+			initForm.append("Checking GPS abilities ...");
+			final String jsr179Version = System.getProperty("microedition.location.version");
+			jsr179Available = (jsr179Version != null);
+			addAPI("JSR-179", jsr179Available);
+
+			try {
+				Class.forName("javax.bluetooth.LocalDevice");
+				bluetoothAvailable = true;
+			} catch (final ClassNotFoundException e1) {
+				bluetoothAvailable = false;
+			}
+			addAPI("Bluetooth", bluetoothAvailable);
+
+			// storage
+			initForm.append("Checking Storage abilities ...");
+
+			// everyone has RMS
+			addAPI("RMS", true);
+
+			// #ifndef AVOID_FILE_API
+			final String fileConnectionVersion = System.getProperty("microedition.io.file.FileConnection.version");
+			fileUrlAvailable = (fileConnectionVersion != null);
+			addAPI("File", fileUrlAvailable);
+			// #else
+// @ fileUrlAvailable = false;
+			// #endif
+
+			final TrackStore[] trackStores = new TrackStore[fileUrlAvailable ? 2 : 1];
+			trackStores[0] = new RMSTrackStore();
+			// #ifndef AVOID_FILE_API
+			if (fileUrlAvailable) {
+				trackStores[1] = new FileTrackStore();
+			}
+			// #endif
+			final LocationProvider locationProvider;
+
+			final Preferences preferences = Preferences.getInstance();
+			String forceOptionsMessage = null;
+			final int selectedLocationProvider = preferences.getLocationProvider();
+			switch (selectedLocationProvider) {
+			case Preferences.LOCATION_JSR179:
+				if (jsr179Available) {
+					locationProvider = new Jsr179LocationProvider();
+				} else {
+					locationProvider = new DummyLocationProvider();
+					forceOptionsMessage = "Invalid location provider selected, please check options.";
+				}
+				break;
+			case Preferences.LOCATION_BLUETOOTH:
+				if (bluetoothAvailable) {
+					locationProvider = new SerialLocationProvider();
+				} else {
+					locationProvider = new DummyLocationProvider();
+					forceOptionsMessage = "Invalid location provider selected, please check options.";
+				}
+				break;
+			case Preferences.LOCATION_NONE:
+			default:
+				locationProvider = new DummyLocationProvider();
+				break;
+			}
+			trackManager.initialize(locationProvider, trackStores);
+
+			final Display display = getDisplay();
+			if (forceOptionsMessage != null) {
+				final Alert alert = new Alert("Warning!", forceOptionsMessage, null, AlertType.WARNING);
+				display.setCurrent(alert, new OptionsForm(trackManager));
+			} else {
+				final int startAction = preferences.getStartAction();
+				switch (startAction) {
+				case Preferences.START_ACTION_SHOW_OPTIONS:
+					display.setCurrent(new OptionsForm(trackManager));
+					break;
+				case Preferences.START_ACTION_NEWTRACK:
+					display.setCurrent(new TrackNameForm(trackManager));
+					break;
+				case Preferences.START_ACTION_TRACKS_SCREEN:
+					try {
+						display.setCurrent(new TracksForm(trackManager));
+					} catch (final TrackStoreException e) {
+						nonFatal(e, "Opening Track Screen", mainCanvas);
+					}
+					break;
+				default:
+					showMainCanvas();
+				}
+			}
+		}
+
+		private void addAPI(final String apiName, final boolean available) {
+			final String msg = apiName + (available ? "" : " NOT") + " available";
+			initForm.append(msg + "\n");
+			log(this, "[API] " + msg);
 		}
 	}
 }

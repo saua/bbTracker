@@ -20,20 +20,12 @@ package org.bbtracker.mobile;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.TimerTask;
 import java.util.Vector;
 
 import javax.microedition.io.Connector;
-import javax.microedition.io.file.FileConnection;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.location.Criteria;
-import javax.microedition.location.Location;
-import javax.microedition.location.LocationException;
-import javax.microedition.location.LocationListener;
-import javax.microedition.location.LocationProvider;
-import javax.microedition.location.QualifiedCoordinates;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
@@ -42,16 +34,19 @@ import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.exporter.GpxTrackExporter;
 import org.bbtracker.mobile.exporter.KmlTrackExporter;
 import org.bbtracker.mobile.exporter.TrackExporter;
+import org.bbtracker.mobile.gps.LocationException;
+import org.bbtracker.mobile.gps.LocationListener;
+import org.bbtracker.mobile.gps.LocationProvider;
 
 public class TrackManager {
 
-	public static final int STATE_NOT_INITIALIZED = 1;
+	public static final int STATE_NOT_INITIALIZED = 0;
 
-	public static final int STATE_INITIALIZED = 2;
+	public static final int STATE_NO_TRACK = 1;
 
-	public static final int STATE_TRACKING = 3;
+	public static final int STATE_TRACKING = 2;
 
-	public static final int STATE_STATIC = 4;
+	public static final int STATE_STATIC = 3;
 
 	private int state;
 
@@ -61,44 +56,36 @@ public class TrackManager {
 
 	private int currentPointIndex = -1;
 
-	private boolean trackInterrupted;
-
 	private Track track;
 
-	private final TrackStore[] trackStores;
+	private TrackStore[] trackStores;
 
 	private final Vector listeners = new Vector();
 
-	private int gpsRecoveryEscalation = 0;
-
-	private final TimerTask gpsRecoveryTask = new GpsRecoveryTask();
+	private boolean trackInterrupted = false;
 
 	private final LocationListener locationListener = new LocationListener() {
-		public void locationUpdated(final LocationProvider provider, final Location location) {
+		public void locationUpdated(final TrackPoint location) {
 			if (state == STATE_STATIC) {
 				return;
 			}
-			if (location.isValid()) {
+			if (location != null) {
 				boolean boundsChanged = false;
 				boolean newSegment = false;
 				if (trackInterrupted == true) {
 					newSegment = true;
 					trackInterrupted = false;
 				}
-				final QualifiedCoordinates coordinates = location.getQualifiedCoordinates();
-				final TrackPoint trackPoint = new TrackPoint(location.getTimestamp(), coordinates.getLatitude(),
-						coordinates.getLongitude(), coordinates.getAltitude(), location.getSpeed(), location
-								.getCourse(), false);
 				if (track != null) {
 					final int pointCount = track.getPointCount();
 					if (currentPointIndex == pointCount - 1) {
 						// activate the new point only, when the last point is currently selected.
 						currentPointIndex = pointCount;
-						currentPoint = trackPoint;
+						currentPoint = location;
 					}
-					boundsChanged = track.addPoint(trackPoint);
+					boundsChanged = track.addPoint(location);
 				} else {
-					currentPoint = trackPoint;
+					currentPoint = location;
 				}
 				fireNewPoint(currentPoint, boundsChanged, newSegment);
 				fireCurrentPointChanged();
@@ -109,39 +96,31 @@ public class TrackManager {
 		}
 
 		public void providerStateChanged(final LocationProvider provider, final int newState) {
-			if (newState == LocationProvider.AVAILABLE) {
-				gpsRecoveryTask.cancel();
-				gpsRecoveryEscalation = 0;
-			} else if (newState == LocationProvider.TEMPORARILY_UNAVAILABLE) {
-				BBTracker.getTimer().schedule(gpsRecoveryTask, 100);
-			}
-			switch (newState) {
-			case LocationProvider.OUT_OF_SERVICE:
-				trackInterrupted = true;
-				break;
-			case LocationProvider.TEMPORARILY_UNAVAILABLE:
-				trackInterrupted = true;
-				break;
-			default:
-				return;
-			}
+			// TODO Auto-generated method stub
+
 		}
 	};
 
 	public TrackManager() {
 		state = STATE_NOT_INITIALIZED;
-		trackStores = new TrackStore[] { new FileTrackStore(), new RMSTrackStore() };
 	}
 
-	public void initLocationProvider() throws LocationException {
-		if (provider != null) {
-			return;
+	void initialize(final LocationProvider provider, final TrackStore[] trackStores) {
+		if (state != STATE_NOT_INITIALIZED) {
+			throw new IllegalStateException("Trackmanager has already been initialized!");
 		}
-		final Criteria criteria = new Criteria();
-		criteria.setAltitudeRequired(true);
-		provider = LocationProvider.getInstance(criteria);
-		updateSampleInterval();
-		state = STATE_INITIALIZED;
+		if (provider == null) {
+			throw new IllegalArgumentException("Must set a valid location provider.");
+		}
+		if (trackStores == null) {
+			throw new IllegalArgumentException("Must set valid trackstores.");
+		}
+		this.trackStores = trackStores;
+		this.provider = provider;
+		this.provider.setLocationListener(locationListener);
+
+		state = STATE_NO_TRACK;
+		fireStateChanged();
 	}
 
 	public boolean changeCurrentPoint(final int offset) {
@@ -238,7 +217,7 @@ public class TrackManager {
 			throw new IllegalStateException("Can't start new track, when in STATE_TRACKING");
 		}
 		if (provider == null) {
-			initLocationProvider();
+			throw new LocationException("No location provider is currently configured.");
 		}
 		updateSampleInterval();
 
@@ -335,12 +314,7 @@ public class TrackManager {
 			return;
 		}
 		final int sampleInterval = Preferences.getInstance().getSampleInterval();
-		try {
-			provider.setLocationListener(locationListener, sampleInterval, sampleInterval, -1);
-		} catch (final IllegalArgumentException e) {
-			provider.setLocationListener(locationListener, -1, -1, -1);
-			BBTracker.log(this, e);
-		}
+		provider.setUpdateInterval(sampleInterval);
 	}
 
 	public int getState() {
@@ -351,8 +325,8 @@ public class TrackManager {
 		switch (state) {
 		case STATE_NOT_INITIALIZED:
 			return "Not Initialized";
-		case STATE_INITIALIZED:
-			return "Initialized";
+		case STATE_NO_TRACK:
+			return "No Track";
 		case STATE_TRACKING:
 			return "Tracking";
 		case STATE_STATIC:
@@ -363,7 +337,10 @@ public class TrackManager {
 	}
 
 	public void shutdown() {
-		provider = null;
+		if (provider != null) {
+			provider.setLocationListener(null);
+			provider = null;
+		}
 	}
 
 	public TrackStoreEntry[] getEntries() throws TrackStoreException {
@@ -385,6 +362,7 @@ public class TrackManager {
 		return result;
 	}
 
+	// #ifndef AVOID_FILE_API
 	public static int exportTrack(final Track track) throws IOException {
 		final Preferences pref = Preferences.getInstance();
 		final String dir = pref.getEffectiveExportDirectory();
@@ -403,10 +381,11 @@ public class TrackManager {
 	private static void export(final String dir, final Track track, final TrackExporter exporter) throws IOException {
 		final String fileName = exporter.getFileName(track);
 		final String fullName = dir.endsWith("/") ? dir + fileName : dir + "/" + fileName;
-		FileConnection connection = null;
+		javax.microedition.io.file.FileConnection connection = null;
 		OutputStream out = null;
 		try {
-			connection = (FileConnection) Connector.open("file:///" + fullName, Connector.READ_WRITE);
+			connection = (javax.microedition.io.file.FileConnection) Connector.open("file:///" + fullName,
+					Connector.READ_WRITE);
 			connection.create();
 			out = connection.openOutputStream();
 			exporter.export(out, track);
@@ -427,6 +406,8 @@ public class TrackManager {
 			}
 		}
 	}
+
+	// #endif
 
 	private void fireNewPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
 		if (listeners == null) {
@@ -487,33 +468,5 @@ public class TrackManager {
 		final TrackStoreEntry e = array[i1];
 		array[i1] = array[i2];
 		array[i2] = e;
-	}
-
-	private class GpsRecoveryTask extends TimerTask {
-		private static final long FIRST_DELAY = 2 * 60;
-
-		private static final long DELAY_PER_LEVEL = 2 * 60;
-
-		public void run() {
-			gpsRecoveryEscalation++;
-			if (gpsRecoveryEscalation == 1) {
-				provider.reset();
-				updateSampleInterval();
-				BBTracker.getTimer().schedule(this, FIRST_DELAY);
-			} else {
-				provider.setLocationListener(null, -1, -1, -1);
-				provider = null;
-				try {
-					final int oldState = state;
-					state = STATE_NOT_INITIALIZED;
-					initLocationProvider();
-					state = oldState;
-				} catch (final LocationException e) {
-					BBTracker.log(this, e);
-					BBTracker.getTimer().schedule(this, DELAY_PER_LEVEL * gpsRecoveryEscalation);
-					fireStateChanged();
-				}
-			}
-		}
 	}
 }
