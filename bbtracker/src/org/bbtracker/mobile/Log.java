@@ -98,7 +98,7 @@ public class Log {
 
 		synchronized (log) {
 			final String cn = source.getClass().getName();
-			final String l = d.substring(11, 20) + cn.substring(cn.lastIndexOf('.') + 1) + " " + m;
+			final String l = d.substring(11, 20) + cn.substring(cn.lastIndexOf('.') + 1) + " " + m + "\n";
 			log[tail] = l;
 			tail = (tail + 1) % MAX_LOG;
 			if (tail == head) {
