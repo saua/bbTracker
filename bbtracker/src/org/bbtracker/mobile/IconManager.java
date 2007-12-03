@@ -24,7 +24,7 @@ import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Image;
 
 public class IconManager {
-	private static final int[] SIZES = new int[] { 16, 22, 32 };
+	private static final int[] SIZES = new int[] { 12, 16, 22, 32 };
 
 	private final int listSizeIndex;
 
