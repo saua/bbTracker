@@ -55,8 +55,6 @@ public class StatusTile extends Tile {
 
 	private final TrackManager manager;
 
-	private Font font;
-
 	private int latWidth;
 
 	private int courseWidth;
@@ -73,11 +71,10 @@ public class StatusTile extends Tile {
 
 	public StatusTile(final TrackManager manager) {
 		this.manager = manager;
-		setFontSize(Font.SIZE_MEDIUM);
+		setFont(Preferences.getInstance().getStatusFont());
 	}
 
-	private void setFontSize(final int fontSize) {
-		font = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, fontSize);
+	private void setFont(final Font font) {
 		latWidth = font.stringWidth(MAX_DEGREE_STRING);
 		courseWidth = font.stringWidth(MAX_COURSE_STRING);
 		speedWidth = font.stringWidth(MAX_SPEED_STRING);
@@ -100,6 +97,7 @@ public class StatusTile extends Tile {
 		final TrackPoint p = manager.getCurrentPoint();
 		final int pi = manager.getCurrentPointIndex();
 
+		final Font font = Preferences.getInstance().getStatusFont();
 		g.setColor(0x00ffffff);
 		g.fillRect(0, 0, width, height);
 		g.setColor(0x00000000);
@@ -186,15 +184,18 @@ public class StatusTile extends Tile {
 	}
 
 	public int getPreferredHeight(final int width) {
-		setFontSize(Preferences.getInstance().getStatusFontSize());
+		final Preferences pref = Preferences.getInstance();
+		setFont(pref.getStatusFont());
 		if (!fitsLayout(width)) {
 			Log.log(this, "getPreferredHeight: Setting Font size to medium, because layout doesn't fit!");
-			setFontSize(Font.SIZE_MEDIUM);
+			pref.setStatusFontSize(Font.SIZE_MEDIUM);
+			setFont(pref.getStatusFont());
 			if (!fitsLayout(width)) {
 				Log.log(this, "getPreferredHeight: Setting Font size to small, because layout still doesn't fit!");
-				setFontSize(Font.SIZE_SMALL);
+				pref.setStatusFontSize(Font.SIZE_SMALL);
+				setFont(pref.getStatusFont());
 			}
 		}
-		return MARGIN + font.getHeight() * 3 + MARGIN;
+		return MARGIN + pref.getStatusFont().getHeight() * 3 + MARGIN;
 	}
 }
