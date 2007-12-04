@@ -24,6 +24,7 @@ import javax.microedition.lcdui.Graphics;
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.TrackSegment;
+import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
 public abstract class PlotterTile extends Tile {
@@ -215,6 +216,7 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	protected void doPaintNoScale(final Graphics g) {
+		g.setFont(Preferences.getInstance().getStatusFont());
 		g.drawString("No Track or no points yet", width - 2, 2, Graphics.TOP | Graphics.RIGHT);
 	}
 
