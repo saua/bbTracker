@@ -25,7 +25,9 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.StringItem;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import javax.microedition.rms.RecordStoreException;
@@ -183,7 +185,7 @@ public class BBTracker extends MIDlet {
 
 	private void doFirstStart() {
 		final Form initForm = new Form("Initializing...");
-		initForm.append("Initializing " + getFullName() + "...");
+		initForm.append("Initializing " + getFullName() + "...\n");
 		getDisplay().setCurrent(initForm);
 		final Runnable run = new Initializer(initForm);
 		new Thread(run).start();
@@ -192,13 +194,16 @@ public class BBTracker extends MIDlet {
 	private final class Initializer implements Runnable {
 		private final Form initForm;
 
+		private final Font font;
+
 		private Initializer(final Form initForm) {
 			this.initForm = initForm;
+			font = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM);
 		}
 
 		public void run() {
 			// GPS
-			initForm.append("Checking GPS abilities ...");
+			addString("Checking GPS abilities ...\n");
 			final String jsr179Version = System.getProperty("microedition.location.version");
 			jsr179Available = (jsr179Version != null);
 			addAPI("JSR-179", jsr179Available);
@@ -212,7 +217,7 @@ public class BBTracker extends MIDlet {
 			addAPI("Bluetooth", bluetoothAvailable);
 
 			// storage
-			initForm.append("Checking Storage abilities ...");
+			addString("Checking Storage abilities ...\n");
 
 			// everyone has RMS
 			addAPI("RMS", true);
@@ -303,8 +308,14 @@ public class BBTracker extends MIDlet {
 
 		private void addAPI(final String apiName, final boolean available) {
 			final String msg = apiName + (available ? "" : " NOT") + " available";
-			initForm.append(msg + "\n");
+			addString(msg + "\n");
 			Log.log(this, "[API] " + msg);
+		}
+
+		private void addString(final String str) {
+			final StringItem si = new StringItem(null, str);
+			si.setFont(font);
+			initForm.append(si);
 		}
 	}
 }
