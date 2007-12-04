@@ -63,6 +63,7 @@ public class SerialLocationProvider extends LocationProvider {
 		public void run() {
 			final int nmeaCount = gps.getNmeaCount();
 			TrackPoint p;
+			Log.log(this, "Update. Fix: " + gps.getFix() + " nmeaCount: " + nmeaCount);
 			if (!gps.getFix() || nmeaCount == lastNmeaCount) {
 				p = null;
 			} else {
@@ -70,7 +71,7 @@ public class SerialLocationProvider extends LocationProvider {
 				p = new TrackPoint(gps.getTimestamp(), gps.getLatitude(), gps.getLongitude(), gps.getAltitude(), gps
 						.getSpeed(), gps.getHeading(), false);
 			}
-			fireLocationUpdated(null);
+			fireLocationUpdated(p);
 		}
 
 	}
