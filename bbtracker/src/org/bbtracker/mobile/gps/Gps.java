@@ -146,7 +146,7 @@ public class Gps {
 			degree = Integer.parseInt(param[a].substring(0, 2));
 			minute = Integer.parseInt(param[a].substring(2, 4));
 			fraction = Integer.parseInt(param[a].substring(5, 9).concat("0000").substring(0, 4));
-			latitude = degree + (minute / 60) + (fraction / 600000);
+			latitude = degree + (minute / 60f) + (fraction / 600000f);
 			if (param[b].charAt(0) == 'S') {
 				latitude = -latitude;
 			}
@@ -155,7 +155,7 @@ public class Gps {
 			degree = Integer.parseInt(param[c].substring(0, 3));
 			minute = Integer.parseInt(param[c].substring(3, 5));
 			fraction = Integer.parseInt(param[c].substring(6, 10).concat("0000").substring(0, 4));
-			longitude = degree + (minute / 60) + (fraction / 600000);
+			longitude = degree + (minute / 60f) + (fraction / 600000f);
 			if (param[d].charAt(0) == 'W') {
 				longitude = -longitude;
 			}
