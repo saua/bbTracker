@@ -108,7 +108,11 @@ public class Preferences {
 
 	private int statusFontSize = Font.SIZE_MEDIUM;
 
+	private Font statusFont;
+
 	private int detailsFontSize = Font.SIZE_MEDIUM;
+
+	private Font detailsFont;
 
 	private String trackDirectory;
 
@@ -249,6 +253,14 @@ public class Preferences {
 
 	public void setStatusFontSize(final int statusFontSize) {
 		this.statusFontSize = statusFontSize;
+		statusFont = null;
+	}
+
+	public Font getStatusFont() {
+		if (statusFont == null) {
+			statusFont = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, statusFontSize);
+		}
+		return statusFont;
 	}
 
 	public int getDetailsFontSize() {
@@ -257,6 +269,14 @@ public class Preferences {
 
 	public void setDetailsFontSize(final int detailsFontSize) {
 		this.detailsFontSize = detailsFontSize;
+		detailsFont = null;
+	}
+
+	public Font getDetailsFont() {
+		if (detailsFont == null) {
+			detailsFont = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, detailsFontSize);
+		}
+		return detailsFont;
 	}
 
 	public String getBluetoothUrl() {
@@ -437,4 +457,5 @@ public class Preferences {
 			}
 		}
 	}
+
 }
