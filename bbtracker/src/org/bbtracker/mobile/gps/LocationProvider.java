@@ -46,6 +46,8 @@ public abstract class LocationProvider {
 
 	private GpsRecoveryTask recoveryTask = new GpsRecoveryTask();
 
+	public abstract void init() throws LocationException;
+
 	public int getState() {
 		return state;
 	}

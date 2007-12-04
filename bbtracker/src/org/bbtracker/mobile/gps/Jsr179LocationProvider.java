@@ -61,15 +61,20 @@ public class Jsr179LocationProvider extends LocationProvider {
 		}
 	};
 
-	public void initLocationProvider() throws LocationException {
+	public void init() throws org.bbtracker.mobile.gps.LocationException {
 		if (provider != null) {
 			return;
 		}
 		final Criteria criteria = new Criteria();
 		criteria.setAltitudeRequired(true);
-		provider = javax.microedition.location.LocationProvider.getInstance(criteria);
-		applyUpdateInterval();
-		setState(AVAILABLE);
+		try {
+			provider = javax.microedition.location.LocationProvider.getInstance(criteria);
+			applyUpdateInterval();
+			setState(AVAILABLE);
+		} catch (final LocationException e) {
+			Log.log(this, e);
+			throw new org.bbtracker.mobile.gps.LocationException("Failed to initialized GPS: " + e.getMessage());
+		}
 	}
 
 	public void applyUpdateInterval() {
@@ -78,6 +83,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 		}
 		final int updateInterval = getUpdateInterval();
 		try {
+			Log.log(this, "Setting locationListener with interval " + updateInterval);
 			provider.setLocationListener(locationListener, updateInterval, updateInterval, -1);
 		} catch (final IllegalArgumentException e) {
 			provider.setLocationListener(locationListener, -1, -1, -1);
@@ -99,9 +105,9 @@ public class Jsr179LocationProvider extends LocationProvider {
 			provider.setLocationListener(null, -1, -1, -1);
 			provider = null;
 			try {
-				initLocationProvider();
+				init();
 				return 0;
-			} catch (final LocationException e) {
+			} catch (final org.bbtracker.mobile.gps.LocationException e) {
 				Log.log(this, e);
 				setState(UNINITIALIZED);
 				fireProviderStateChanged();

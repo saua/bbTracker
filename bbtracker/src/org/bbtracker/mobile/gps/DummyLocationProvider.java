@@ -19,6 +19,10 @@ package org.bbtracker.mobile.gps;
 
 public class DummyLocationProvider extends LocationProvider {
 
+	public void init() throws LocationException {
+		// nothing to do
+	}
+
 	public int tryRecover(final int escalationLevel) {
 		return 0;
 	}

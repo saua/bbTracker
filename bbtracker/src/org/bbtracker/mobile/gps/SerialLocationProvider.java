@@ -9,19 +9,17 @@ public class SerialLocationProvider extends LocationProvider {
 	public SerialLocationProvider() {
 		gps = new Gps();
 		setState(UNINITIALIZED);
-		final String bluetoothAddress = Preferences.getInstance().getBluetoothUrl();
-		final String url = bluetoothAddress;
+		final String url = Preferences.getInstance().getBluetoothUrl();
 		if (url == null || url.length() == 0) {
 			Log.log(this, "No URL configured!");
 			setState(OUT_OF_SERVICE);
-		} else {
-			try {
-				gps.open(url);
-				setState(AVAILABLE);
-			} catch (final LocationException e) {
-				Log.log(this, e, "Failed to open connection to GPS at " + url);
-			}
 		}
+	}
+
+	public void init() throws LocationException {
+		final String url = Preferences.getInstance().getBluetoothUrl();
+		gps.open(url);
+		setState(AVAILABLE);
 	}
 
 	public void setUpdateInterval(final int updateInterval) {
