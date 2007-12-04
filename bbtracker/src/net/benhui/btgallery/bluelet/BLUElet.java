@@ -313,11 +313,13 @@ public class BLUElet implements CommandListener {
 				final Alert alert = new Alert("Bluetooth", "No Bluetooth device found", null, AlertType.INFO);
 				alert.setTimeout(3000);
 				remotedeviceui.showui();
-				display.setCurrent(alert, remotedeviceui);
+				if (display.getCurrent() == remotedeviceui) {
+					display.setCurrent(alert, remotedeviceui);
+				}
 
 			} else {
 				remotedeviceui.showui();
-				display.setCurrent(remotedeviceui);
+				// display.setCurrent(remotedeviceui);
 			}
 
 		}
