@@ -47,6 +47,8 @@ public class Gps {
 
 	private int mDay, mMonth, mYear;
 
+	private long timestamp;
+
 	private int mNmeaCount;
 
 	private int mAllSatellites, mFixSatellites;
@@ -98,6 +100,10 @@ public class Gps {
 
 	public boolean getFix() {
 		return mFix;
+	}
+
+	public long getTimestamp() {
+		return timestamp;
 	}
 
 	public void open(final String url) throws LocationException {
@@ -154,10 +160,11 @@ public class Gps {
 				longitude = -longitude;
 			}
 		}
-		if (param[e].length() > 5) {
-			mHour = Integer.parseInt(param[e].substring(0, 2));
-			mMinute = Integer.parseInt(param[e].substring(2, 4));
-			mSecond = Integer.parseInt(param[e].substring(4, 6));
+		final String time = param[e];
+		if (time.length() > 5) {
+			mHour = Integer.parseInt(time.substring(0, 2));
+			mMinute = Integer.parseInt(time.substring(2, 4));
+			mSecond = Integer.parseInt(time.substring(4, 6));
 		}
 		if (!Float.isNaN(latitude) && !Float.isNaN(longitude)) {
 			mLatitude = latitude;
@@ -170,6 +177,7 @@ public class Gps {
 		if (starIndex == -1) {
 			return;
 		}
+		timestamp = System.currentTimeMillis();
 		final String[] param = splitString(nmea.substring(0, starIndex), ",");
 		if (param[0].equals("$GPGSV")) {
 			int i, j;
