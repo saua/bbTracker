@@ -26,7 +26,7 @@ class RemoteDeviceUI extends List {
 	public RemoteDeviceUI() {
 		super("Bluetooth devices", List.IMPLICIT);
 
-		addCommand(new Command("Select", Command.ITEM, 1));
+		setSelectCommand(new Command("Select", Command.OK, 1));
 		addCommand(new Command("Search", Command.SCREEN, 2));
 		addCommand(BLUElet.BACK);
 
