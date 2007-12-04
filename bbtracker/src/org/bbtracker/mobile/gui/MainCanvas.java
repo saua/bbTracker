@@ -32,6 +32,7 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Log;
+import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackListener;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
@@ -162,9 +163,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		}
 
 		if (statusMessageEndTime > System.currentTimeMillis()) {
-			final Font font = Font.getDefaultFont();
+			final Font font = Preferences.getInstance().getStatusFont();
 			final int stringWidth = font.stringWidth(statusMessage);
-			final int stringHeight = g.getFont().getHeight();
+			final int stringHeight = font.getHeight();
 
 			g.setFont(font);
 			g.setColor(0x00ffffff);
