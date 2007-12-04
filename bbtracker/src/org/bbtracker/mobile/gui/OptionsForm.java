@@ -396,11 +396,6 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 			public void commandAction(final Command command, final Displayable displayable) {
 				if (command == BLUElet.SELECTED) {
-					// do nothing, wait for COMPLETED
-				} else if (command == BLUElet.BACK) {
-					BBTracker.getDisplay().setCurrent(OptionsForm.this);
-					BLUElet.instance.destroyApp(false);
-				} else if (command == BLUElet.COMPLETED) {
 					final BLUElet bluelet = BLUElet.instance;
 					final RemoteDevice device = bluelet.getSelectedDevice();
 					if (device != null) {
@@ -412,15 +407,26 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 							deviceName = address;
 						}
 						final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
-						bluelet.destroyApp(false);
-						String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
-
-						Log.log(this, "Selected Bluetooth Device: " + deviceName + " / " + url);
-						bluetoothUrl = url;
-						bluetoothNameField.setString(deviceName);
+						Log.log(this, "Selected Bluetooth Device: " + deviceName);
+						if (serviceRecord != null) {
+							String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+							Log.log(this, "ServiceRecord with URL " + url);
+							bluetoothUrl = url;
+							bluetoothNameField.setString(deviceName);
+						} else {
+							Alert alert = new Alert(
+									"No matching service found",
+									"No matching service found was found for this Bluetooth device. Please make sure that you selected a GPS device",
+									null, AlertType.INFO);
+							BBTracker.getDisplay().setCurrent(alert, OptionsForm.this);
+							BLUElet.instance.destroyApp(false);
+							return;
+						}
 					}
-					BLUElet.instance.destroyApp(false);
 					BBTracker.getDisplay().setCurrent(OptionsForm.this);
+				} else if (command == BLUElet.BACK) {
+					BBTracker.getDisplay().setCurrent(OptionsForm.this);
+					BLUElet.instance.destroyApp(false);
 				}
 			}
 
@@ -434,7 +440,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			mBluelet = BLUElet.instance;
 			BLUElet.callback = commandListener;
 		}
-		mBluelet.startInquiry(DiscoveryAgent.GIAC, new UUID[] { new UUID(0x0001) /* new UUID(0x1101) */});
+		mBluelet.startInquiry(DiscoveryAgent.GIAC, new UUID[] { new UUID(0x1101) });
 		BBTracker.getDisplay().setCurrent(mBluelet.getUI());
 	}
 }
