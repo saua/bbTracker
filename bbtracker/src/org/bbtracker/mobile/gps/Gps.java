@@ -108,6 +108,10 @@ public class Gps {
 		try {
 			streamConnection = (StreamConnection) Connector.open(url);
 			inputStream = streamConnection.openInputStream();
+		} catch (final IllegalArgumentException ex) {
+			// happens with malformed URLs
+			Log.log(this, ex, "Error opening connection to " + url);
+			throw new LocationException("Error while opening Bluetooth connection: " + ex.getMessage());
 		} catch (final IOException ex) {
 			Log.log(this, ex, "Error opening connection to " + url);
 			throw new LocationException("Error while opening Bluetooth connection: " + ex.getMessage());
