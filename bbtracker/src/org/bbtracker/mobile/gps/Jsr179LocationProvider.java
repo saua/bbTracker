@@ -24,6 +24,7 @@ import javax.microedition.location.QualifiedCoordinates;
 
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.Log;
+import org.bbtracker.mobile.Preferences;
 
 public class Jsr179LocationProvider extends LocationProvider {
 	private static final int RECOVERY_DELAY_PER_LEVEL = 2 * 60;
@@ -69,7 +70,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 		criteria.setAltitudeRequired(true);
 		try {
 			provider = javax.microedition.location.LocationProvider.getInstance(criteria);
-			applyUpdateInterval();
+			setUpdateInterval(Preferences.getInstance().getSampleInterval());
 			setState(AVAILABLE);
 		} catch (final LocationException e) {
 			Log.log(this, e);
