@@ -27,11 +27,13 @@ public final class Utils {
 	// U+00B0 = Degree Sign
 	public static final char DEGREE = '\u00B0';
 
+	// used to be '\u2032'
 	// U+2032 = Prime
-	public static final char MINUTE = '\u2032';
+	public static final char MINUTE = '\'';
 
+	// used to be '\u2033'
 	// U+2033 = Double Prime
-	public static final char SECOND = '\u2033';
+	public static final char SECOND = '"';
 
 	private static final double WGS84_A = 6378137;
 
