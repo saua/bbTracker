@@ -33,6 +33,7 @@ import javax.microedition.rms.RecordStoreException;
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.gps.DummyLocationProvider;
 import org.bbtracker.mobile.gps.Jsr179LocationProvider;
+import org.bbtracker.mobile.gps.LocationException;
 import org.bbtracker.mobile.gps.LocationProvider;
 import org.bbtracker.mobile.gps.SerialLocationProvider;
 import org.bbtracker.mobile.gui.MainCanvas;
@@ -239,22 +240,28 @@ public class BBTracker extends MIDlet {
 			switch (selectedLocationProvider) {
 			case Preferences.LOCATION_JSR179:
 				if (jsr179Available) {
+					Log.log(this, "Using JSR 179 Location Provider");
 					locationProvider = new Jsr179LocationProvider();
 				} else {
+					Log.log(this, "NOT using JSR 179 Location Provider, because JSR 179 is not available.");
 					locationProvider = new DummyLocationProvider();
 					forceOptionsMessage = "Invalid location provider selected, please check options.";
 				}
 				break;
 			case Preferences.LOCATION_BLUETOOTH:
 				if (bluetoothAvailable) {
+					Log.log(this, "Using Serial/Bluetooth Location Provider");
 					locationProvider = new SerialLocationProvider();
 				} else {
+					Log.log(this,
+							"NOT using Serial/Bluetooth Location Provider, because Bluetooth API is not available.");
 					locationProvider = new DummyLocationProvider();
 					forceOptionsMessage = "Invalid location provider selected, please check options.";
 				}
 				break;
 			case Preferences.LOCATION_NONE:
 			default:
+				Log.log(this, "Using Dummy Location Provider, as configured.");
 				locationProvider = new DummyLocationProvider();
 				break;
 			}
@@ -278,6 +285,14 @@ public class BBTracker extends MIDlet {
 						display.setCurrent(new TracksForm(trackManager));
 					} catch (final TrackStoreException e) {
 						nonFatal(e, "Opening Track Screen", mainCanvas);
+					}
+					break;
+				case Preferences.START_ACTION_INIT_GPS:
+					try {
+						locationProvider.init();
+						showMainCanvas();
+					} catch (final LocationException e) {
+						nonFatal(e, "initializing GPS", mainCanvas);
 					}
 					break;
 				default:
