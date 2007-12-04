@@ -176,7 +176,7 @@ public class Gps {
 			mNmeaCount++;
 			mAllSatellites = Integer.parseInt(param[3]);
 			j = (Integer.parseInt(param[2]) - 1) * 4;
-			for (i = 4; i < 17 && j < 12; i += 4, j++) {
+			for (i = 4; i < 17 && j < 12 && i < param.length; i += 4, j++) {
 				mGpsSatellites[j].setNumber(Integer.parseInt(param[i]));
 				mGpsSatellites[j].setElevation(Integer.parseInt(param[i + 1]));
 				mGpsSatellites[j].setAzimuth(Integer.parseInt(param[i + 2]));
