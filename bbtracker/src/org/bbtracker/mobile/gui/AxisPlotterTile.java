@@ -65,8 +65,8 @@ public abstract class AxisPlotterTile extends PlotterTile {
 		final int diff = bottom - top;
 		g.setColor(AXIS_COLOR);
 		g.drawLine(axisX, top, axisX, bottom);
-		g.drawLine(axisX - 3, top + 5, axisX, top);
-		g.drawLine(axisX + 3, top + 4, axisX, top);
+		g.drawLine(axisX - 5, top + 5, axisX, top);
+		g.drawLine(axisX + 5, top + 5, axisX, top);
 		g.setFont(axisLabelFont);
 		for (int i = xAxisScale.labelValue.length - 1; i >= 0; i--) {
 			final float location = xAxisScale.labelLocation[i];
@@ -79,6 +79,6 @@ public abstract class AxisPlotterTile extends PlotterTile {
 			g.drawString(Utils.floatToString(value, true), axisX - 4, y - (axisLabelFont.getHeight() / 2),
 					Graphics.TOP | Graphics.RIGHT);
 		}
-		g.drawString(getYData().getName() + " in " + xAxisScale.unit, axisX + 3, top, Graphics.TOP | Graphics.LEFT);
+		g.drawString(getYData().getName() + " in " + xAxisScale.unit, axisX + 7, top, Graphics.TOP | Graphics.LEFT);
 	}
 }
