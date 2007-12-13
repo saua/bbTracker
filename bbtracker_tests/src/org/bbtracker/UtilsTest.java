@@ -33,44 +33,44 @@ public class UtilsTest extends TestCase {
 	}
 
 	public void testDegreesToStringPositive() throws Exception {
-		assertEquals(" 1° 6\u203239.60\u2033+", Utils.degreesToString(1.111, '+', '-'));
+		assertEquals("+ 1° 6'39.60\"", Utils.degreesToString(1.111, '+', '-'));
 	}
 
 	public void testDegreesToStringNegative() throws Exception {
-		assertEquals(" 1° 6\u203239.60\u2033-", Utils.degreesToString(-1.111, '+', '-'));
+		assertEquals("- 1° 6'39.60\"", Utils.degreesToString(-1.111, '+', '-'));
 	}
 
 	public void testDegreesToStringDecimalSecondsLessThan0_1() throws Exception {
-		assertEquals(" 1° 0\u2032 0.04\u2033+", Utils.degreesToString(1.00001, '+', '-'));
+		assertEquals("+ 1° 0' 0.04\"", Utils.degreesToString(1.00001, '+', '-'));
 	}
 
 	public void testLatitudeToStringPositive() throws Exception {
-		assertEquals(" 1° 0\u2032 0.00\u2033N", Utils.latitudeToString(1d));
+		assertEquals("N 1° 0' 0.00\"", Utils.latitudeToString(1d));
 	}
 
 	public void testLatitudeToStringNegative() throws Exception {
-		assertEquals(" 1° 0\u2032 0.00\u2033S", Utils.latitudeToString(-1d));
+		assertEquals("S 1° 0' 0.00\"", Utils.latitudeToString(-1d));
 	}
 
 	public void testLongitudeToStringPositive() throws Exception {
-		assertEquals(" 1° 0\u2032 0.00\u2033E", Utils.longitudeToString(1d));
+		assertEquals("E 1° 0' 0.00\"", Utils.longitudeToString(1d));
 	}
 
 	public void testLongitudeToStringNegative() throws Exception {
-		assertEquals(" 1° 0\u2032 0.00\u2033W", Utils.longitudeToString(-1d));
+		assertEquals("W 1° 0' 0.00\"", Utils.longitudeToString(-1d));
 	}
 
-	public void testSpeedToString0() throws Exception {
-		assertEquals("0.0 km/h", Utils.speedToString(0));
-	}
-
-	public void testSpeedToString1() throws Exception {
-		assertEquals("3.6 km/h", Utils.speedToString(1));
-	}
-
-	public void testSpeedToString5() throws Exception {
-		assertEquals("18.0 km/h", Utils.speedToString(5));
-	}
+// public void testSpeedToString0() throws Exception {
+// assertEquals("0.0 km/h", Utils.speedToString(0));
+// }
+//
+// public void testSpeedToString1() throws Exception {
+// assertEquals("3.6 km/h", Utils.speedToString(1));
+// }
+//
+// public void testSpeedToString5() throws Exception {
+// assertEquals("18.0 km/h", Utils.speedToString(5));
+// }
 
 	// Test case from http://www.movable-type.co.uk/scripts/latlong-vincenty.html
 	public void testDistanceVincenty() throws Exception {
