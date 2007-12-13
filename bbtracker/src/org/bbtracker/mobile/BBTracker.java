@@ -254,15 +254,21 @@ public class BBTracker extends MIDlet {
 				}
 				break;
 			case Preferences.LOCATION_BLUETOOTH:
-				if (bluetoothAvailable) {
-					Log.log(this, "Using Serial/Bluetooth Location Provider");
-					locationProvider = new SerialLocationProvider();
-				} else {
+				if (!bluetoothAvailable) {
 					Log.log(this,
 							"NOT using Serial/Bluetooth Location Provider, because Bluetooth API is not available.");
 					locationProvider = new DummyLocationProvider();
 					forceOptionsMessage = "Invalid location provider selected, please check options.";
+				} else if (preferences.getBluetoothUrl() == null || preferences.getBluetoothUrl().length() == 0) {
+					Log.log(this,
+							"NOT using Serial/Bluetooth Location Provider, because no Bluetooth device is selectede.");
+					locationProvider = new DummyLocationProvider();
+					forceOptionsMessage = "No Bluetooth device selected, please check options.";
+				} else {
+					Log.log(this, "Using Serial/Bluetooth Location Provider");
+					locationProvider = new SerialLocationProvider();
 				}
+
 				break;
 			case Preferences.LOCATION_NONE:
 			default:
