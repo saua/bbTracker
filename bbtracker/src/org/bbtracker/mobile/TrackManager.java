@@ -29,6 +29,7 @@ import javax.microedition.lcdui.Displayable;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
+import org.bbtracker.Utils;
 import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
 import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.exporter.GpxTrackExporter;
@@ -357,7 +358,7 @@ public class TrackManager {
 			offset += entries[i].length;
 		}
 
-		quicksort(result, 0, result.length - 1);
+		Utils.quicksort(result, TrackStore.TSE_COMPARATOR);
 
 		return result;
 	}
@@ -440,33 +441,5 @@ public class TrackManager {
 		while (e.hasMoreElements()) {
 			((TrackListener) e.nextElement()).currentPointChanged(currentPoint, currentPointIndex);
 		}
-	}
-
-	// Wee! A QuickSort implementation!
-	// with inspiration from Wikipedia, I was to lazy to implement it myself
-	private static void quicksort(final TrackStoreEntry[] array, final int left, final int right) {
-		if (right > left) {
-			int pivotIndex = left;
-			final TrackStoreEntry pivotValue = array[pivotIndex];
-			swap(array, pivotIndex, right);
-			int storeIndex = left - 1;
-			for (int i = left; i < right - 1; i++) {
-				if (array[i].compareTo(pivotValue) < 0) {
-					storeIndex++;
-					swap(array, storeIndex, i);
-				}
-			}
-			swap(array, right, storeIndex + 1);
-			pivotIndex = storeIndex + 1;
-
-			quicksort(array, left, pivotIndex - 1);
-			quicksort(array, pivotIndex + 1, right);
-		}
-	}
-
-	private static void swap(final TrackStoreEntry[] array, final int i1, final int i2) {
-		final TrackStoreEntry e = array[i1];
-		array[i1] = array[i2];
-		array[i2] = e;
 	}
 }

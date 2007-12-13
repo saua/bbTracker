@@ -19,9 +19,16 @@ package org.bbtracker.mobile;
 
 import java.util.Date;
 
+import org.bbtracker.Comparator;
 import org.bbtracker.Track;
 
 public interface TrackStore {
+	public static final Comparator TSE_COMPARATOR = new Comparator() {
+		public int compare(Object a, Object b) {
+			return ((TrackStoreEntry) a).compareTo((TrackStoreEntry) b);
+		}
+	};
+
 	public TrackStoreEntry[] getEntries() throws TrackStoreException;
 
 	public void saveTrack(final Track track) throws TrackStoreException;

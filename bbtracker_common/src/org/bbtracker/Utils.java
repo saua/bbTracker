@@ -309,4 +309,36 @@ public final class Utils {
 
 		return sb.toString();
 	}
+
+	public static void quicksort(final Object[] array, final Comparator comp) {
+		quicksort(array, comp, 0, array.length - 1);
+	}
+
+	// Wee! A QuickSort implementation!
+	// with inspiration from Wikipedia, I was to lazy to implement it myself
+	private static void quicksort(final Object[] array, final Comparator comp, final int left, final int right) {
+		if (right > left) {
+			int pivotIndex = left;
+			final Object pivotValue = array[pivotIndex];
+			swap(array, pivotIndex, right);
+			int storeIndex = left - 1;
+			for (int i = left; i < right; i++) {
+				if (comp.compare(array[i], pivotValue) < 0) {
+					storeIndex++;
+					swap(array, storeIndex, i);
+				}
+			}
+			swap(array, right, storeIndex + 1);
+			pivotIndex = storeIndex + 1;
+
+			quicksort(array, comp, left, pivotIndex - 1);
+			quicksort(array, comp, pivotIndex + 1, right);
+		}
+	}
+
+	private static void swap(final Object[] array, final int i1, final int i2) {
+		final Object e = array[i1];
+		array[i1] = array[i2];
+		array[i2] = e;
+	}
 }
