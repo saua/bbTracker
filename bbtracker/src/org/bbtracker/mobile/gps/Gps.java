@@ -112,6 +112,7 @@ public class Gps {
 		StreamConnection streamConnection = null;
 		InputStream inputStream = null;
 		try {
+			Log.log(this, "Opening connection to " + url);
 			streamConnection = (StreamConnection) Connector.open(url);
 			inputStream = streamConnection.openInputStream();
 		} catch (final IllegalArgumentException ex) {
@@ -297,7 +298,6 @@ public class Gps {
 					connection.close();
 				}
 			} catch (final IOException ex) {
-
 			}
 		}
 	}
