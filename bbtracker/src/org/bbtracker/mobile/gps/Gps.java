@@ -32,6 +32,7 @@ import javax.microedition.io.StreamConnection;
 import org.bbtracker.mobile.Log;
 
 public class Gps {
+	private static final float KNOTS_TO_MPS = 1.852f / 3.6f;
 
 	private Thread mThread;
 
@@ -87,7 +88,7 @@ public class Gps {
 	}
 
 	public float getSpeed() {
-		return mSpeed * 1.852f;
+		return mSpeed * KNOTS_TO_MPS;
 	}
 
 	public float getAltitude() {
