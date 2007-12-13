@@ -217,7 +217,7 @@ public abstract class PlotterTile extends Tile {
 
 	protected void doPaintNoScale(final Graphics g) {
 		g.setFont(Preferences.getInstance().getStatusFont());
-		g.drawString("No Track or no points yet", width - 2, 2, Graphics.TOP | Graphics.RIGHT);
+		g.drawString("nothing to plot, yet", width / 2, height / 2, Graphics.BASELINE | Graphics.HCENTER);
 	}
 
 	protected void onResize() {
