@@ -65,8 +65,8 @@ public abstract class AxisPlotterTile extends PlotterTile {
 		final int diff = bottom - top;
 		g.setColor(AXIS_COLOR);
 		g.drawLine(axisX, top, axisX, bottom);
-		g.drawLine(axisX - 5, top + 5, axisX, top);
-		g.drawLine(axisX + 5, top + 5, axisX, top);
+		g.drawLine(axisX, top, axisX - 5, top + 5);
+		g.drawLine(axisX, top, axisX + 5, top + 5);
 		g.setFont(axisLabelFont);
 		for (int i = xAxisScale.labelValue.length - 1; i >= 0; i--) {
 			final float location = xAxisScale.labelLocation[i];
@@ -75,6 +75,10 @@ public abstract class AxisPlotterTile extends PlotterTile {
 			}
 			final float value = xAxisScale.labelValue[i];
 			final int y = bottom - (int) (location * diff);
+			if (y - 5 <= top) {
+				// don't draw the top notch, if it's too far up the scale (it would collide with the arrow)
+				continue;
+			}
 			g.drawLine(axisX - 2, y, axisX, y);
 			g.drawString(Utils.floatToString(value, true), axisX - 4, y - (axisLabelFont.getHeight() / 2),
 					Graphics.TOP | Graphics.RIGHT);
