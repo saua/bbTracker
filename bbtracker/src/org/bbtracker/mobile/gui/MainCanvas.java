@@ -282,7 +282,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 				if (manager.getState() == TrackManager.STATE_TRACKING) {
 					final Alert alert = new Alert("Stop tracking?", "The track <" + manager.getTrack().getName() +
 							"> is currently beeing recorded. Save that track and start a new one?", null,
-							AlertType.CONFIRMATION);
+							AlertType.WARNING);
 					final Command startNewTrack = new Command("Start new Track", Command.OK, 1);
 					alert.addCommand(startNewTrack);
 					alert.addCommand(new Command("Continue tracking", Command.CANCEL, 0));
@@ -335,7 +335,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			question += "\nRecording the current Track <" + manager.getTrack().getName() +
 					"> will stop and it will be saved.";
 		}
-		final Alert alert = new Alert("Really Quit?", question, null, AlertType.CONFIRMATION);
+		final Alert alert = new Alert("Really Quit?", question, null, AlertType.WARNING);
 		final Command quitCommand = new Command("Quit", Command.OK, 1);
 		alert.addCommand(quitCommand);
 		alert.addCommand(new Command("Cancel", Command.CANCEL, 0));
