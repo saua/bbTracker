@@ -166,13 +166,14 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			final Font font = Preferences.getInstance().getStatusFont();
 			final int stringWidth = font.stringWidth(statusMessage);
 			final int stringHeight = font.getHeight();
+			final int width = getWidth();
 
 			g.setFont(font);
 			g.setColor(0x00ffffff);
-			g.fillRect(2, 2, stringWidth + 4, stringHeight + 4);
+			g.fillRect((width - 4) - stringWidth, 2, stringWidth + 2, stringHeight + 4);
 			g.setColor(0x00000000);
-			g.drawRect(2, 2, stringWidth + 4, stringHeight + 4);
-			g.drawString(statusMessage, 4, 4, Graphics.TOP | Graphics.LEFT);
+			g.drawRect((width - 4) - stringWidth, 2, stringWidth + 2, stringHeight + 4);
+			g.drawString(statusMessage, width - 2, 4, Graphics.TOP | Graphics.RIGHT);
 		}
 	}
 
