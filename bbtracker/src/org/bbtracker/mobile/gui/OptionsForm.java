@@ -395,7 +395,10 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		final CommandListener commandListener = new CommandListener() {
 
 			public void commandAction(final Command command, final Displayable displayable) {
-				if (command == BLUElet.SELECTED) {
+				if (command == BLUElet.COMPLETED) {
+					Log.log(this, "BLUElet 'completed' event");
+				} else if (command == BLUElet.SELECTED) {
+					Log.log(this, "BLUElet 'selected' event");
 					final BLUElet bluelet = BLUElet.instance;
 					final RemoteDevice device = bluelet.getSelectedDevice();
 					if (device != null) {
@@ -425,6 +428,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 					}
 					BBTracker.getDisplay().setCurrent(OptionsForm.this);
 				} else if (command == BLUElet.BACK) {
+					Log.log(this, "BLUElet 'back' event");
 					BBTracker.getDisplay().setCurrent(OptionsForm.this);
 					BLUElet.instance.destroyApp(false);
 				}
