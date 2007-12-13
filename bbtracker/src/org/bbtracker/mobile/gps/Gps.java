@@ -117,11 +117,11 @@ public class Gps {
 			inputStream = streamConnection.openInputStream();
 		} catch (final IllegalArgumentException ex) {
 			// happens with malformed URLs
-			Log.log(this, ex, "Error opening connection to " + url);
+			Log.log(this, ex, "Malformed URL: " + url);
 			throw new LocationException("Error while opening Bluetooth connection: " + ex.getMessage());
 		} catch (final IOException ex) {
 			Log.log(this, ex, "Error opening connection to " + url);
-			throw new LocationException("Error while opening Bluetooth connection: " + ex.getMessage());
+			throw new LocationException("Failed to connect to GPS puck, is the device switched on?");
 		}
 		mThread = new Thread(new DataReader(inputStream, streamConnection));
 		mThread.start();
