@@ -34,6 +34,7 @@ import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.Gauge;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemCommandListener;
@@ -395,36 +396,40 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		final CommandListener commandListener = new CommandListener() {
 
 			public void commandAction(final Command command, final Displayable displayable) {
-				if (command == BLUElet.COMPLETED) {
-					Log.log(this, "BLUElet 'completed' event");
-				} else if (command == BLUElet.SELECTED) {
+				final BLUElet bluelet = BLUElet.instance;
+				if (command == BLUElet.SELECTED) {
 					Log.log(this, "BLUElet 'selected' event");
-					final BLUElet bluelet = BLUElet.instance;
 					final RemoteDevice device = bluelet.getSelectedDevice();
 					if (device != null) {
-						final String address = device.getBluetoothAddress();
-						String deviceName;
-						try {
-							deviceName = device.getFriendlyName(false);
-						} catch (IOException e) {
-							deviceName = address;
-						}
-						final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
-						Log.log(this, "Selected Bluetooth Device: " + deviceName);
-						if (serviceRecord != null) {
-							String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
-							Log.log(this, "ServiceRecord with URL " + url);
-							bluetoothUrl = url;
-							bluetoothNameField.setString(deviceName);
-						} else {
-							Alert alert = new Alert(
-									"No matching service found",
-									"No matching service found was found for this Bluetooth device. Please make sure that you selected a GPS device",
-									null, AlertType.INFO);
-							BBTracker.getDisplay().setCurrent(alert, OptionsForm.this);
-							BLUElet.instance.destroyApp(false);
-							return;
-						}
+						Alert alert = new Alert("Device selected", "Looking for service", null, AlertType.INFO);
+						alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING));
+						alert.setTimeout(Alert.FOREVER);
+						BBTracker.getDisplay().setCurrent(alert);
+					}
+				} else if (command == BLUElet.COMPLETED) {
+					Log.log(this, "BLUElet 'completed' event");
+					final RemoteDevice device = bluelet.getSelectedDevice();
+					String deviceName;
+					try {
+						deviceName = device.getFriendlyName(false);
+					} catch (IOException e) {
+						deviceName = device.getBluetoothAddress();
+					}
+					final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
+					Log.log(this, "Selected Bluetooth Device: " + deviceName);
+					if (serviceRecord != null) {
+						String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+						Log.log(this, "ServiceRecord with URL " + url);
+						bluetoothUrl = url;
+						bluetoothNameField.setString(deviceName);
+					} else {
+						Alert alert = new Alert(
+								"No matching service found",
+								"No matching service found was found for this Bluetooth device. Please make sure that you selected a GPS device",
+								null, AlertType.INFO);
+						BBTracker.getDisplay().setCurrent(alert, OptionsForm.this);
+						BLUElet.instance.destroyApp(false);
+						return;
 					}
 					BBTracker.getDisplay().setCurrent(OptionsForm.this);
 				} else if (command == BLUElet.BACK) {
