@@ -34,8 +34,6 @@ public class TrackSegment {
 
 	transient double maxLongitude = Double.NEGATIVE_INFINITY;
 
-	transient double length = 0;
-
 	TrackSegment() {
 		points = new Vector();
 	}
@@ -67,7 +65,7 @@ public class TrackSegment {
 		if (points.size() > 0) {
 			final TrackPoint prevPoint = (TrackPoint) points.elementAt(points.size() - 1);
 			final double dist = Utils.distance(prevPoint.getLatitude(), prevPoint.getLongitude(), lat, lon);
-			length += dist;
+			point.setDistance(prevPoint.getDistance() + dist);
 		}
 		points.addElement(point);
 		return boundsChanged;
@@ -79,10 +77,6 @@ public class TrackSegment {
 
 	public int getPointCount() {
 		return points.size();
-	}
-
-	public double getLength() {
-		return length;
 	}
 
 	public Enumeration getPoints() {

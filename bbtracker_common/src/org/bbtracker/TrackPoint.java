@@ -34,6 +34,8 @@ public class TrackPoint {
 
 	private float course;
 
+	private double distance;
+
 	private String name;
 
 	private boolean interpolated;
@@ -132,6 +134,14 @@ public class TrackPoint {
 
 	public int getIndex() {
 		return index;
+	}
+
+	void setDistance(final double distance) {
+		this.distance = distance;
+	}
+
+	public double getDistance() {
+		return distance;
 	}
 
 	public void writeToStream(final DataOutputStream out) throws IOException {

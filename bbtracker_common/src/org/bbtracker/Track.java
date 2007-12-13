@@ -131,12 +131,12 @@ public class Track {
 	}
 
 	public double getLength() {
-		final Enumeration e = segments.elements();
-		double length = 0d;
-		while (e.hasMoreElements()) {
-			length += ((TrackSegment) e.nextElement()).getLength();
+		if (pointCount < 2) {
+			return 0.0;
+		} else {
+			final TrackPoint p = getPoint(getPointCount() - 1);
+			return p.getDistance();
 		}
-		return length;
 	}
 
 	public float getMaxSpeed() {

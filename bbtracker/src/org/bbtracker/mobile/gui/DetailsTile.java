@@ -110,8 +110,8 @@ public class DetailsTile extends Tile {
 			pointTime = new Date(p.getTimestamp()).toString().substring(11, 19);
 		}
 		if (track != null) {
-			lengthValue = track.getLength();
 			if (p != null) {
+				lengthValue = p.getDistance();
 				final long offset = track.getPointOffset(p);
 				time = Utils.durationToString(offset) + " (" + pointTime + ")";
 			}
