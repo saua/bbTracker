@@ -21,6 +21,7 @@ import java.util.TimerTask;
 
 import org.bbtracker.TrackPoint;
 import org.bbtracker.mobile.BBTracker;
+import org.bbtracker.mobile.Log;
 
 /**
  * This abstract class is a stripped-down copy of the javax.microedition.location.LocationProvider interface.
@@ -59,6 +60,7 @@ public abstract class LocationProvider {
 
 	protected void setState(final int state) {
 		if (this.state != state) {
+			Log.log(this, "Toggling state from " + this.state + " to " + state);
 			this.state = state;
 			fireProviderStateChanged();
 		}
