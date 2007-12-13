@@ -114,7 +114,9 @@ public abstract class LocationProvider {
 			running = true;
 			try {
 				recoveryEscalationLevel++;
+				Log.log(this, "Attempting recovery at escalation level " + recoveryEscalationLevel);
 				final int delay = tryRecover(recoveryEscalationLevel);
+				Log.log(this, "delay = " + delay);s
 				if (delay > 0) {
 					BBTracker.getTimer().schedule(this, delay);
 				}
