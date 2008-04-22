@@ -68,7 +68,7 @@ public class FileTrackStore implements TrackStore {
 		FileConnection connection = null;
 		DataOutputStream dout = null;
 		try {
-			connection = createTrackFile(dir, track.getName());
+			connection = FileUtil.createFile(dir, track.getName(), EXTENSION);
 			dout = connection.openDataOutputStream();
 			track.writeToStream(dout);
 		} catch (final IOException e) {
@@ -93,69 +93,12 @@ public class FileTrackStore implements TrackStore {
 		}
 	}
 
-	private FileConnection createTrackFile(final String dir, final String trackName) throws IOException,
-			TrackStoreException {
-		final String filename = getFileName(trackName);
-		FileConnection connection = null;
-
-		int i = 0;
-		do {
-			if (connection != null) {
-				connection.close();
-			}
-
-			String fullName;
-			if (i == 0) {
-				fullName = "file:///" + dir + filename + EXTENSION;
-			} else {
-				fullName = "file:///" + dir + filename + "_" + i + EXTENSION;
-			}
-
-			try {
-				connection = (FileConnection) Connector.open(fullName, Connector.READ_WRITE);
-			} catch (final IllegalArgumentException e) {
-				// some file system don't like file names that are longer than 8.3 (thanks CP/M and DOS!)
-				if (i == 0) {
-					if (filename.length() <= 8) {
-						throw new TrackStoreException("Filesystem doesn't accept filename <" + fullName + ">: " +
-								e.getMessage());
-					}
-					fullName = "file:///" + dir + filename.substring(0, 8) + EXTENSION;
-				} else {
-					final String postfix = "_" + i;
-					final int l = 8 - postfix.length();
-					fullName = "file:///" + dir + filename.substring(0, l) + postfix + EXTENSION;
-				}
-				try {
-					connection = (FileConnection) Connector.open(fullName, Connector.READ_WRITE);
-				} catch (final IllegalArgumentException e2) {
-					throw new TrackStoreException("Filesystem doesn't accept filename <" + fullName + ">: " +
-							e2.getMessage());
-				}
-			}
-			i++;
-		} while (connection.exists());
-		connection.create();
-		return connection;
-	}
-
 	private String getTrackDirectory() throws TrackStoreException {
 		final String dir = Preferences.getInstance().getTrackDirectory();
 		if (dir == null) {
 			throw new TrackStoreException("No track directory set, please configure it on the options screen!");
 		}
 		return dir;
-	}
-
-	private String getFileName(final String trackName) {
-		final char[] chars = trackName.toCharArray();
-		for (int i = 0; i < chars.length; i++) {
-			final char c = chars[i];
-			if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) {
-				chars[i] = '_';
-			}
-		}
-		return new String(chars);
 	}
 
 	private class FileTrackStoreEntry extends TrackStoreEntry {

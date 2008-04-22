@@ -23,7 +23,7 @@ import java.io.OutputStream;
 import org.bbtracker.Track;
 
 public interface TrackExporter {
-	public String getFileName(final Track track);
+	public String getExtension();
 
 	public void export(final OutputStream out, final Track track) throws IOException;
 }

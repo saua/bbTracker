@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import javax.microedition.io.Connector;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Displayable;
@@ -380,14 +379,10 @@ public class TrackManager {
 	}
 
 	private static void export(final String dir, final Track track, final TrackExporter exporter) throws IOException {
-		final String fileName = exporter.getFileName(track);
-		final String fullName = dir.endsWith("/") ? dir + fileName : dir + "/" + fileName;
 		javax.microedition.io.file.FileConnection connection = null;
 		OutputStream out = null;
 		try {
-			connection = (javax.microedition.io.file.FileConnection) Connector.open("file:///" + fullName,
-					Connector.READ_WRITE);
-			connection.create();
+			connection = FileUtil.createFile(dir, track.getName(), exporter.getExtension());
 			out = connection.openOutputStream();
 			exporter.export(out, track);
 		} finally {

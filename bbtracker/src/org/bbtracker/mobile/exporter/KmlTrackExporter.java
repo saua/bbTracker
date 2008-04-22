@@ -27,8 +27,8 @@ import java.util.Enumeration;
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.TrackSegment;
-import org.bbtracker.Utils;
 import org.bbtracker.UnitConverter;
+import org.bbtracker.Utils;
 import org.bbtracker.mobile.Preferences;
 
 public class KmlTrackExporter implements TrackExporter {
@@ -41,8 +41,8 @@ public class KmlTrackExporter implements TrackExporter {
 	private static final String STYLE_TAG = "\t<Style id=\"" + STYLE_NAME + "\">\n" + "<LineStyle>\n" +
 			"<color>63eeee17</color>\n" + "<width>4</width>\n" + "</LineStyle>\n" + "</Style>\n";
 
-	public String getFileName(final Track track) {
-		return track.getName().replace('/', '_') + ".kml";
+	public String getExtension() {
+		return ".kml";
 	}
 
 	public void export(final OutputStream out, final Track track) throws IOException {

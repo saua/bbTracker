@@ -33,8 +33,8 @@ import org.bbtracker.mobile.BBTracker;
 public class GpxTrackExporter implements TrackExporter {
 	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 
-	public String getFileName(final Track track) {
-		return track.getName().replace('/', '_') + ".gpx";
+	public String getExtension() {
+		return ".gpx";
 	}
 
 	public void export(final OutputStream out, final Track track) throws IOException {
