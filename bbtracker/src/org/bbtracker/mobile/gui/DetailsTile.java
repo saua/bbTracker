@@ -134,11 +134,14 @@ public class DetailsTile extends Tile {
 				trackName = track.getName();
 			}
 		}
-		final String point;
+		String point;
 		if (pi == -1) {
 			point = "-";
 		} else {
 			point = (pi + 1) + "/" + track.getPointCount();
+			if (p.getName() != null) {
+				point += " " + p.getName();
+			}
 		}
 
 		final String lon = Utils.longitudeToString(lonValue).trim();

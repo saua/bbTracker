@@ -60,7 +60,7 @@ public class TrackPoint {
 		return name;
 	}
 
-	void setName(final String name) {
+	public void setName(final String name) {
 		this.name = name;
 	}
 
