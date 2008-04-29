@@ -136,6 +136,10 @@ public class TrackPoint {
 		return distance;
 	}
 
+	public byte getSatellites() {
+		return satellites;
+	}
+
 	public void writeToStream(final DataOutputStream out) throws IOException {
 		out.writeLong(timestamp);
 		out.writeDouble(latitude);

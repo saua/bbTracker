@@ -46,32 +46,6 @@ public class Jsr179LocationProvider extends LocationProvider {
 			}
 		}
 
-		private byte getNrOfSatellites(String nmea) {
-			if (nmea == null) {
-				return -1;
-			}
-			int pos = nmea.indexOf("$GPGGA");
-			if (pos != -1) {
-				// number of satellites is after the 8th comma
-				for (int i = 0; i < 8; i++) {
-					pos = nmea.indexOf(",", pos + 1);
-					if (pos == -1) {
-						break;
-					}
-				}
-				if (pos != -1) {
-					int endpos = nmea.indexOf(",", pos + 1);
-					String numSatelites = nmea.substring(pos + 1, endpos);
-					try {
-						return Byte.parseByte(numSatelites);
-					} catch (NumberFormatException e) {
-						return -1;
-					}
-				}
-			}
-			return -1;
-		}
-
 		public void providerStateChanged(final javax.microedition.location.LocationProvider provider, final int newState) {
 			switch (newState) {
 			case javax.microedition.location.LocationProvider.AVAILABLE:
@@ -89,6 +63,32 @@ public class Jsr179LocationProvider extends LocationProvider {
 			}
 		}
 	};
+
+	static byte getNrOfSatellites(final String nmea) {
+		if (nmea == null) {
+			return -1;
+		}
+		int pos = nmea.indexOf("$GPGGA");
+		if (pos != -1) {
+			// number of satellites is after the 7th comma
+			for (int i = 0; i < 7; i++) {
+				pos = nmea.indexOf(",", pos + 1);
+				if (pos == -1) {
+					break;
+				}
+			}
+			if (pos != -1) {
+				final int endpos = nmea.indexOf(",", pos + 1);
+				final String numSatelites = nmea.substring(pos + 1, endpos);
+				try {
+					return Byte.parseByte(numSatelites);
+				} catch (final NumberFormatException e) {
+					return -1;
+				}
+			}
+		}
+		return -1;
+	}
 
 	public void init() throws org.bbtracker.mobile.gps.LocationException {
 		if (provider != null) {
