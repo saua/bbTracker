@@ -34,13 +34,15 @@ public abstract class PlotterTile extends Tile {
 
 	private static final int SEGMENT_LINK_COLOR = 0x00aaaaaa;
 
-	private static final int CURRENT_POINT_COLOR = 0x00555555;
+	private static final int CURRENT_POINT_COLOR = 0x00444444;
 
 	private static final int WAYPOINT_COLOR = 0x00bb0000;
 
-	private static final int CURRENT_POINT_SIZE = 4;
+	private static final int CURRENT_POINT_SIZE = 5;
 
-	private static final int WAYPOINT_SIZE = 3;
+	private static final int WAYPOINT_OFFSET = 2;
+
+	private static final int WAYPOINT_SIZE = 4;
 
 	private final TrackManager manager;
 
@@ -200,19 +202,26 @@ public abstract class PlotterTile extends Tile {
 
 		final String name = point1.getName();
 		if (name != null && name.length() > 0) {
-			g.setColor(WAYPOINT_COLOR);
-			g.drawLine(x1 - WAYPOINT_SIZE, y1 - WAYPOINT_SIZE, x1 + WAYPOINT_SIZE, y1 + WAYPOINT_SIZE);
-			g.drawLine(x1 - WAYPOINT_SIZE, y1 + WAYPOINT_SIZE, x1 + WAYPOINT_SIZE, y1 - WAYPOINT_SIZE);
+			paintWaypoint(g, x1, y1, point1);
 		}
 
 		if (point1 == manager.getCurrentPoint()) {
-			g.setColor(CURRENT_POINT_COLOR);
-			g.drawLine(x1, y1 - CURRENT_POINT_SIZE, x1 + CURRENT_POINT_SIZE, y1);
-			g.drawLine(x1 + CURRENT_POINT_SIZE, y1, x1, y1 + CURRENT_POINT_SIZE);
-			g.drawLine(x1, y1 + CURRENT_POINT_SIZE, x1 - CURRENT_POINT_SIZE, y1);
-			g.drawLine(x1 - CURRENT_POINT_SIZE, y1, x1, y1 - CURRENT_POINT_SIZE);
+			paintCurrentPoint(g, x1, y1, point1);
 		}
 
+	}
+
+	protected void paintCurrentPoint(final Graphics g, final int x, final int y, final TrackPoint p) {
+		g.setColor(CURRENT_POINT_COLOR);
+		g.drawLine(x, y - CURRENT_POINT_SIZE, x + CURRENT_POINT_SIZE, y);
+		g.drawLine(x + CURRENT_POINT_SIZE, y, x, y + CURRENT_POINT_SIZE);
+		g.drawLine(x, y + CURRENT_POINT_SIZE, x - CURRENT_POINT_SIZE, y);
+		g.drawLine(x - CURRENT_POINT_SIZE, y, x, y - CURRENT_POINT_SIZE);
+	}
+
+	protected void paintWaypoint(final Graphics g, final int x, final int y, final TrackPoint p) {
+		g.setColor(WAYPOINT_COLOR);
+		g.drawRect(x - WAYPOINT_OFFSET, y - WAYPOINT_OFFSET, WAYPOINT_SIZE, WAYPOINT_SIZE);
 	}
 
 	protected void doPaintNoScale(final Graphics g) {
