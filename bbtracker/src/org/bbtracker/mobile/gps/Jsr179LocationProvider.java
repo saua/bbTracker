@@ -35,13 +35,41 @@ public class Jsr179LocationProvider extends LocationProvider {
 		public void locationUpdated(javax.microedition.location.LocationProvider provider, Location location) {
 			if (location.isValid()) {
 				final QualifiedCoordinates coordinates = location.getQualifiedCoordinates();
+				String nmea = location.getExtraInfo("application/X-jsr179-location-nmea");
+				byte nrOfSatellites = getNrOfSatellites(nmea);
 				final TrackPoint trackPoint = new TrackPoint(location.getTimestamp(), coordinates.getLatitude(),
 						coordinates.getLongitude(), coordinates.getAltitude(), location.getSpeed(), location
-								.getCourse(), false);
+								.getCourse(), nrOfSatellites);
 				fireLocationUpdated(trackPoint);
 			} else {
 				fireLocationUpdated(null);
 			}
+		}
+
+		private byte getNrOfSatellites(String nmea) {
+			if (nmea == null) {
+				return -1;
+			}
+			int pos = nmea.indexOf("$GPGGA");
+			if (pos != -1) {
+				// number of satellites is after the 8th comma
+				for (int i = 0; i < 8; i++) {
+					pos = nmea.indexOf(",", pos + 1);
+					if (pos == -1) {
+						break;
+					}
+				}
+				if (pos != -1) {
+					int endpos = nmea.indexOf(",", pos + 1);
+					String numSatelites = nmea.substring(pos + 1, endpos);
+					try {
+						return Byte.parseByte(numSatelites);
+					} catch (NumberFormatException e) {
+						return -1;
+					}
+				}
+			}
+			return -1;
 		}
 
 		public void providerStateChanged(final javax.microedition.location.LocationProvider provider, final int newState) {

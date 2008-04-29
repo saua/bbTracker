@@ -38,21 +38,21 @@ public class TrackPoint {
 
 	private String name;
 
-	private boolean interpolated;
+	private final byte satellites;
 
 	private boolean standing = false;
 
 	private transient int index;
 
 	public TrackPoint(final long timestamp, final double latitude, final double longitude, final float elevation,
-			final float speed, final float course, final boolean interpolated) {
+			final float speed, final float course, final byte satellites) {
 		this.timestamp = timestamp;
 		this.latitude = latitude;
 		this.longitude = longitude;
 		this.elevation = elevation;
 		this.speed = speed;
 		this.course = course;
-		this.interpolated = interpolated;
+		this.satellites = satellites;
 		name = null;
 	}
 
@@ -112,14 +112,6 @@ public class TrackPoint {
 		this.course = course;
 	}
 
-	public boolean isInterpolated() {
-		return interpolated;
-	}
-
-	public void setInterpolated(final boolean interpolated) {
-		this.interpolated = interpolated;
-	}
-
 	public boolean isStanding() {
 		return standing;
 	}
@@ -151,7 +143,9 @@ public class TrackPoint {
 		out.writeFloat(elevation);
 		out.writeFloat(speed);
 		out.writeFloat(course);
-		out.writeBoolean(interpolated);
+		// we're now writing the number of satellites instead of the (unused) interpolated property
+		// since interpolated was always 0 this shouldn't be a problem.
+		out.writeByte(satellites);
 		out.writeBoolean(standing);
 		out.writeUTF(name == null ? "" : name);
 	}
@@ -163,10 +157,10 @@ public class TrackPoint {
 		final float elevation = in.readFloat();
 		final float speed = in.readFloat();
 		final float course = in.readFloat();
-		final boolean interpolated = in.readBoolean();
+		final byte satellites = in.readByte();
 		final boolean standing = in.readBoolean();
 		final String name = in.readUTF();
-		final TrackPoint point = new TrackPoint(timestamp, latitude, longitude, elevation, speed, course, interpolated);
+		final TrackPoint point = new TrackPoint(timestamp, latitude, longitude, elevation, speed, course, satellites);
 		point.setName(name.length() == 0 ? null : name);
 		point.setStanding(standing);
 		return point;
