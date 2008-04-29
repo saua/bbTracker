@@ -27,7 +27,7 @@ import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 
 public class Jsr179LocationProvider extends LocationProvider {
-	private static final int RECOVERY_DELAY_PER_LEVEL = 2 * 60;
+	private static final int RECOVERY_DELAY_PER_LEVEL = 30 * 1000; // half a minute
 
 	private javax.microedition.location.LocationProvider provider;
 
