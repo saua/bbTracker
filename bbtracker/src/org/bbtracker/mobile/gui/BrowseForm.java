@@ -41,8 +41,6 @@ public class BrowseForm extends List implements CommandListener {
 
 	private final Command selectCommand;
 
-	private final Command cancelCommand;
-
 	public BrowseForm(final String title, final String path) {
 		this(title, path, null);
 	}
@@ -53,10 +51,9 @@ public class BrowseForm extends List implements CommandListener {
 		this.path = path.length() == 0 ? null : path;
 		this.callback = callback;
 
-		selectCommand = new Command("Select", Command.ITEM, 1);
-		cancelCommand = new Command("Cancel", Command.CANCEL, 2);
+		selectCommand = new Command("Select", Command.ITEM, 0);
 		setSelectCommand(selectCommand);
-		addCommand(cancelCommand);
+		addCommand(GuiUtils.CANCEL_COMMAND);
 		setCommandListener(this);
 
 		updateContent();
@@ -142,7 +139,7 @@ public class BrowseForm extends List implements CommandListener {
 				}
 				updateContent();
 			}
-		} else if (cmd == cancelCommand) {
+		} else if (cmd == GuiUtils.CANCEL_COMMAND) {
 			path = null;
 			callback.run();
 		}

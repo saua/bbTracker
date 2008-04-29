@@ -54,10 +54,6 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	private final TrackManager trackManager;
 
-	private final Command okCommand;
-
-	private final Command cancelCommand;
-
 	// #ifndef AVOID_FILE_API
 	private final Command browseTrackCommand;
 
@@ -169,11 +165,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		append(exportFormatGroup);
 		// #endif
 
-		okCommand = new Command("OK", Command.OK, 0);
-		cancelCommand = new Command("Cancel", Command.CANCEL, 1);
-
-		addCommand(okCommand);
-		addCommand(cancelCommand);
+		addCommand(GuiUtils.OK_COMMAND);
+		addCommand(GuiUtils.CANCEL_COMMAND);
 		setCommandListener(this);
 	}
 
@@ -214,7 +207,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	}
 
 	public void commandAction(final Command command, final Displayable source) {
-		if (command == okCommand) {
+		if (command == GuiUtils.OK_COMMAND) {
 			final String message = validatePreferences();
 			if (message == null) {
 				savePreferences();
@@ -222,7 +215,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			} else {
 				final Alert alert = new Alert("Validate Preferences!", message, null, AlertType.CONFIRMATION);
 				final Command continueCommand = new Command("Continue", "Continue and ignore warnings", Command.OK, 1);
-				alert.addCommand(new Command("Cancel", "Return to Options Screen", Command.CANCEL, 0));
+				alert.addCommand(GuiUtils.CANCEL_COMMAND);
 				alert.addCommand(continueCommand);
 				alert.setCommandListener(new CommandListener() {
 					public void commandAction(final Command cmd, final Displayable displayable) {
@@ -236,7 +229,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				});
 				BBTracker.alert(alert, null);
 			}
-		} else if (command == cancelCommand) {
+		} else if (command == GuiUtils.CANCEL_COMMAND) {
 			BBTracker.getInstance().showMainCanvas();
 		}
 	}
