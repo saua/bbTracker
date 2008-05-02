@@ -208,7 +208,7 @@ public class Track {
 
 	public TrackSegment newSegment() {
 		if (segments.size() != 0) {
-			final TrackSegment lastSegment = (TrackSegment) segments.elementAt(segments.size());
+			final TrackSegment lastSegment = (TrackSegment) segments.elementAt(segments.size() - 1);
 			if (lastSegment.getPointCount() == 0) {
 				return lastSegment;
 			}
