@@ -64,6 +64,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final Command stopTrackingCommand;
 
+	private final Command pauseTrackingCommand;
+
+	private final Command continueTrackingCommand;
+
 	private final Command tracksCommand;
 
 	private final Command optionsCommand;
@@ -100,9 +104,11 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		markPointCommand = new Command("Mark current Point", Command.ITEM, 0);
 		newTrackCommand = new Command("Start Track", Command.SCREEN, 2);
 		stopTrackingCommand = new Command("Stop Track", Command.STOP, 3);
-		tracksCommand = new Command("Tracks", Command.SCREEN, 4);
-		optionsCommand = new Command("Options", Command.SCREEN, 5);
-		aboutCommand = new Command("About", Command.SCREEN, 6);
+		pauseTrackingCommand = new Command("Pause Track", Command.SCREEN, 4);
+		continueTrackingCommand = new Command("Continue Track", Command.SCREEN, 4);
+		tracksCommand = new Command("Tracks", Command.SCREEN, 5);
+		optionsCommand = new Command("Options", Command.SCREEN, 6);
+		aboutCommand = new Command("About", Command.SCREEN, 7);
 		// #ifndef AVOID_FILE_API
 		exportCommand = new Command("Export Track", Command.SCREEN, 1);
 		// #endif
@@ -148,8 +154,12 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	protected void setStatusMessage(final String statusMessage, final int duration) {
 		this.statusMessage = statusMessage;
-		statusMessageEndTime = System.currentTimeMillis() + duration;
-		BBTracker.getTimer().schedule(new RepaintTask(), duration + 10);
+		if (duration != -1) {
+			statusMessageEndTime = System.currentTimeMillis() + duration;
+			BBTracker.getTimer().schedule(new RepaintTask(), duration + 10);
+		} else {
+			statusMessageEndTime = Long.MAX_VALUE;
+		}
 		repaint();
 	}
 
@@ -210,6 +220,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case TrackManager.STATE_STATIC:
 			setStatusMessage("Static Track");
 			removeCommand(stopTrackingCommand);
+			removeCommand(pauseTrackingCommand);
+			removeCommand(continueTrackingCommand);
 			removeCommand(markPointCommand);
 			// #ifndef AVOID_FILE_API
 			addCommand(exportCommand);
@@ -218,6 +230,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case TrackManager.STATE_TRACKING:
 			setStatusMessage("Tracking");
 			addCommand(stopTrackingCommand);
+			addCommand(pauseTrackingCommand);
 			addCommand(markPointCommand);
 			// #ifndef AVOID_FILE_API
 			removeCommand(exportCommand);
@@ -225,6 +238,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			break;
 		default:
 			removeCommand(stopTrackingCommand);
+			removeCommand(pauseTrackingCommand);
+			removeCommand(continueTrackingCommand);
+			removeCommand(markPointCommand);
 			// #ifndef AVOID_FILE_API
 			removeCommand(exportCommand);
 			// #endif
@@ -275,6 +291,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			exitAction();
 		} else if (command == markPointCommand) {
 			markPointAction();
+		} else if (command == pauseTrackingCommand) {
+			pauseTrackingAction();
+		} else if (command == continueTrackingCommand) {
+			continueTrackingAction();
 		} else if (command == switchViewCommand) {
 			nextTileConfiguration();
 			// #ifndef AVOID_FILE_API
@@ -418,6 +438,20 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			});
 			BBTracker.getDisplay().setCurrent(f);
 		}
+	}
+
+	private void pauseTrackingAction() {
+		removeCommand(pauseTrackingCommand);
+		addCommand(continueTrackingCommand);
+		manager.pauseTracking();
+		setStatusMessage("Paused!", -1);
+	}
+
+	private void continueTrackingAction() {
+		removeCommand(continueTrackingCommand);
+		addCommand(pauseTrackingCommand);
+		manager.continueTracking();
+		setStatusMessage("Continuing...");
 	}
 
 	protected void keyReleased(final int keyCode) {

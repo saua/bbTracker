@@ -50,6 +50,9 @@ public class TrackManager {
 
 	private int state;
 
+	// true if no new points are recorded in TRACKING state.
+	private boolean paused;
+
 	protected LocationProvider provider;
 
 	private TrackPoint currentPoint;
@@ -76,28 +79,37 @@ public class TrackManager {
 					newSegment = true;
 					trackInterrupted = false;
 				}
+				boolean currentPointChanged;
 				if (track != null) {
-					final int pointCount = track.getPointCount();
-					if (currentPointIndex == pointCount - 1) {
-						// activate the new point only, when the last point is currently selected.
-						currentPointIndex = pointCount;
-						currentPoint = location;
+					currentPointChanged = false;
+					if (!paused) {
+						final int pointCount = track.getPointCount();
+						if (currentPointIndex == pointCount - 1) {
+							// activate the new point only, when the last point is currently selected.
+							currentPointIndex = pointCount;
+							currentPoint = location;
+							currentPointChanged = true;
+						}
+						if (newSegment) {
+							track.newSegment();
+						}
+						boundsChanged = track.addPoint(location);
 					}
-					boundsChanged = track.addPoint(location);
 				} else {
 					currentPoint = location;
+					currentPointChanged = true;
 				}
-				fireNewPoint(currentPoint, boundsChanged, newSegment);
-				fireCurrentPointChanged();
-				providerStateChanged(provider, provider.getState());
+				fireNewPoint(location, boundsChanged, newSegment);
+				if (currentPointChanged) {
+					fireCurrentPointChanged();
+				}
 			} else {
 				fireNewPoint(null, false, false);
 			}
 		}
 
 		public void providerStateChanged(final LocationProvider provider, final int newState) {
-			// TODO Auto-generated method stub
-
+			// noop
 		}
 	};
 
@@ -183,6 +195,32 @@ public class TrackManager {
 		return changed;
 	}
 
+	public void pauseTracking() {
+		if (state != STATE_TRACKING) {
+			throw new IllegalStateException("Not in tracking state! Can't pause tracking!");
+		}
+		paused = true;
+		final int pc = track.getPointCount();
+		if (track != null && pc > 0) {
+			final TrackPoint p = track.getPoint(pc - 1);
+			if (p.getName() == null) {
+				p.setName("paused");
+			}
+		}
+	}
+
+	public void continueTracking() {
+		if (state != STATE_TRACKING) {
+			throw new IllegalStateException("Not in tracking state! Can't continue tracking!");
+		}
+		trackInterrupted = true;
+		paused = false;
+	}
+
+	public boolean isPaused() {
+		return paused;
+	}
+
 	public void addPointListener(final TrackListener listener) {
 		if (!listeners.contains(listener)) {
 			listeners.addElement(listener);
@@ -223,6 +261,7 @@ public class TrackManager {
 
 		track = new Track(name);
 		state = STATE_TRACKING;
+		paused = false;
 
 		currentPointIndex = -1;
 		currentPoint = null;
