@@ -50,6 +50,8 @@ public class DetailsTile extends Tile {
 
 	private static final String NAME_LABEL = "Name: ";
 
+	private static final String SATELLITES_LABEL = "Satellites: ";
+
 	private static final int MARGIN = 2;
 
 	private final TrackManager manager;
@@ -66,17 +68,18 @@ public class DetailsTile extends Tile {
 	private void setFontSize(final int fontSize) {
 		font = Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, fontSize);
 		labelWidth = 0;
-		updateLabeWidth(ELEVATION_LABEL);
-		updateLabeWidth(LAT_LABEL);
-		updateLabeWidth(LON_LABEL);
-		updateLabeWidth(TIME_LABEL);
-		updateLabeWidth(DISTANCE_LABEL);
-		updateLabeWidth(SPEED_LABEL);
-		updateLabeWidth(POINT_LABEL);
-		updateLabeWidth(NAME_LABEL);
+		updateLabelWidth(ELEVATION_LABEL);
+		updateLabelWidth(LAT_LABEL);
+		updateLabelWidth(LON_LABEL);
+		updateLabelWidth(TIME_LABEL);
+		updateLabelWidth(DISTANCE_LABEL);
+		updateLabelWidth(SPEED_LABEL);
+		updateLabelWidth(POINT_LABEL);
+		updateLabelWidth(NAME_LABEL);
+		updateLabelWidth(SATELLITES_LABEL);
 	}
 
-	private void updateLabeWidth(final String label) {
+	private void updateLabelWidth(final String label) {
 		final int w = font.stringWidth(label);
 		if (w > labelWidth) {
 			labelWidth = w;
@@ -100,6 +103,7 @@ public class DetailsTile extends Tile {
 		float elevationValue = Float.NaN;
 		double lengthValue = Double.NaN;
 		String pointTime = null;
+		byte satellitesValue = -1;
 		String time = "-";
 		if (p != null) {
 			lonValue = p.getLongitude();
@@ -108,6 +112,7 @@ public class DetailsTile extends Tile {
 			courseValue = p.getCourse();
 			elevationValue = p.getElevation();
 			pointTime = new Date(p.getTimestamp()).toString().substring(11, 19);
+			satellitesValue = p.getSatellites();
 		}
 		if (track != null) {
 			if (p != null) {
@@ -129,11 +134,14 @@ public class DetailsTile extends Tile {
 				trackName = track.getName();
 			}
 		}
-		final String point;
+		String point;
 		if (pi == -1) {
 			point = "-";
 		} else {
 			point = (pi + 1) + "/" + track.getPointCount();
+			if (p.getName() != null) {
+				point += " " + p.getName();
+			}
 		}
 
 		final String lon = Utils.longitudeToString(lonValue).trim();
@@ -144,6 +152,7 @@ public class DetailsTile extends Tile {
 		final String speed = unit.speedToString(speedValue);
 		final String elevation = unit.elevationToString(elevationValue);
 		final String length = unit.distanceToString(lengthValue);
+		final String satellites = satellitesValue > 0 ? String.valueOf(satellitesValue) : "-";
 
 		final int fontHeight = font.getHeight();
 		final int x = MARGIN + labelWidth;
@@ -175,6 +184,9 @@ public class DetailsTile extends Tile {
 		y += fontHeight;
 		g.drawString(COURSE_LABEL, MARGIN, y, Graphics.TOP | Graphics.LEFT);
 		g.drawString(course, x, y, Graphics.TOP | Graphics.LEFT);
+		y += fontHeight;
+		g.drawString(SATELLITES_LABEL, MARGIN, y, Graphics.TOP | Graphics.LEFT);
+		g.drawString(satellites, x, y, Graphics.TOP | Graphics.LEFT);
 	}
 
 	public void showNotify() {

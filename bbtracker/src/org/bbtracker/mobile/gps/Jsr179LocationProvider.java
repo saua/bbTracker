@@ -27,7 +27,7 @@ import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 
 public class Jsr179LocationProvider extends LocationProvider {
-	private static final int RECOVERY_DELAY_PER_LEVEL = 2 * 60;
+	private static final int RECOVERY_DELAY_PER_LEVEL = 30 * 1000; // half a minute
 
 	private javax.microedition.location.LocationProvider provider;
 
@@ -35,9 +35,11 @@ public class Jsr179LocationProvider extends LocationProvider {
 		public void locationUpdated(javax.microedition.location.LocationProvider provider, Location location) {
 			if (location.isValid()) {
 				final QualifiedCoordinates coordinates = location.getQualifiedCoordinates();
+				String nmea = location.getExtraInfo("application/X-jsr179-location-nmea");
+				byte nrOfSatellites = getNrOfSatellites(nmea);
 				final TrackPoint trackPoint = new TrackPoint(location.getTimestamp(), coordinates.getLatitude(),
 						coordinates.getLongitude(), coordinates.getAltitude(), location.getSpeed(), location
-								.getCourse(), false);
+								.getCourse(), nrOfSatellites);
 				fireLocationUpdated(trackPoint);
 			} else {
 				fireLocationUpdated(null);
@@ -61,6 +63,32 @@ public class Jsr179LocationProvider extends LocationProvider {
 			}
 		}
 	};
+
+	static byte getNrOfSatellites(final String nmea) {
+		if (nmea == null) {
+			return -1;
+		}
+		int pos = nmea.indexOf("$GPGGA");
+		if (pos != -1) {
+			// number of satellites is after the 7th comma
+			for (int i = 0; i < 7; i++) {
+				pos = nmea.indexOf(",", pos + 1);
+				if (pos == -1) {
+					break;
+				}
+			}
+			if (pos != -1) {
+				final int endpos = nmea.indexOf(",", pos + 1);
+				final String numSatelites = nmea.substring(pos + 1, endpos);
+				try {
+					return Byte.parseByte(numSatelites);
+				} catch (final NumberFormatException e) {
+					return -1;
+				}
+			}
+		}
+		return -1;
+	}
 
 	public void init() throws org.bbtracker.mobile.gps.LocationException {
 		if (provider != null) {

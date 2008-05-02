@@ -88,7 +88,7 @@ public class SerialLocationProvider extends LocationProvider {
 				lastNmeaCount = nmeaCount;
 				lastNmeaChangeTimestamp = System.currentTimeMillis();
 				p = new TrackPoint(gps.getTimestamp(), gps.getLatitude(), gps.getLongitude(), gps.getAltitude(), gps
-						.getSpeed(), gps.getHeading(), false);
+						.getSpeed(), gps.getHeading(), (byte) gps.getSatelliteCount());
 			}
 			fireLocationUpdated(p);
 		}

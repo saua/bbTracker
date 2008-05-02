@@ -26,10 +26,14 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
+import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.TextField;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
+import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
@@ -60,6 +64,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final Command stopTrackingCommand;
 
+	private final Command pauseTrackingCommand;
+
+	private final Command continueTrackingCommand;
+
 	private final Command tracksCommand;
 
 	private final Command optionsCommand;
@@ -69,6 +77,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	private final Command aboutCommand;
 
 	private final Command exitCommand;
+
+	private final Command markPointCommand;
 
 	// #ifndef AVOID_FILE_API
 	private final Command exportCommand;
@@ -90,14 +100,17 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		statusTile = new StatusTile(manager);
 		detailsTile = new DetailsTile(manager);
 
-		switchViewCommand = new Command("Switch View", Command.SCREEN, 11);
-		newTrackCommand = new Command("Start Track", Command.SCREEN, 1);
-		stopTrackingCommand = new Command("Stop Track", Command.STOP, 2);
-		tracksCommand = new Command("Tracks", Command.SCREEN, 3);
-		optionsCommand = new Command("Options", Command.SCREEN, 4);
-		aboutCommand = new Command("About", Command.SCREEN, 5);
+		switchViewCommand = new Command("Switch View", Command.SCREEN, 10);
+		markPointCommand = new Command("Mark current Point", Command.ITEM, 0);
+		newTrackCommand = new Command("Start Track", Command.SCREEN, 2);
+		stopTrackingCommand = new Command("Stop Track", Command.STOP, 3);
+		pauseTrackingCommand = new Command("Pause Track", Command.SCREEN, 4);
+		continueTrackingCommand = new Command("Continue Track", Command.SCREEN, 4);
+		tracksCommand = new Command("Tracks", Command.SCREEN, 5);
+		optionsCommand = new Command("Options", Command.SCREEN, 6);
+		aboutCommand = new Command("About", Command.SCREEN, 7);
 		// #ifndef AVOID_FILE_API
-		exportCommand = new Command("Export Track", Command.SCREEN, 0);
+		exportCommand = new Command("Export Track", Command.SCREEN, 1);
 		// #endif
 		exitCommand = new Command("Exit", Command.EXIT, 11);
 
@@ -141,8 +154,12 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	protected void setStatusMessage(final String statusMessage, final int duration) {
 		this.statusMessage = statusMessage;
-		statusMessageEndTime = System.currentTimeMillis() + duration;
-		BBTracker.getTimer().schedule(new RepaintTask(), duration + 10);
+		if (duration != -1) {
+			statusMessageEndTime = System.currentTimeMillis() + duration;
+			BBTracker.getTimer().schedule(new RepaintTask(), duration + 10);
+		} else {
+			statusMessageEndTime = Long.MAX_VALUE;
+		}
 		repaint();
 	}
 
@@ -203,6 +220,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case TrackManager.STATE_STATIC:
 			setStatusMessage("Static Track");
 			removeCommand(stopTrackingCommand);
+			removeCommand(pauseTrackingCommand);
+			removeCommand(continueTrackingCommand);
+			removeCommand(markPointCommand);
 			// #ifndef AVOID_FILE_API
 			addCommand(exportCommand);
 			// #endif
@@ -210,12 +230,17 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case TrackManager.STATE_TRACKING:
 			setStatusMessage("Tracking");
 			addCommand(stopTrackingCommand);
+			addCommand(pauseTrackingCommand);
+			addCommand(markPointCommand);
 			// #ifndef AVOID_FILE_API
 			removeCommand(exportCommand);
 			// #endif
 			break;
 		default:
 			removeCommand(stopTrackingCommand);
+			removeCommand(pauseTrackingCommand);
+			removeCommand(continueTrackingCommand);
+			removeCommand(markPointCommand);
 			// #ifndef AVOID_FILE_API
 			removeCommand(exportCommand);
 			// #endif
@@ -264,6 +289,12 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	public void commandAction(final Command command, final Displayable displayable) {
 		if (command == exitCommand) {
 			exitAction();
+		} else if (command == markPointCommand) {
+			markPointAction();
+		} else if (command == pauseTrackingCommand) {
+			pauseTrackingAction();
+		} else if (command == continueTrackingCommand) {
+			continueTrackingAction();
 		} else if (command == switchViewCommand) {
 			nextTileConfiguration();
 			// #ifndef AVOID_FILE_API
@@ -336,9 +367,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 					"> will stop and it will be saved.";
 		}
 		final Alert alert = new Alert("Really Quit?", question, null, AlertType.WARNING);
-		final Command quitCommand = new Command("Quit", Command.OK, 1);
+		final Command quitCommand = new Command("Quit", Command.OK, 2);
 		alert.addCommand(quitCommand);
-		alert.addCommand(new Command("Cancel", Command.CANCEL, 0));
+		alert.addCommand(GuiUtils.CANCEL_COMMAND);
 		alert.setCommandListener(new CommandListener() {
 
 			public void commandAction(final Command cmd, final Displayable current) {
@@ -375,6 +406,54 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		BBTracker.alert(alert, this);
 	}
 
+	private void markPointAction() {
+		String errorMessage = null;
+		final TrackPoint p = manager.getCurrentPoint();
+		final int pi = manager.getCurrentPointIndex();
+		if (manager.getState() != TrackManager.STATE_TRACKING) {
+			errorMessage = "Not currently tracking!";
+		} else if (p == null) {
+			errorMessage = "No point to mark, yet!";
+		}
+		if (errorMessage != null) {
+			BBTracker.alert(new Alert("Can not mark point", errorMessage, null, AlertType.INFO), this);
+		} else {
+			final Form f = new Form("Mark Point");
+			final TextField textField = new TextField("Note: ", "", 30, TextField.ANY);
+			f.append(textField);
+			f.append(new StringItem("Point: ", pi + "/" + manager.getTrack().getPointCount()));
+			f.append(new StringItem("Longitude: ", Utils.longitudeToString(p.getLongitude())));
+			f.append(new StringItem("Latitude: ", Utils.latitudeToString(p.getLatitude())));
+			f.addCommand(GuiUtils.OK_COMMAND);
+			f.addCommand(GuiUtils.CANCEL_COMMAND);
+			f.setCommandListener(new CommandListener() {
+
+				public void commandAction(final Command cmd, final Displayable displayable) {
+					if (cmd == GuiUtils.OK_COMMAND) {
+						final String s = textField.getString();
+						p.setName(s.length() == 0 ? "X" : s);
+					}
+					BBTracker.getDisplay().setCurrent(MainCanvas.this);
+				}
+			});
+			BBTracker.getDisplay().setCurrent(f);
+		}
+	}
+
+	private void pauseTrackingAction() {
+		removeCommand(pauseTrackingCommand);
+		addCommand(continueTrackingCommand);
+		manager.pauseTracking();
+		setStatusMessage("Paused!", -1);
+	}
+
+	private void continueTrackingAction() {
+		removeCommand(continueTrackingCommand);
+		addCommand(pauseTrackingCommand);
+		manager.continueTracking();
+		setStatusMessage("Continuing...");
+	}
+
 	protected void keyReleased(final int keyCode) {
 		final int gameAction = getGameAction(keyCode);
 		switch (keyCode) {
@@ -391,6 +470,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case '9':
 			// last
 			manager.changeToLastPoint();
+			break;
+		case 'x':
+		case '8':
+			markPointAction();
 			break;
 		default:
 			switch (gameAction) {
