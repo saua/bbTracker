@@ -418,10 +418,11 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		if (errorMessage != null) {
 			BBTracker.alert(new Alert("Can not mark point", errorMessage, null, AlertType.INFO), this);
 		} else {
+			final String oldName = p.getName();
 			final Form f = new Form("Mark Point");
-			final TextField textField = new TextField("Note: ", "", 30, TextField.ANY);
+			final TextField textField = new TextField("Note: ", oldName != null ? oldName : "", 30, TextField.ANY);
 			f.append(textField);
-			f.append(new StringItem("Point: ", pi + "/" + manager.getTrack().getPointCount()));
+			f.append(new StringItem("Point: ", (pi + 1) + "/" + manager.getTrack().getPointCount()));
 			f.append(new StringItem("Longitude: ", Utils.longitudeToString(p.getLongitude())));
 			f.append(new StringItem("Latitude: ", Utils.latitudeToString(p.getLatitude())));
 			f.addCommand(GuiUtils.OK_COMMAND);
@@ -431,7 +432,17 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 				public void commandAction(final Command cmd, final Displayable displayable) {
 					if (cmd == GuiUtils.OK_COMMAND) {
 						final String s = textField.getString();
-						p.setName(s.length() == 0 ? "X" : s);
+						final String newName;
+						if ("".equals(s)) {
+							if (oldName == null) {
+								newName = "X";
+							} else {
+								newName = null;
+							}
+						} else {
+							newName = s;
+						}
+						p.setName(newName);
 					}
 					BBTracker.getDisplay().setCurrent(MainCanvas.this);
 				}
