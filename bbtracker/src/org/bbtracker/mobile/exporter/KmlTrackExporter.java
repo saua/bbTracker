@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Date;
 import java.util.Enumeration;
 
 import org.bbtracker.Track;
@@ -34,12 +35,12 @@ import org.bbtracker.mobile.Preferences;
 public class KmlTrackExporter implements TrackExporter {
 	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 
-	private static final String KML_HEADER = "<kml xmlns=\"http://earth.google.com/kml/2.1\">\n";
+	private static final String KML_HEADER = "<kml xmlns=\"http://earth.google.com/kml/2.2\">\n";
 
-	private static final String STYLE_NAME = "sn_ylw-pushpin";
+	private static final String TRACK_STYLE_NAME = "tr";
 
-	private static final String STYLE_TAG = "\t<Style id=\"" + STYLE_NAME + "\">\n" + "<LineStyle>\n" +
-			"<color>63eeee17</color>\n" + "<width>4</width>\n" + "</LineStyle>\n" + "</Style>\n";
+	private static final String STYLE_TAG = "\t<Style id=\"" + TRACK_STYLE_NAME + "\">\n" + "\t\t<LineStyle>\n" +
+			"\t\t\t<color>63eeee17</color>\n" + "\t\t\t<width>4</width>\n" + "\t\t</LineStyle>\n" + "\t</Style>\n";
 
 	public String getExtension() {
 		return ".kml";
@@ -71,19 +72,9 @@ public class KmlTrackExporter implements TrackExporter {
 			w.write("<Document>\n");
 			w.write("\t<name>");
 			w.write(xmlName);
-			w.write(".kml</name>\n");
-
-			w.write(STYLE_TAG);
-
-			w.write("\t<Placemark>\n\t\t<name>");
-			w.write(xmlName);
 			w.write("</name>\n");
-			w.write("\t\t<visibility>0</visibility>\n");
-			w.write("\t\t<styleUrl>#");
-			w.write(STYLE_NAME);
-			w.write("</styleUrl>\n");
 
-			w.write("<description><![CDATA[<table>\n");
+			w.write("\t<description><![CDATA[<table>\n");
 			w.write("<tr><td><b>Total Distance: </b>");
 			w.write(lengthString);
 			w.write("</td></tr>\n");
@@ -99,24 +90,75 @@ public class KmlTrackExporter implements TrackExporter {
 			w.write("<tr><td><b>Min Elevation: </b>");
 			w.write(minElevString);
 			w.write("</td></tr>\n");
-			w.write(")</table>]]></description>)");
+			w.write(")</table>]]></description>\n");
 
-			w.write("\t\t<LineString>\n\t\t\t<coordinates>\n");
-			final Enumeration segments = track.getSegments();
+			w.write(STYLE_TAG);
+
+			boolean hasNamedPoints = false;
+			Enumeration segments = track.getSegments();
+			int segmentNumber = 0;
+			while (segments.hasMoreElements()) {
+				segmentNumber++;
+				final String s = String.valueOf(segmentNumber);
+				w.write("\t<Placemark id=\"segmnet");
+				w.write(s);
+				w.write("\">\n\t\t<name>segment ");
+				w.write(s);
+				w.write("</name>\n");
+				w.write("\t\t<visibility>1</visibility>\n");
+				w.write("\t\t<styleUrl>#");
+				w.write(TRACK_STYLE_NAME);
+				w.write("</styleUrl>\n");
+
+				w.write("\t\t<LineString>\n\t\t\t<coordinates>\n");
+				final TrackSegment segment = (TrackSegment) segments.nextElement();
+				final Enumeration points = segment.getPoints();
+				boolean first = true;
+				while (points.hasMoreElements()) {
+					final TrackPoint point = (TrackPoint) points.nextElement();
+					hasNamedPoints = hasNamedPoints || point.getName() != null;
+					if (first) {
+						first = false;
+					} else {
+						w.write(' ');
+					}
+					writePoint(w, point);
+				}
+			}
+			w.write("\n\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n");
+
+			w
+					.write("\t<Folder id=\"trackpoints\">\n\t\t<name>Track points with timestamps</name>\n\t\t<visibility>1</visibility>\n\t\t<open>0</open>\n");
+			segments = track.getSegments();
 			while (segments.hasMoreElements()) {
 				final TrackSegment segment = (TrackSegment) segments.nextElement();
 				final Enumeration points = segment.getPoints();
 				while (points.hasMoreElements()) {
 					final TrackPoint point = (TrackPoint) points.nextElement();
-					w.write(String.valueOf(point.getLongitude()));
-					w.write(',');
-					w.write(String.valueOf(point.getLatitude()));
-					w.write(',');
-					w.write(String.valueOf(point.getElevation()));
-					w.write(' ');
+					w.write("\t\t<Placemark id=\"tp");
+					w.write(String.valueOf(point.getIndex()));
+					w.write("\">");
+					String v;
+					if (point.getName() != null) {
+						w.write("<name>");
+						w.write(Utils.escapeXml(point.getName()));
+						w.write("</name>");
+						v = "1";
+					} else {
+						v = "0";
+					}
+					w.write("<visibility>");
+					w.write(v);
+					w.write("</visibility>\n");
+					w.write("\t\t\t<TimeStamp><when>");
+					w.write(Utils.dateToXmlDateTime(new Date(point.getTimestamp())));
+					w.write("</when></TimeStamp><Point><coordinates>");
+					writePoint(w, point);
+					w.write("</coordinates></Point>\n\t\t</Placemark>\n");
 				}
 			}
-			w.write("\n\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n</Document>\n</kml>");
+			w.write("\t</Folder>");
+			w.write("\n</Document>\n</kml>");
 		} finally {
 			if (w != null) {
 				try {
@@ -126,5 +168,13 @@ public class KmlTrackExporter implements TrackExporter {
 				}
 			}
 		}
+	}
+
+	private void writePoint(final Writer w, final TrackPoint point) throws IOException {
+		w.write(String.valueOf(point.getLongitude()));
+		w.write(',');
+		w.write(String.valueOf(point.getLatitude()));
+		w.write(',');
+		w.write(String.valueOf(point.getElevation()));
 	}
 }

@@ -34,10 +34,6 @@ import org.bbtracker.mobile.gps.LocationException;
 
 public class TrackNameForm extends Form implements CommandListener {
 
-	private final Command okCommand = new Command("Ok", Command.OK, 0);
-
-	private final Command cancelCommand = new Command("Cancel", Command.CANCEL, 1);
-
 	private TextField nameField;
 
 	private final TrackManager trackManager;
@@ -80,14 +76,14 @@ public class TrackNameForm extends Form implements CommandListener {
 
 		append(nameField);
 
-		addCommand(okCommand);
-		addCommand(cancelCommand);
+		addCommand(GuiUtils.OK_COMMAND);
+		addCommand(GuiUtils.CANCEL_COMMAND);
 
 		setCommandListener(this);
 	}
 
 	public void commandAction(final Command command, final Displayable displayable) {
-		if (command == okCommand) {
+		if (command == GuiUtils.OK_COMMAND) {
 			if (trackManager != null) {
 				// new track
 				try {
@@ -99,7 +95,7 @@ public class TrackNameForm extends Form implements CommandListener {
 			} else {
 				track.setName(nameField.getString());
 			}
-		} else if (command == cancelCommand) {
+		} else if (command == GuiUtils.CANCEL_COMMAND) {
 			BBTracker.getInstance().showMainCanvas();
 		}
 	}
