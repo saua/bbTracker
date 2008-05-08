@@ -18,6 +18,7 @@
 package org.bbtracker.mobile;
 
 import java.util.Timer;
+import java.util.Vector;
 
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -58,7 +59,10 @@ public class BBTracker extends MIDlet {
 
 	private static boolean bluetoothAvailable = false;
 
+	// #ifndef AVOID_FILE_API
 	private static boolean fileUrlAvailable = false;
+
+	// #endif
 
 	private final TrackManager trackManager;
 
@@ -161,9 +165,12 @@ public class BBTracker extends MIDlet {
 		return bluetoothAvailable;
 	}
 
+	// #ifndef AVOID_FILE_API
 	public static boolean isFileUrlAvailable() {
 		return fileUrlAvailable;
 	}
+
+	// #endif
 
 	protected void destroyApp(final boolean force) throws MIDletStateChangeException {
 		shutdown(true);
@@ -226,17 +233,17 @@ public class BBTracker extends MIDlet {
 			final String fileConnectionVersion = System.getProperty("microedition.io.file.FileConnection.version");
 			fileUrlAvailable = (fileConnectionVersion != null);
 			addAPI("File", fileUrlAvailable);
-			// #else
-// @ fileUrlAvailable = false;
 			// #endif
 
-			final TrackStore[] trackStores = new TrackStore[fileUrlAvailable ? 2 : 1];
-			trackStores[0] = new RMSTrackStore();
+			final Vector stores = new Vector();
 			// #ifndef AVOID_FILE_API
 			if (fileUrlAvailable) {
-				trackStores[1] = new FileTrackStore();
+				stores.addElement(new FileTrackStore());
 			}
 			// #endif
+			stores.addElement(new RMSTrackStore());
+			final TrackStore[] trackStores = new TrackStore[stores.size()];
+			stores.copyInto(trackStores);
 			final LocationProvider locationProvider;
 
 			final Preferences preferences = Preferences.getInstance();
