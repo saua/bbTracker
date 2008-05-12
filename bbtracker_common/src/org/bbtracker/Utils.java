@@ -21,6 +21,7 @@ package org.bbtracker;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
+import java.util.Vector;
 
 public final class Utils {
 
@@ -340,5 +341,51 @@ public final class Utils {
 		final Object e = array[i1];
 		array[i1] = array[i2];
 		array[i2] = e;
+	}
+
+	/**
+	 * Tokenize a string.
+	 * 
+	 * @param value Source string
+	 * @param token Token
+	 * @return Vector with the string separated or null is nothing to split
+	 * if found.
+	 */
+	public static Vector splitToStringVector(final String value, 
+			final char token) {
+	
+		if (value != null && value.length() > 0) {
+			Vector tmpRet = new Vector();
+			int pos = -1;
+			int lastPos = 0;
+			
+			do {
+				lastPos = pos + 1;
+				pos = value.indexOf(token, lastPos);
+				if (pos >= lastPos) {
+					final String tmpString;		
+					tmpString = value.substring(lastPos, pos).trim();
+					if (tmpString.length() <= 0) {
+						tmpRet.addElement(null);
+					} else {
+						tmpRet.addElement(tmpString);
+					}
+				}
+			} while (pos >= lastPos);
+			
+
+			final String tmpString;
+			/* Add the last link. */
+			tmpString = value.substring(lastPos).trim();
+			if (tmpString.length() <= 0) {
+				tmpRet.addElement(null);
+			} else {
+				tmpRet.addElement(tmpString);
+			}
+			
+			return tmpRet;
+		}
+
+		return null;
 	}
 }

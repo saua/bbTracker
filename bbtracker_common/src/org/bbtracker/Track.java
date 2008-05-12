@@ -208,7 +208,7 @@ public class Track {
 
 	public TrackSegment newSegment() {
 		if (segments.size() != 0) {
-			final TrackSegment lastSegment = (TrackSegment) segments.elementAt(segments.size() - 1);
+			final TrackSegment lastSegment = (TrackSegment) segments.elementAt(segments.size());
 			if (lastSegment.getPointCount() == 0) {
 				return lastSegment;
 			}
@@ -231,6 +231,27 @@ public class Track {
 		}
 	}
 
+	public static Track readFromStringList(final Vector list) {
+		String name = (String) list.elementAt(0);
+		list.removeElementAt(0);
+		Track track = new Track(name);
+		final TrackSegment segment = new TrackSegment();
+		Enumeration e = list.elements();
+		while (e.hasMoreElements()) {
+			String line = (String) e.nextElement();
+			double latitude;
+			double longitude;
+			Vector tokens = Utils.splitToStringVector(line, ',');
+			longitude = Double.parseDouble((String) tokens.elementAt(0));
+			latitude = Double.parseDouble((String) tokens.elementAt(1));
+			final TrackPoint point = new TrackPoint(0, latitude, longitude, 
+					0, 0, 0, (byte) 0);
+			segment.addPoint(point);
+		}
+		track.addSegment(0, segment);
+		return track;
+	}
+	
 	public static Track readFromStream(final DataInputStream in) throws IOException {
 		final int version = in.readInt();
 		if (version != streamVersion) {
@@ -240,28 +261,35 @@ public class Track {
 		final Date creationDate = new Date(in.readLong());
 		final int segmentCount = in.readInt();
 		final Track track = new Track(name.length() == 0 ? null : name, segmentCount);
-		int p = 0;
+		int index = 0;
 		for (int i = 0; i < segmentCount; i++) {
 			final TrackSegment segment = TrackSegment.readFromStream(in);
-			track.segments.addElement(segment);
-			track.pointCount += segment.getPointCount();
-			track.updateMinCoordinates(segment.minLatitude, segment.minLongitude);
-			track.updateMaxCoordinates(segment.maxLatitude, segment.maxLongitude);
-			final Enumeration points = segment.getPoints();
-			while (points.hasMoreElements()) {
-				final TrackPoint point = (TrackPoint) points.nextElement();
-				point.setIndex(p++);
-				track.updateSpeedAndElevation(point.getSpeed(), point.getElevation());
-			}
+			index += track.addSegment(index, segment);
 		}
 		track.creationDate = creationDate;
 		return track;
 	}
 
-	public static String readNameFromStream(final DataInputStream in) throws IOException {
+	private int addSegment(final int indexOffset, final TrackSegment segment) {
+		segments.addElement(segment);
+		pointCount += segment.getPointCount();
+		updateMinCoordinates(segment.minLatitude, segment.minLongitude);
+		updateMaxCoordinates(segment.maxLatitude, segment.maxLongitude);
+		final Enumeration points = segment.getPoints();
+		int p = 0;
+		while (points.hasMoreElements()) {
+			final TrackPoint point = (TrackPoint) points.nextElement();
+			point.setIndex(indexOffset + p++);
+			updateSpeedAndElevation(point.getSpeed(), point.getElevation());
+		}
+		return p;
+	}
+
+	public static String readNameFromStream(final DataInputStream in) throws IOException, TrackStoreException{
 		final int version = in.readInt();
 		if (version != streamVersion) {
-			return "Wrong version! Got " + version + " instead of " + streamVersion + "!";
+			throw new TrackStoreException(
+					"Wrong version! Got " + version + " instead of " + streamVersion + "!");
 		}
 		final String name = in.readUTF();
 
