@@ -18,6 +18,8 @@
 package org.bbtracker.mobile.gui;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
@@ -92,6 +94,9 @@ public final class MapBackground implements Runnable {
 	
 	/** Constant for loading progress state. */
 	private static final int STATE_DONE = 2;
+
+	/** Constant for loading progress state. */
+	private static final int STATE_ERROR = 3;
 	
 	/** Filename. */
 	private static final String FILENAME_SUFFIX = ".png";
@@ -148,7 +153,7 @@ public final class MapBackground implements Runnable {
 	private String mapDescriptionUrl;
 	
 	/** Index in tar file. */
-	private long[] tarFileIndex;
+	private int[] tarFileIndex;
 
 	/** Index in tar file. */
 	private int[] tarFileSize;
@@ -282,7 +287,6 @@ public final class MapBackground implements Runnable {
 				double googleScale = (1 << i) * self.tileWidth;
 				if (Math.abs(self.scaleX - googleScale) 
 						< googleScale / percent) {
-					System.out.println("Using rounded google scale.");
 					self.scaleX = googleScale;
 					break;
 				}
@@ -332,6 +336,7 @@ public final class MapBackground implements Runnable {
 		if (missingImage) {
 			paintLoadingProgress(g);
 		}
+		paintMemoryStatus(g);
 		
 		g.setColor(POSITION_COLOR);
 		g.drawLine(clipX, centerOffsetY, clipWidth, centerOffsetY);
@@ -362,8 +367,6 @@ public final class MapBackground implements Runnable {
 		int offY = 
 			(int) ((normalisedPixelLat - normalisedPixelLatOffset) * scaleY) 
 			+ centerOffsetY;
-		System.out.println("Offset: " + offX + "," + offY 
-				+ "max: " + maxTileX + ", " + maxTileY);
 		boolean missingImage = false;
 
 		for (int x = 0; x < maxTileX; x += tileWidth) {
@@ -372,7 +375,6 @@ public final class MapBackground implements Runnable {
 				for (int y = 0; y < maxTileY; y += tileHeight) {
 					int startY = offY + y;
 					if (startY < height && startY + tileHeight > 0) {
-						System.out.println("Found tile.");
 						Image img = getTileImage(x, y);
 						if (img != null) {
 							g.drawImage(img, startX, startY, 
@@ -394,6 +396,32 @@ public final class MapBackground implements Runnable {
 		repaint(0, 0, PROGRESS_BAR_WIDTH, PROGRESS_BAR_HEIGHT);
 	}
 	
+	/**
+	 * Paint memory status.
+	 * 
+	 * @param g graphic object
+	 */
+	private static void paintMemoryStatus(Graphics g) {
+		g.setColor(PROGRESS_BACKGROUND_COLOR);
+		 
+		final long totalMemory = Runtime.getRuntime().totalMemory();
+		final long freeMemory  = Runtime.getRuntime().freeMemory();
+		final int barX = (int) (PROGRESS_BAR_WIDTH * freeMemory / totalMemory);
+		g.fillRect(0, PROGRESS_BAR_HEIGHT, barX, PROGRESS_BAR_HEIGHT);
+		g.setColor(PROGRESS_DONE_COLOR);
+		g.fillRect(barX, PROGRESS_BAR_HEIGHT, 
+				PROGRESS_BAR_WIDTH - barX, PROGRESS_BAR_HEIGHT);
+		g.setColor(PROGRESS_TEXT_COLOR);
+		StringBuffer state = new StringBuffer();
+		state.append(freeMemory);
+		state.append('/');
+		state.append(totalMemory);
+		g.drawString(state.toString(), 
+				PROGRESS_TEXT_POSITION_X, 
+				PROGRESS_TEXT_POSITION_Y + PROGRESS_BAR_HEIGHT, 
+				Graphics.TOP | Graphics.LEFT);
+	}
+
 	/**
 	 * Paint progress bar.
 	 * 
@@ -419,6 +447,9 @@ public final class MapBackground implements Runnable {
 			break;
 		case STATE_READING:
 			state.append("Reading");
+			break;
+		case STATE_DONE:
+			state.append("Done");
 			break;
 		default:
 			state.append("Error");
@@ -475,6 +506,7 @@ public final class MapBackground implements Runnable {
 			tile.image = Image.createImage(in);
 			repaint();
 		} catch (Throwable e) {
+			queueState = STATE_ERROR;
 			Log.log(this, e, "loading Map Tile " + tile.fileNumber);
 		} finally {
 			tileCache.put(new Integer(tile.fileNumber), tile);
@@ -498,7 +530,7 @@ public final class MapBackground implements Runnable {
 					Log.log(this, e, "closing Map Tile " + tile.fileNumber);
 				}
 			} else {
-				if (!in.markSupported()) {
+				if (in != null && !in.markSupported()) {
 					closeTarInputStream();
 				}
 			}
@@ -522,12 +554,16 @@ public final class MapBackground implements Runnable {
 					is.mark(Integer.MAX_VALUE);
 				}
 				if (tarFileIndex == null) {
-					readFileIndex(is);
-					if (markSupported) {
-						is.reset();
-					} else {
-						closeTarInputStream();
-						is = openTarFileInputStream();
+					readTarFileIndex();
+					if (tarFileIndex == null) {
+						readFileIndex(is);
+						if (markSupported) {
+							is.reset();
+						} else {
+							closeTarInputStream();
+							is = openTarFileInputStream();
+						}
+						storeTarFileIndex();
 					}
 				}
 				this.tarFileInputStream = is;
@@ -545,7 +581,7 @@ public final class MapBackground implements Runnable {
 			}
 		}
 
-		if (is != null) {
+		if (is != null && tarFileIndex != null) {
 			try {
 				if (markSupported) {
 					is.reset();
@@ -581,7 +617,75 @@ public final class MapBackground implements Runnable {
 		is = file.openInputStream();
 		return is;
 	}
-	
+
+	/**
+	 * store tar file index.
+	 * 
+	 * @throws IOException io error
+	 */
+	private void storeTarFileIndex() throws IOException {
+		FileConnection file = 
+			(FileConnection) Connector.open(
+					"file:///" + tarFileDirectory + getTarIndexFileName(), 
+					Connector.WRITE);
+		try {
+			DataOutputStream out = file.openDataOutputStream();
+
+			try {
+				out.writeInt(tarFileIndex.length);
+				for (int i = 0; i < tarFileIndex.length; i++) {
+					out.writeInt(tarFileIndex[i]);
+					out.writeInt(tarFileSize[i]);
+				}
+			} finally {
+				out.close();
+			}
+		} finally {
+			file.close();
+		}
+	}
+
+	/**
+	 * @return tar file index (replace .tar by .idx)
+	 */
+	private String getTarIndexFileName() {
+		int pos = tarFileName.lastIndexOf('.');
+		if (pos == -1) {
+			throw new RuntimeException("Invalid tar filename");
+		}
+		return tarFileName.substring(0, pos + 1) + "idx";
+	}
+
+	/**
+	 * open and read tar file index and file sizes.
+	 */
+	private void readTarFileIndex() {
+		int[] tarIndex = null;
+		int[] tarSize  = null;
+		try {
+			FileConnection file = 
+				(FileConnection) Connector.open(
+						"file:///" + tarFileDirectory + getTarIndexFileName(), 
+						Connector.READ);
+			DataInputStream in = file.openDataInputStream();
+			try {
+				int length = in.readInt();
+				tarIndex = new int[length];
+				tarSize  = new int[length];
+				for (int i = 0; i < length; i++) {
+					tarIndex[i] = in.readInt();
+					tarSize[i]  = in.readInt();
+				}
+			} finally {
+				in.close();
+			}
+		} catch (IOException e) {
+			Log.log(this, e, "reading tar file index");
+			tarIndex = null;
+		}
+		tarFileIndex = tarIndex;
+		tarFileSize  = tarSize;
+	}
 	/**
 	 * Read Tar file index.
 	 * See tar file format at:  http://en.wikipedia.org/wiki/Tar_(file_format)
@@ -592,8 +696,8 @@ public final class MapBackground implements Runnable {
 		queueState = STATE_INDEX;
 		final int nElements = (maxTileX / tileWidth) * (maxTileY / tileHeight);
 		queueTotal = nElements;
-		final long[] fileIndex = new long[nElements];
-		final int[] tarSize    = new int[nElements];
+		final int[] fileIndex = new int[nElements];
+		final int[] tarSize   = new int[nElements];
 		long fileOffset = 0;
 		final int blockSize = 512;
 		final int headerSize = blockSize;
@@ -629,7 +733,7 @@ public final class MapBackground implements Runnable {
 				}
 				if (name.startsWith(baseFileName)) {
 					final int fileNumber = parseFileNumber(name);
-					fileIndex[fileNumber] = fileOffset;
+					fileIndex[fileNumber] = (int) fileOffset;
 					tarSize[fileNumber] = fileSize;
 					++imageFound;
 					queueProgress = imageFound;

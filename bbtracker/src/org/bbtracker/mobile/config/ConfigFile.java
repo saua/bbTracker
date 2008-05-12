@@ -136,23 +136,29 @@ public final class ConfigFile {
 	public void saveConfig(String url) throws IOException {
 		FileConnection connection = 
 			(FileConnection) Connector.open(url, Connector.WRITE);
-		OutputStream out = connection.openOutputStream();
-		OutputStreamWriter writer = new OutputStreamWriter(out);
+		try {
+			OutputStream out = connection.openOutputStream();
+			OutputStreamWriter writer = new OutputStreamWriter(out);
 
-		Enumeration keys = params.keys();
-		Enumeration values = params.elements();
-		while (keys.hasMoreElements()) {
-			String key = (String) keys.nextElement();
-			String value = (String) values.nextElement();
-			
-			writer.write(key);
-			writer.write(' ');
-			writer.write(value);
-			writer.write('\n');
+			try {
+				Enumeration keys = params.keys();
+				Enumeration values = params.elements();
+				while (keys.hasMoreElements()) {
+					String key = (String) keys.nextElement();
+					String value = (String) values.nextElement();
+
+					writer.write(key);
+					writer.write(' ');
+					writer.write(value);
+					writer.write('\n');
+				}
+			} finally {
+				writer.close();
+				out.close();
+			}
+		} finally {
+			connection.close();
 		}
-		writer.close();
-		out.close();
-		connection.close();
 	}
 	
 	/**
