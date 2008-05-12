@@ -32,18 +32,21 @@ public class IconManager {
 
 	private final int alertSizeIndex;
 
-	private static final Object NO_ICON = new Object();
+	private static final Image NO_ICON = Image.createImage(1,1);
 
 	private static IconManager instance;
 
 	private IconManager() {
 		final Display display = BBTracker.getDisplay();
-		listSizeIndex = getBestMatchingSizeIndex(display.getBestImageWidth(Display.LIST_ELEMENT), display
-				.getBestImageHeight(Display.LIST_ELEMENT));
-		choiceGroupSizeIndex = getBestMatchingSizeIndex(display.getBestImageWidth(Display.CHOICE_GROUP_ELEMENT),
-				display.getBestImageHeight(Display.CHOICE_GROUP_ELEMENT));
-		alertSizeIndex = getBestMatchingSizeIndex(display.getBestImageWidth(Display.ALERT), display
-				.getBestImageHeight(Display.ALERT));
+		listSizeIndex = 1;
+		choiceGroupSizeIndex = 1;
+		alertSizeIndex = 1;
+//		listSizeIndex = getBestMatchingSizeIndex(display.getBestImageWidth(Display.LIST_ELEMENT), display
+//				.getBestImageHeight(Display.LIST_ELEMENT));
+//		choiceGroupSizeIndex = getBestMatchingSizeIndex(display.getBestImageWidth(Display.CHOICE_GROUP_ELEMENT),
+//				display.getBestImageHeight(Display.CHOICE_GROUP_ELEMENT));
+//		alertSizeIndex = getBestMatchingSizeIndex(display.getBestImageWidth(Display.ALERT), display
+//				.getBestImageHeight(Display.ALERT));
 	}
 
 	private static int getBestMatchingSizeIndex(final int width, final int height) {
@@ -99,7 +102,7 @@ public class IconManager {
 			if (sizeIndex > 0) {
 				icon = getImage(name, sizeIndex - 1);
 			} else {
-				icon = null;
+				icon = NO_ICON;
 			}
 		}
 		return (Image) icon;

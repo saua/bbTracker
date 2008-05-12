@@ -29,6 +29,7 @@ import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.List;
 
 import org.bbtracker.Track;
+import org.bbtracker.TrackStoreException;
 import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.IconManager;
@@ -36,7 +37,6 @@ import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
-import org.bbtracker.mobile.TrackStore.TrackStoreException;
 
 public class TracksForm extends List implements CommandListener {
 	private final TrackManager trackManager;

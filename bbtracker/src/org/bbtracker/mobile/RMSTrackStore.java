@@ -13,6 +13,7 @@ import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotFoundException;
 
 import org.bbtracker.Track;
+import org.bbtracker.TrackStoreException;
 
 public class RMSTrackStore implements TrackStore {
 	private static final String RECORD_STORE_NAME = "Tracks";

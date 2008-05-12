@@ -55,6 +55,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	private final TrackManager trackManager;
 
 	// #ifndef AVOID_FILE_API
+	private final Command browseMapCommand;
+	
 	private final Command browseTrackCommand;
 
 	private final Command browseExportCommand;
@@ -74,6 +76,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	private final ChoiceGroup startTypeGroup;
 
 	// #ifndef AVOID_FILE_API
+	private final TextField mapDirectoryField;
+	
 	private final TextField trackDirectoryField;
 
 	private final TextField exportDirectoryField;
@@ -133,15 +137,22 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		startTypeGroup.setSelectedIndex(startAction, true);
 
 		// #ifndef AVOID_FILE_API
+		
+		mapDirectoryField = new TextField("Map directory: ", pref.getMapDirectory(), 100, TextField.URL);
+		browseMapCommand = new Command("Browse for map", Command.ITEM, 1);
+		addCommand(browseMapCommand);
+		mapDirectoryField.setItemCommandListener(this);
+		addCommand(browseMapCommand);
+		
 		trackDirectoryField = new TextField("Track directory: ", pref.getTrackDirectory(), 100, TextField.URL);
-		browseTrackCommand = new Command("Browse", Command.ITEM, 1);
-		trackDirectoryField.setDefaultCommand(browseTrackCommand);
+		browseTrackCommand = new Command("Browse for track", Command.ITEM, 1);
+		addCommand(browseTrackCommand);
 		trackDirectoryField.setItemCommandListener(this);
 
 		exportDirectoryField = new TextField("Export directory (defaults to track directory): ", pref
 				.getExportDirectory(), 100, TextField.URL);
-		browseExportCommand = new Command("Browse", Command.ITEM, 1);
-		exportDirectoryField.setDefaultCommand(browseExportCommand);
+		browseExportCommand = new Command("Browse for export", Command.ITEM, 1);
+		addCommand(browseExportCommand);
 		exportDirectoryField.setItemCommandListener(this);
 
 		exportFormatGroup = new ChoiceGroup("Export to: ", Choice.MULTIPLE, Preferences.EXPORT_FORMATS, null);
@@ -160,6 +171,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		append(detailsFontSizeGroup);
 		append(startTypeGroup);
 		// #ifndef AVOID_FILE_API
+		append(mapDirectoryField);
 		append(trackDirectoryField);
 		append(exportDirectoryField);
 		append(exportFormatGroup);
@@ -229,6 +241,12 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				});
 				BBTracker.alert(alert, null);
 			}
+		} else if (command == browseTrackCommand) {
+			showDirectoryBrowser("Track Storage Directory", trackDirectoryField);
+		} else if (command == browseMapCommand) {
+			showDirectoryBrowser("Track Storage Directory", mapDirectoryField);
+		} else if (command == browseExportCommand) {
+			showDirectoryBrowser("Track Export Directory", exportDirectoryField);
 		} else if (command == GuiUtils.CANCEL_COMMAND) {
 			BBTracker.getInstance().showMainCanvas();
 		}
@@ -315,6 +333,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			pref.setStartAction(startTypeGroup.getSelectedIndex());
 			// #ifndef AVOID_FILE_API
 			pref.setTrackDirectory(trackDirectoryField.getString());
+			pref.setMapDirectory(mapDirectoryField.getString());
 			pref.setExportDirectory(exportDirectoryField.getString());
 			Log.initLog();
 
@@ -359,6 +378,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 // #ifndef AVOID_FILE_API
 		} else if (command == browseTrackCommand) {
 			showDirectoryBrowser("Track Storage Directory", trackDirectoryField);
+		} else if (command == browseMapCommand) {
+			showDirectoryBrowser("Track Storage Directory", mapDirectoryField);
 		} else if (command == browseExportCommand) {
 			showDirectoryBrowser("Track Export Directory", exportDirectoryField);
 // #endif

@@ -33,7 +33,7 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import javax.microedition.rms.RecordStoreException;
 
-import org.bbtracker.mobile.TrackStore.TrackStoreException;
+import org.bbtracker.TrackStoreException;
 import org.bbtracker.mobile.gps.DummyLocationProvider;
 import org.bbtracker.mobile.gps.Jsr179LocationProvider;
 import org.bbtracker.mobile.gps.LocationException;
@@ -154,6 +154,7 @@ public class BBTracker extends MIDlet {
 	}
 
 	public void showMainCanvas() {
+		mainCanvas.loadBackgrounds();
 		getDisplay().setCurrent(mainCanvas);
 	}
 
@@ -232,6 +233,13 @@ public class BBTracker extends MIDlet {
 			// #ifndef AVOID_FILE_API
 			final String fileConnectionVersion = System.getProperty("microedition.io.file.FileConnection.version");
 			fileUrlAvailable = (fileConnectionVersion != null);
+			if (fileConnectionVersion == null) {
+				final String platform = System.getProperty("microedition.platform");
+				System.out.println(platform);
+				if ("MicroEmulator".equals(platform)) {
+					fileUrlAvailable = true;
+				}
+			}
 			addAPI("File", fileUrlAvailable);
 			// #endif
 

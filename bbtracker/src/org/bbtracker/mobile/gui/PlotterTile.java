@@ -17,13 +17,10 @@
  */
 package org.bbtracker.mobile.gui;
 
-import java.util.Enumeration;
-
 import javax.microedition.lcdui.Graphics;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
-import org.bbtracker.TrackSegment;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
@@ -45,16 +42,10 @@ public abstract class PlotterTile extends Tile {
 	private static final int WAYPOINT_SIZE = 4;
 
 	private final TrackManager manager;
-
-	private Track track;
-
+	
 	private final AxisConfiguration xAxis = new AxisConfiguration();
 
 	private final AxisConfiguration yAxis = new AxisConfiguration();
-
-	private final DataProvider xData;
-
-	private final DataProvider yData;
 
 	private final boolean linkedScale;
 
@@ -66,13 +57,26 @@ public abstract class PlotterTile extends Tile {
 
 	private int marginBottom = DEFAULT_MARGIN;
 
+	private final DataProvider xData;
+
+	private final DataProvider yData;
+
+	private TrackPlotter mainTrackPlotter;
+	
+	private TrackPlotter extraTrackPlotter;
+	
 	public PlotterTile(final TrackManager manager, final DataProvider xData, final DataProvider yData,
 			final boolean linkedScale) {
 		this.manager = manager;
+		this.linkedScale = linkedScale;
 		this.xData = xData;
 		this.yData = yData;
-		this.linkedScale = linkedScale;
-		track = manager.getTrack();
+		mainTrackPlotter = new TrackPlotter();
+		mainTrackPlotter.setTrackColor(0);
+		extraTrackPlotter = new TrackPlotter();
+		extraTrackPlotter.setTrackColor(0x9090ff);
+		extraTrackPlotter.setTrackStyle(TrackPlotter.WIDE);
+		mainTrackPlotter.setTrack(manager.getTrack());
 		manager.addPointListener(this);
 		updateScale();
 	}
@@ -131,36 +135,23 @@ public abstract class PlotterTile extends Tile {
 			return;
 		}
 
+		doPaintBackground(g);
 		doPaintPlot(g);
 		doPaintAxis(g);
 	}
 
 	protected void doPaintPlot(final Graphics g) {
-		TrackPoint prevPoint = null;
-
-		int prevX = -1;
-		int prevY = -1;
-		final Enumeration segments = track.getSegments();
-		while (segments.hasMoreElements()) {
-			final TrackSegment segment = (TrackSegment) segments.nextElement();
-			final Enumeration points = segment.getPoints();
-			boolean newSegment = true;
-			while (points.hasMoreElements()) {
-				final TrackPoint point = (TrackPoint) points.nextElement();
-				final double xValue = xData.getValue(point);
-				final double yValue = yData.getValue(point);
-				final int x = getMarginLeft() + xAxis.getPosition(xValue);
-				final int y = height - (getMarginBottom() + yAxis.getPosition(yValue));
-
-				paintConnection(g, prevPoint, prevX, prevY, point, x, y, newSegment);
-
-				prevPoint = point;
-				prevX = x;
-				prevY = y;
-				newSegment = false;
-			}
+		extraTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
+		
+		mainTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
+		TrackPoint currentPoint = manager.getCurrentPoint();
+		if (currentPoint != null) {
+			mainTrackPlotter.paintCurrentPoint(g, currentPoint, xData, 
+					yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
 		}
-		paintConnection(g, prevPoint, prevX, prevY, null, -1, -1, false);
+	}
+	
+	protected void doPaintBackground(final Graphics g) {
 	}
 
 	protected abstract void doPaintAxis(final Graphics g);
@@ -234,18 +225,30 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	private void updateScale() {
-		if (track == null || track.getPointCount() == 0) {
-			xAxis.scale = Double.NaN;
-			yAxis.scale = Double.NaN;
-			return;
-		}
-		final boolean xChanged = xAxis.updateMinMax(xData, track);
-		final boolean yChanged = yAxis.updateMinMax(yData, track);
-		if (xChanged || yChanged) {
+		if (updateScale(mainTrackPlotter)) {
+			resetScale();
+			updateScale(mainTrackPlotter);
+			updateScale(extraTrackPlotter);
 			onScaleChanged();
 		}
 	}
 
+	private void resetScale() {
+		xAxis.resetMinMax();
+		yAxis.resetMinMax();
+	}
+
+	private boolean updateScale(TrackPlotter plotter) {
+		Track track = plotter.getTrack();
+		if (track != null && track.getLength() > 0) {
+			final boolean xChanged = xAxis.updateMinMax(xData, track);
+			final boolean yChanged = yAxis.updateMinMax(yData, track);
+			return xChanged || yChanged;
+		} else { 
+			return false;
+		}
+	}
+	
 	protected void onScaleChanged() {
 		if (!(xAxis.hasMinMax() && yAxis.hasMinMax())) {
 			xAxis.scale = Double.NaN;
@@ -267,11 +270,27 @@ public abstract class PlotterTile extends Tile {
 		yAxis.calculateOffset(spaceY);
 	}
 
-	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
-		if (manager.getTrack() != track) {
-			track = manager.getTrack();
-			updateScale();
+	protected void onScaleChanged(final double scaleX, final double scaleY, 
+			final double centerX, final double centerY) {
+		if (!(xAxis.hasMinMax() && yAxis.hasMinMax())) {
+			xAxis.scale = Double.NaN;
+			yAxis.scale = Double.NaN;
+			return;
 		}
+
+		final int spaceX = width - (getMarginLeft() + getMarginRight());
+		final int spaceY = height - (getMarginTop() + getMarginBottom());
+
+		xAxis.scale = scaleX;
+		yAxis.scale = scaleY;
+
+		xAxis.calculateOffset(centerX, spaceX);
+		yAxis.calculateOffset(centerY, spaceY);
+	}
+	
+	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
+		// What has this to do with current point change???
+		checkCurrentTrack();
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
@@ -279,10 +298,16 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void showNotify() {
-		if (manager.getTrack() != track) {
-			track = manager.getTrack();
+		checkCurrentTrack();
+	}
+
+	private void checkCurrentTrack() {
+		if (manager.getTrack() != mainTrackPlotter.getTrack()) {
+			extraTrackPlotter.setTrack(mainTrackPlotter.getTrack());
+			mainTrackPlotter.setTrack(manager.getTrack());
+			resetScale();
+			updateScale();
 		}
-		updateScale();
 	}
 
 	protected AxisConfiguration getXAxis() {
@@ -300,30 +325,38 @@ public abstract class PlotterTile extends Tile {
 	public DataProvider getYData() {
 		return yData;
 	}
-
+	
 	protected static class AxisConfiguration {
-		double minValue = Double.NaN;
+		double minValue = Double.MAX_VALUE;
 
-		double maxValue = Double.NaN;
+		double maxValue = Double.MIN_VALUE;
 
 		double scale;
 
 		double offset;
 
 		boolean hasMinMax() {
-			return !(Double.isNaN(minValue) || Double.isNaN(maxValue));
+			return !(minValue > maxValue);
 		}
 
+		void resetMinMax() {
+			minValue = Double.MAX_VALUE;
+			maxValue = Double.MIN_VALUE;
+		}
+		
 		boolean updateMinMax(final DataProvider data, final Track track) {
 			final double newMin = data.getMinValue(track);
 			final double newMax = data.getMaxValue(track);
-			if (newMin != minValue || newMax != maxValue) {
+			boolean update = false;
+			if (newMin < minValue) {
 				minValue = newMin;
+				update = true;
+			} 
+			if (newMax > maxValue) {
 				maxValue = newMax;
-				return true;
-			} else {
-				return false;
+				update = true;
 			}
+			return update;
 		}
 
 		/**
@@ -346,6 +379,10 @@ public abstract class PlotterTile extends Tile {
 			offset = ((maxValue + minValue) - (space * scale)) / 2;
 		}
 
+		void calculateOffset(double value, final int space) {
+			offset = value - space * scale / 2;
+		}
+		
 		int getPosition(final double value) {
 			return (int) ((value - offset) / scale);
 		}

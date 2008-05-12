@@ -28,9 +28,9 @@ import javax.microedition.lcdui.Displayable;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
+import org.bbtracker.TrackStoreException;
 import org.bbtracker.Utils;
 import org.bbtracker.mobile.TrackStore.TrackStoreEntry;
-import org.bbtracker.mobile.TrackStore.TrackStoreException;
 import org.bbtracker.mobile.exporter.GpxTrackExporter;
 import org.bbtracker.mobile.exporter.KmlTrackExporter;
 import org.bbtracker.mobile.exporter.TrackExporter;
