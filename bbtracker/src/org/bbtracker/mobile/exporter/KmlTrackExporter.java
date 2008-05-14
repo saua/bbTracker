@@ -100,7 +100,7 @@ public class KmlTrackExporter implements TrackExporter {
 			while (segments.hasMoreElements()) {
 				segmentNumber++;
 				final String s = String.valueOf(segmentNumber);
-				w.write("\t<Placemark id=\"segmnet");
+				w.write("\t<Placemark id=\"segment");
 				w.write(s);
 				w.write("\">\n\t\t<name>segment ");
 				w.write(s);
