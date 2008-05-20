@@ -1,7 +1,7 @@
 MIDlet-1: bbTracker,bbtracker.png,org.bbtracker.mobile.BBTracker
 MIDlet-Jar-URL: bbtracker.jar
 MicroEdition-Configuration: CLDC-1.1
-MIDlet-Version: 0.5.3
+MIDlet-Version: 0.5.3.1
 MIDlet-Name: bbTracker
 MIDlet-Description: bbTracker is a simple GPS tracking software for your smartphone.
 MIDlet-Vendor: Joachim Sauer
