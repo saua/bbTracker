@@ -124,8 +124,8 @@ public class KmlTrackExporter implements TrackExporter {
 					}
 					writePoint(w, point);
 				}
+				w.write("\n\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n");
 			}
-			w.write("\n\t\t\t</coordinates>\n\t\t</LineString>\n\t</Placemark>\n");
 
 			w
 					.write("\t<Folder id=\"trackpoints\">\n\t\t<name>Track points with timestamps</name>\n\t\t<visibility>1</visibility>\n\t\t<open>0</open>\n");
