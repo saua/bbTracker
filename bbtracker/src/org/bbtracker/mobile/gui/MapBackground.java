@@ -88,18 +88,27 @@ public final class MapBackground implements Runnable {
 
 	/** Constant for loading progress state. */
 	private static final int STATE_INDEX = 0;
-	
-	/** Constant for loading progress state. */
-	private static final int STATE_READING = 1;
-	
-	/** Constant for loading progress state. */
-	private static final int STATE_DONE = 2;
 
 	/** Constant for loading progress state. */
-	private static final int STATE_ERROR = 3;
+	private static final int STATE_OPENING = 1;
+	
+	/** Constant for loading progress state. */
+	private static final int STATE_READING = 2;
+	
+	/** Constant for loading progress state. */
+	private static final int STATE_DONE = 3;
+
+	/** Constant for loading progress state. */
+	private static final int STATE_ERROR = 4;
 	
 	/** Filename. */
 	private static final String FILENAME_SUFFIX = ".png";
+	
+	/** 
+	 * If set, use input stream decorator to send end of stream when 
+	 * end of image stream is reached within the tar file.
+	 */
+	private static boolean s_useCompactStream = true;	
 	
 	/** Tile width in pixels. */
 	private int tileWidth;
@@ -109,8 +118,13 @@ public final class MapBackground implements Runnable {
 	
 	/** Hashtable of tileNumber = Tile. */ 
 	private Hashtable tileCache = new Hashtable();
+
+	/** Mutex to notify missing images. */
+	private Object tileLoadMutex = new Object();
 	
-	/** Vector of Tile. */
+	/** 
+	 * Vector of Tile. Changes to this variable are only permitted when
+	 * synchronized under tileLoadMutex. */
 	private volatile Vector tileLoadQueue = new Vector();
 	
 	/** basefilename for image files. */
@@ -336,7 +350,7 @@ public final class MapBackground implements Runnable {
 		if (missingImage) {
 			paintLoadingProgress(g);
 		}
-		paintMemoryStatus(g);
+//		paintMemoryStatus(g);
 		
 		g.setColor(POSITION_COLOR);
 		g.drawLine(clipX, centerOffsetY, clipWidth, centerOffsetY);
@@ -367,26 +381,50 @@ public final class MapBackground implements Runnable {
 		int offY = 
 			(int) ((normalisedPixelLat - normalisedPixelLatOffset) * scaleY) 
 			+ centerOffsetY;
-		boolean missingImage = false;
 
-		for (int x = 0; x < maxTileX; x += tileWidth) {
-			int startX = offX + x;
-			if (startX < width && startX + tileWidth > 0) { 
-				for (int y = 0; y < maxTileY; y += tileHeight) {
-					int startY = offY + y;
-					if (startY < height && startY + tileHeight > 0) {
-						Image img = getTileImage(x, y);
-						if (img != null) {
-							g.drawImage(img, startX, startY, 
-									Graphics.TOP | Graphics.LEFT);
-						} else {
-							missingImage = true;
-						}
-					}
+		Vector missingImages = new Vector();
+		
+		long time = System.currentTimeMillis();
+		
+		final int firstX = -offX / tileWidth;
+		final int firstY = -offY / tileHeight;
+		
+		final int halfWidth = width >> 1;
+		final int halfHeight = height >> 1;
+		for (int x = firstX; offX + x * tileWidth < width; x++) {
+			for (int y = firstY; offY + y * tileHeight < height; y++) {
+				final int px = offX + x * tileWidth;
+				final int py = offY + y * tileHeight;
+				boolean center = px < halfWidth && px + tileWidth > halfWidth
+						&& py < halfHeight && py + tileHeight > halfHeight; 
+				paintMapTile(g, missingImages, time, x, px, y, py, center);
+			}
+		}
+		synchronized (tileLoadMutex) {
+			tileLoadQueue = missingImages;
+			tileLoadMutex.notify();
+		}
+		return !missingImages.isEmpty();
+	}
+
+	private void paintMapTile(Graphics g, Vector missingImages, long time,
+			int x, int startX, int y, int startY, boolean center) {
+		if (x < maxTileX / tileWidth && y < maxTileY / tileHeight) {
+			final int fileNumber = x * (maxTileY / tileHeight) + y;
+			Image img = getTileImage(fileNumber);
+			if (img != null) {
+				g.drawImage(img, startX, startY, 
+						Graphics.TOP | Graphics.LEFT);
+			} else {
+				Tile newTile = new Tile(fileNumber);
+				newTile.lastUse = time;
+				if (center) {
+					missingImages.insertElementAt(newTile, 0);
+				} else {
+					missingImages.addElement(newTile);
 				}
 			}
 		}
-		return missingImage;
 	}
 
 	/**
@@ -441,20 +479,26 @@ public final class MapBackground implements Runnable {
 				PROGRESS_BAR_WIDTH - progressX, PROGRESS_BAR_HEIGHT);
 		g.setColor(PROGRESS_TEXT_COLOR);
 		StringBuffer state = new StringBuffer();
+		final String stateString;
 		switch (queueState) {
 		case STATE_INDEX:
-			state.append("Index");
+			stateString = "Index";
+			break;
+		case STATE_OPENING:
+			stateString = "Opening";
 			break;
 		case STATE_READING:
-			state.append("Reading");
+			stateString = "Reading";
 			break;
 		case STATE_DONE:
-			state.append("Done");
+			stateString = "Done";
 			break;
+		case STATE_ERROR:
 		default:
-			state.append("Error");
+			stateString = "Error";
 			break;
 		}
+		state.append(stateString);
 		state.append(' ');
 		if (queueProgress != -1) {
 			state.append(queueProgress);
@@ -481,6 +525,34 @@ public final class MapBackground implements Runnable {
 		}
 	}
 
+	/** Show tile list in the load queue. */
+	public void dumpLoadQueue() {
+		Enumeration e = tileLoadQueue.elements();
+		StringBuffer str = new StringBuffer();
+		while (e.hasMoreElements()) {
+			int n = ((Tile) e.nextElement()).fileNumber;
+			str.append(n);
+			if (e.hasMoreElements()) {
+				str.append(',');
+			}
+		}
+		Log.log(this, "LoadQueue: " + str.toString());
+	}
+
+	/** Show tile list in the cache. */
+	public void dumpCache() {
+		Enumeration e = tileCache.keys();
+		StringBuffer str = new StringBuffer();
+		while (e.hasMoreElements()) {
+			int n = ((Integer) e.nextElement()).intValue();
+			str.append(n);
+			if (e.hasMoreElements()) {
+				str.append(',');
+			}
+		}
+		Log.log(this, "Cache   : " + str.toString());
+	}
+	
 	/**
 	 * Read tile.
 	 * 
@@ -490,6 +562,11 @@ public final class MapBackground implements Runnable {
 		FileConnection connection = null;
 		InputStream in = null;
 		try {
+			queueState = STATE_OPENING;
+			queueTotal = Math.min(
+					tileCache.size() + tileLoadQueue.size(),
+					MAX_TILES_CACHED);
+			queueProgress = queueTotal - tileLoadQueue.size() - 1;
 			if (tarFileName == null) {
 				final String filename = tile.getFileName();
 				connection = 
@@ -500,11 +577,12 @@ public final class MapBackground implements Runnable {
 				in = getTarInput(tile.fileNumber);
 			}
 			queueState = STATE_READING;
-			queueTotal = tileCache.size();
-			queueProgress = queueTotal - tileLoadQueue.size();
+			repaintQueueState();
 			
-			tile.image = Image.createImage(in);
-			repaint();
+			if (in != null) {
+				tile.image = Image.createImage(in);
+				repaint();
+			}
 		} catch (Throwable e) {
 			queueState = STATE_ERROR;
 			Log.log(this, e, "loading Map Tile " + tile.fileNumber);
@@ -538,34 +616,18 @@ public final class MapBackground implements Runnable {
 	}
 
 	/**
-	 * open tar file if necessary and skip to the index.
+	 * Open tar file if necessary and skip to the index.
 	 * 
 	 * @param fileNumber tile index
-	 * @return input stream
+	 * @return input stream or null if error
 	 */
 	private synchronized InputStream getTarInput(final int fileNumber) {
-		InputStream is = this.tarFileInputStream;
-		boolean markSupported = false;
+		InputStream is;
+		
+		is = this.tarFileInputStream;
 		if (is == null) {
 			try {
-				is = openTarFileInputStream();
-				markSupported = is.markSupported();
-				if (markSupported) {
-					is.mark(Integer.MAX_VALUE);
-				}
-				if (tarFileIndex == null) {
-					readTarFileIndex();
-					if (tarFileIndex == null) {
-						readFileIndex(is);
-						if (markSupported) {
-							is.reset();
-						} else {
-							closeTarInputStream();
-							is = openTarFileInputStream();
-						}
-						storeTarFileIndex();
-					}
-				}
+				is = openTarFileAndReadIndex();
 				this.tarFileInputStream = is;
 			} catch (Exception e) {
 				Log.log(this, e, "opening Tar Tile " + tarFileName);
@@ -581,9 +643,10 @@ public final class MapBackground implements Runnable {
 			}
 		}
 
-		if (is != null && tarFileIndex != null) {
+		if (is != null && tarFileIndex != null 
+				&& tarFileSize[fileNumber] != 0) {
 			try {
-				if (markSupported) {
+				if (is.markSupported()) {
 					is.reset();
 				}
 				is.skip(tarFileIndex[fileNumber]);
@@ -592,13 +655,48 @@ public final class MapBackground implements Runnable {
 				closeTarInputStream();
 				is = null;
 			}
+		} else {
+			is = null;
 		}
 
 		if (is != null) {
-			return new CompactStream(is, tarFileSize[fileNumber]);
+			if (s_useCompactStream) {
+				return new CompactStream(is, tarFileSize[fileNumber]);
+			} else {
+				return is;
+			}
 		} else {
 			return null;
 		}
+	}
+
+	/**
+	 * Open tar file and read its index if not stored.
+	 * 
+	 * @return tar file input stream
+	 * @throws IOException io error
+	 */
+	private InputStream openTarFileAndReadIndex() throws IOException {
+		InputStream is;
+		is = openTarFileInputStream();
+		boolean markSupported = is.markSupported();
+		if (markSupported) {
+			is.mark(Integer.MAX_VALUE);
+		}
+		if (tarFileIndex == null) {
+			readTarFileIndex();
+			if (tarFileIndex == null) {
+				readFileIndex(is);
+				if (markSupported) {
+					is.reset();
+				} else {
+					closeTarInputStream();
+					is = openTarFileInputStream();
+				}
+				storeTarFileIndex();
+			}
+		}
+		return is;
 	}
 
 	/**
@@ -619,30 +717,40 @@ public final class MapBackground implements Runnable {
 	}
 
 	/**
-	 * store tar file index.
-	 * 
-	 * @throws IOException io error
+	 * Store tar file index.
 	 */
-	private void storeTarFileIndex() throws IOException {
-		FileConnection file = 
-			(FileConnection) Connector.open(
-					"file:///" + tarFileDirectory + getTarIndexFileName(), 
-					Connector.WRITE);
+	private void storeTarFileIndex() {
+		final String url = getTarFileIndexUrl();
 		try {
-			DataOutputStream out = file.openDataOutputStream();
-
+			FileConnection file = 
+				(FileConnection) Connector.open(
+						url, 
+						Connector.READ_WRITE);
+            if (!file.exists()) {
+            	file.create();
+            }
 			try {
-				out.writeInt(tarFileIndex.length);
-				for (int i = 0; i < tarFileIndex.length; i++) {
-					out.writeInt(tarFileIndex[i]);
-					out.writeInt(tarFileSize[i]);
+				DataOutputStream out = file.openDataOutputStream();
+
+				try {
+					out.writeInt(tarFileIndex.length);
+					for (int i = 0; i < tarFileIndex.length; i++) {
+						out.writeInt(tarFileIndex[i]);
+						out.writeInt(tarFileSize[i]);
+					}
+				} finally {
+					out.close();
 				}
 			} finally {
-				out.close();
+				file.close();
 			}
-		} finally {
-			file.close();
+		} catch (IOException e) {
+			Log.log(this, e, "Storing tar index: " + url);
 		}
+	}
+
+	private String getTarFileIndexUrl() {
+		return "file:///" + tarFileDirectory + getTarIndexFileName();
 	}
 
 	/**
@@ -662,11 +770,10 @@ public final class MapBackground implements Runnable {
 	private void readTarFileIndex() {
 		int[] tarIndex = null;
 		int[] tarSize  = null;
+		final String url = getTarFileIndexUrl();
 		try {
 			FileConnection file = 
-				(FileConnection) Connector.open(
-						"file:///" + tarFileDirectory + getTarIndexFileName(), 
-						Connector.READ);
+				(FileConnection) Connector.open(url, Connector.READ);
 			DataInputStream in = file.openDataInputStream();
 			try {
 				int length = in.readInt();
@@ -680,7 +787,7 @@ public final class MapBackground implements Runnable {
 				in.close();
 			}
 		} catch (IOException e) {
-			Log.log(this, e, "reading tar file index");
+			Log.log(this, e, "reading tar file index " + url);
 			tarIndex = null;
 		}
 		tarFileIndex = tarIndex;
@@ -706,14 +813,14 @@ public final class MapBackground implements Runnable {
 		try {
 			boolean interrupted = false;
 			int imageFound = 0;
+			final int headerFileNameSize = 100;
+			final int headerFileSizeSize = 12;
+			final int headerSkip = 24;
+			final int headerBufferSize = headerFileNameSize 
+										 + headerSkip + headerFileSizeSize;
+			final byte[] header = new byte[headerBufferSize];
 			for (;;) {
 				fileOffset += headerSize;
-				final int headerFileNameSize = 100;
-				final int headerFileSizeSize = 12;
-				final int headerSkip = 24;
-				final int headerBufferSize = headerFileNameSize 
-					+ headerSkip + headerFileSizeSize;
-				byte[] header = new byte[headerBufferSize];
 				tarStream.read(header);
 				ByteArrayInputStream headerInputStream = 
 					new ByteArrayInputStream(header);
@@ -907,20 +1014,16 @@ public final class MapBackground implements Runnable {
 	 */
 	private Image getTileImage(int x, int y) {
 		final int fileNumber = getFileNumber(x, y);
+		return getTileImage(fileNumber);
+	}
+
+	private Image getTileImage(final int fileNumber) {
 		Tile tile = (Tile) tileCache.get(new Integer(fileNumber));
 		long time = System.currentTimeMillis();
 		if (tile != null) {
 			tile.lastUse = time;
 			return tile.image;
 		} else {
-			synchronized (tileLoadQueue) {
-				Tile newTile = new Tile(fileNumber);
-				if (!tileLoadQueue.contains(newTile)) {
-					newTile.lastUse = time;
-					tileLoadQueue.addElement(newTile);
-					tileLoadQueue.notify();
-				}
-			}
 			return null;
 		}
 	}
@@ -931,10 +1034,10 @@ public final class MapBackground implements Runnable {
 	 * @return next tile to load
 	 */
 	private Tile getNextTileInLoadQueue() {
-		synchronized (tileLoadQueue) {
+		synchronized (tileLoadMutex) {
 			if (tileLoadQueue.size() == 0) {
 				try {
-					tileLoadQueue.wait();
+					tileLoadMutex.wait();
 				} catch (InterruptedException e) {
 					ignoreException();
 				}
@@ -970,9 +1073,9 @@ public final class MapBackground implements Runnable {
 	/** Stop loading thread and flush cache. */
 	public void stop() {
 		stopLoadThread = true;
-		synchronized (tileLoadQueue) {
-			tileLoadQueue.removeAllElements();
-			tileLoadQueue.notifyAll();
+		synchronized (tileLoadMutex) {
+			tileLoadQueue = null;
+			tileLoadMutex.notify();
 		}
 		tileCache.clear();
 		synchronized (this) {
