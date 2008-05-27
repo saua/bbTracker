@@ -12,6 +12,7 @@ import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
 
 import org.bbtracker.Track;
+import org.bbtracker.TrackStoreException;
 
 public class FileTrackStore implements TrackStore {
 
@@ -34,6 +35,8 @@ public class FileTrackStore implements TrackStore {
 					final Date date = Track.readDateFromStream(din);
 					result.addElement(new FileTrackStoreEntry(name, date, fileUrl));
 				} catch (final IOException e) {
+					Log.log(this, e, "loading info from " + file);
+				} catch (final TrackStoreException e) {
 					Log.log(this, e, "loading info from " + file);
 				} finally {
 					if (din != null) {

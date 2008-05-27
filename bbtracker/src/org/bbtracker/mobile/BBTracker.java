@@ -33,7 +33,7 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.midlet.MIDletStateChangeException;
 import javax.microedition.rms.RecordStoreException;
 
-import org.bbtracker.mobile.TrackStore.TrackStoreException;
+import org.bbtracker.TrackStoreException;
 import org.bbtracker.mobile.gps.DummyLocationProvider;
 import org.bbtracker.mobile.gps.Jsr179LocationProvider;
 import org.bbtracker.mobile.gps.LocationException;

@@ -33,13 +33,13 @@ import javax.microedition.lcdui.TextField;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
+import org.bbtracker.TrackStoreException;
 import org.bbtracker.Utils;
 import org.bbtracker.mobile.BBTracker;
 import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackListener;
 import org.bbtracker.mobile.TrackManager;
-import org.bbtracker.mobile.TrackStore.TrackStoreException;
 
 public class MainCanvas extends Canvas implements TrackListener, CommandListener {
 	private static final int DEFAULT_STATUS_TIMEOUT = 5 * 1000;

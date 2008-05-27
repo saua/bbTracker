@@ -21,6 +21,7 @@ import java.util.Date;
 
 import org.bbtracker.Comparator;
 import org.bbtracker.Track;
+import org.bbtracker.TrackStoreException;
 
 public interface TrackStore {
 	public static final Comparator TSE_COMPARATOR = new Comparator() {
@@ -32,16 +33,6 @@ public interface TrackStore {
 	public TrackStoreEntry[] getEntries() throws TrackStoreException;
 
 	public void saveTrack(final Track track) throws TrackStoreException;
-
-	public static class TrackStoreException extends Exception {
-		public TrackStoreException(final Throwable t) {
-			super(t.toString());
-		}
-
-		public TrackStoreException(final String message) {
-			super(message);
-		}
-	}
 
 	public static abstract class TrackStoreEntry {
 		private final Date date;
