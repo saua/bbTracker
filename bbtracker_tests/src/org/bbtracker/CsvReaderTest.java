@@ -172,6 +172,13 @@ public class CsvReaderTest {
 		assertThat(reader.nextLine(), is(nullValue()));
 	}
 
+	@Test
+	public void quotedFieldWithSpace() throws IOException {
+		final CsvReader reader = newReader("foo, \"bar\", baz");
+		assertThat(reader.nextLine(), is(new String[] { "foo", "bar", " baz" }));
+		assertThat(reader.nextLine(), is(nullValue()));
+	}
+
 	@Test(expected = MalformedCsvException.class)
 	public void newlineWithCROnly() throws IOException {
 		newReader("foo\rbar").nextLine();

@@ -23,6 +23,11 @@ import java.util.Vector;
 
 /**
  * The CsvReader is used to read and parse a CSV stream according to RFC 4180.
+ * 
+ * It deviates from the RFC in that it allows a single space character between
+ * the previous comma (or beginning of the line) and the double-quote of a
+ * quoted field. This is done, because many CSV files seem to use that
+ * convention.
  */
 public class CsvReader {
 	private Reader reader;
@@ -52,7 +57,8 @@ public class CsvReader {
 			close();
 			throw e;
 		}
-		// reset newLine marker so that the final empty line doesn't return a new String[0]
+		// reset newLine marker so that the final empty line doesn't return a
+		// new String[0]
 		newLine = false;
 		if (v.isEmpty() && reader == null) {
 			return null;
@@ -70,7 +76,8 @@ public class CsvReader {
 			newLine = false;
 			return null;
 		}
-		// when the last nextField() call ended in a ',' then we return a String, even if it's empty
+		// when the last nextField() call ended in a ',' then we return a
+		// String, even if it's empty
 		boolean forceFieldEvenIfEmpty = afterComma;
 		afterComma = false;
 		boolean first = true;
@@ -98,15 +105,15 @@ public class CsvReader {
 							newLine = true;
 							done = true;
 						} else {
-							throw new MalformedCsvException("Uexpected CR without LF (followed by <" + ((char) c) +
-									">)");
+							throw new MalformedCsvException("Uexpected CR without LF (followed by <" + ((char) c)
+									+ ">)");
 						}
 					} else if (c == '"') {
 						buf.append('"');
 						c = reader.read();
 					} else {
-						throw new MalformedCsvException("Single quote followed by <" + ((char) c) +
-								"> inside quoted field!");
+						throw new MalformedCsvException("Single quote followed by <" + ((char) c)
+								+ "> inside quoted field!");
 					}
 				} else if (first) {
 					inQuotes = true;
@@ -144,12 +151,27 @@ public class CsvReader {
 					buf.append((char) c);
 					c = reader.read();
 				} else {
-					// we recognize a lone \n as a end-of-line, just as we do \r\n. Strictly speaking only the former is
+					// we recognize a lone \n as a end-of-line, just as we do
+					// \r\n. Strictly speaking only the former is
 					// RFC 4180 complaint
 					newLine = true;
 					done = true;
 				}
 				break;
+			case ' ':
+				if (first) {
+					c = reader.read();
+					if (c == '"') {
+						inQuotes = true;
+						c = reader.read();
+					} else {
+						buf.append(' ');
+						buf.append((char) c);
+						c = reader.read();
+					}
+					break;
+				}
+				// else fall through
 			default:
 				buf.append((char) c);
 				c = reader.read();
