@@ -114,6 +114,8 @@ public class Preferences {
 
 	private Font detailsFont;
 
+	private String mapDirectory;
+	
 	private String trackDirectory;
 
 	private String exportDirectory;
@@ -163,6 +165,10 @@ public class Preferences {
 		this.startAction = startAction;
 	}
 
+	public String getMapDirectory() {
+		return mapDirectory;
+	}
+	
 	public String getTrackDirectory() {
 		return trackDirectory;
 	}
@@ -179,6 +185,17 @@ public class Preferences {
 		}
 	}
 
+	public void setMapDirectory(final String mapDirectory) {
+		if (mapDirectory == null || mapDirectory.length() == 0) {
+			this.mapDirectory = null;
+		} else {
+			this.mapDirectory = mapDirectory;
+			if (!this.mapDirectory.endsWith("/")) {
+				this.mapDirectory += "/";
+			}
+		}
+	}
+	
 	public void setTrackDirectory(final String trackDirectory) {
 		if (trackDirectory == null || trackDirectory.length() == 0) {
 			this.trackDirectory = null;
@@ -361,6 +378,11 @@ public class Preferences {
 				} else {
 					exportDirectory = null;
 				}
+				if ((dirFlags & 4) != 0) {
+					mapDirectory = in.readUTF();
+				} else {
+					mapDirectory = null;
+				}
 				exportFormats = in.readInt();
 				units = in.readInt();
 				statusFontSize = in.readInt();
@@ -413,13 +435,18 @@ public class Preferences {
 			out.writeInt(sampleInterval);
 			out.writeInt(trackNumber);
 
-			final byte trackFlags = (byte) ((trackDirectory == null ? 0 : 1) | (exportDirectory == null ? 0 : 2));
+			final byte trackFlags = (byte) ((trackDirectory == null ? 0 : 1) 
+					| (exportDirectory == null ? 0 : 2)
+					| (mapDirectory == null ? 0 : 4));
 			out.writeByte(trackFlags);
 			if (trackDirectory != null) {
 				out.writeUTF(trackDirectory);
 			}
 			if (exportDirectory != null) {
 				out.writeUTF(exportDirectory);
+			}
+			if (mapDirectory != null) {
+				out.writeUTF(mapDirectory);
 			}
 			out.writeInt(exportFormats);
 			out.writeInt(units);

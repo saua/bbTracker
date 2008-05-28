@@ -32,7 +32,7 @@ public class IconManager {
 
 	private final int alertSizeIndex;
 
-	private static final Object NO_ICON = new Object();
+	private static final Image NO_ICON = Image.createImage(1,1);
 
 	private static IconManager instance;
 
@@ -98,8 +98,6 @@ public class IconManager {
 		if (icon == NO_ICON) {
 			if (sizeIndex > 0) {
 				icon = getImage(name, sizeIndex - 1);
-			} else {
-				icon = null;
 			}
 		}
 		return (Image) icon;

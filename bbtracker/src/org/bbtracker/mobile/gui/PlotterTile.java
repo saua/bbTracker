@@ -17,44 +17,21 @@
  */
 package org.bbtracker.mobile.gui;
 
-import java.util.Enumeration;
-
 import javax.microedition.lcdui.Graphics;
 
 import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
-import org.bbtracker.TrackSegment;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
 public abstract class PlotterTile extends Tile {
 	public static final int DEFAULT_MARGIN = 5;
 
-	private static final int LINK_COLOR = 0x00003300;
-
-	private static final int SEGMENT_LINK_COLOR = 0x00aaaaaa;
-
-	private static final int CURRENT_POINT_COLOR = 0x00444444;
-
-	private static final int WAYPOINT_COLOR = 0x00bb0000;
-
-	private static final int CURRENT_POINT_SIZE = 5;
-
-	private static final int WAYPOINT_OFFSET = 2;
-
-	private static final int WAYPOINT_SIZE = 4;
-
 	private final TrackManager manager;
-
-	private Track track;
 
 	private final AxisConfiguration xAxis = new AxisConfiguration();
 
 	private final AxisConfiguration yAxis = new AxisConfiguration();
-
-	private final DataProvider xData;
-
-	private final DataProvider yData;
 
 	private final boolean linkedScale;
 
@@ -66,13 +43,26 @@ public abstract class PlotterTile extends Tile {
 
 	private int marginBottom = DEFAULT_MARGIN;
 
+	private final DataProvider xData;
+
+	private final DataProvider yData;
+
+	private final TrackPlotter mainTrackPlotter;
+
+	private final TrackPlotter extraTrackPlotter;
+
 	public PlotterTile(final TrackManager manager, final DataProvider xData, final DataProvider yData,
 			final boolean linkedScale) {
 		this.manager = manager;
+		this.linkedScale = linkedScale;
 		this.xData = xData;
 		this.yData = yData;
-		this.linkedScale = linkedScale;
-		track = manager.getTrack();
+		mainTrackPlotter = new TrackPlotter();
+		mainTrackPlotter.setTrackColor(0);
+		extraTrackPlotter = new TrackPlotter();
+		extraTrackPlotter.setTrackColor(0x9090ff);
+		extraTrackPlotter.setTrackStyle(TrackPlotter.WIDE);
+		mainTrackPlotter.setTrack(manager.getTrack());
 		manager.addPointListener(this);
 		updateScale();
 	}
@@ -131,98 +121,26 @@ public abstract class PlotterTile extends Tile {
 			return;
 		}
 
+		doPaintBackground(g);
 		doPaintPlot(g);
 		doPaintAxis(g);
 	}
 
 	protected void doPaintPlot(final Graphics g) {
-		TrackPoint prevPoint = null;
+		extraTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
 
-		int prevX = -1;
-		int prevY = -1;
-		final Enumeration segments = track.getSegments();
-		while (segments.hasMoreElements()) {
-			final TrackSegment segment = (TrackSegment) segments.nextElement();
-			final Enumeration points = segment.getPoints();
-			boolean newSegment = true;
-			while (points.hasMoreElements()) {
-				final TrackPoint point = (TrackPoint) points.nextElement();
-				final double xValue = xData.getValue(point);
-				final double yValue = yData.getValue(point);
-				final int x = getMarginLeft() + xAxis.getPosition(xValue);
-				final int y = height - (getMarginBottom() + yAxis.getPosition(yValue));
-
-				paintConnection(g, prevPoint, prevX, prevY, point, x, y, newSegment);
-
-				prevPoint = point;
-				prevX = x;
-				prevY = y;
-				newSegment = false;
-			}
+		mainTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
+		final TrackPoint currentPoint = manager.getCurrentPoint();
+		if (currentPoint != null) {
+			mainTrackPlotter.paintCurrentPoint(g, currentPoint, xData, yData, xAxis, yAxis, getMarginLeft(),
+					getMarginTop(), height);
 		}
-		paintConnection(g, prevPoint, prevX, prevY, null, -1, -1, false);
+	}
+
+	protected void doPaintBackground(final Graphics g) {
 	}
 
 	protected abstract void doPaintAxis(final Graphics g);
-
-	/**
-	 * Draws a connection between two points. The first time this method is called for any given redraw operation
-	 * <code>point1</code> will be null (and <code>x1</code> and <code>y1</code> will be -1). The last time it is
-	 * called the same is true for <code>point2</code>, <code>x2</code> and <code>y2</code>.
-	 * 
-	 * This is so that every point will always occur once in position 1 and once in position 2.
-	 * 
-	 * @param g
-	 *            The Graphics object to draw on
-	 * @param point1
-	 *            the first point
-	 * @param x1
-	 *            the x-Coordinate of the first point on screen
-	 * @param y1
-	 *            the y-Coordinate of the first point on screen
-	 * @param point2
-	 *            the second point
-	 * @param x2
-	 *            the x-Coordinate of the second point on screen
-	 * @param y2
-	 *            the y-Coordinate of the second point on screen
-	 * @param newSegment
-	 *            <code>true</code> iff the two points are not in the same segment.
-	 */
-	protected void paintConnection(final Graphics g, final TrackPoint point1, final int x1, final int y1,
-			final TrackPoint point2, final int x2, final int y2, final boolean newSegment) {
-		if (point1 == null) {
-			return;
-		}
-
-		if (point2 != null) {
-			g.setColor(newSegment ? SEGMENT_LINK_COLOR : LINK_COLOR);
-			g.drawLine(x1, y1, x2, y2);
-		}
-
-		final String name = point1.getName();
-		if (name != null && name.length() > 0) {
-			paintWaypoint(g, x1, y1, point1);
-		}
-
-		if (point1 == manager.getCurrentPoint()) {
-			paintCurrentPoint(g, x1, y1, point1);
-		}
-
-	}
-
-	protected void paintCurrentPoint(final Graphics g, final int x, final int y, final TrackPoint p) {
-		g.setColor(CURRENT_POINT_COLOR);
-		g.drawLine(x, y - CURRENT_POINT_SIZE, x + CURRENT_POINT_SIZE, y);
-		g.drawLine(x + CURRENT_POINT_SIZE, y, x, y + CURRENT_POINT_SIZE);
-		g.drawLine(x, y + CURRENT_POINT_SIZE, x - CURRENT_POINT_SIZE, y);
-		g.drawLine(x - CURRENT_POINT_SIZE, y, x, y - CURRENT_POINT_SIZE);
-	}
-
-	protected void paintWaypoint(final Graphics g, final int x, final int y, final TrackPoint p) {
-		g.setColor(WAYPOINT_COLOR);
-		g.drawRect(x - WAYPOINT_OFFSET, y - WAYPOINT_OFFSET, WAYPOINT_SIZE, WAYPOINT_SIZE);
-	}
 
 	protected void doPaintNoScale(final Graphics g) {
 		g.setFont(Preferences.getInstance().getStatusFont());
@@ -234,15 +152,27 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	private void updateScale() {
-		if (track == null || track.getPointCount() == 0) {
-			xAxis.scale = Double.NaN;
-			yAxis.scale = Double.NaN;
-			return;
-		}
-		final boolean xChanged = xAxis.updateMinMax(xData, track);
-		final boolean yChanged = yAxis.updateMinMax(yData, track);
-		if (xChanged || yChanged) {
+		if (updateScale(mainTrackPlotter)) {
+			resetScale();
+			updateScale(mainTrackPlotter);
+			updateScale(extraTrackPlotter);
 			onScaleChanged();
+		}
+	}
+
+	private void resetScale() {
+		xAxis.resetMinMax();
+		yAxis.resetMinMax();
+	}
+
+	private boolean updateScale(final TrackPlotter plotter) {
+		final Track track = plotter.getTrack();
+		if (track != null && track.getLength() > 0) {
+			final boolean xChanged = xAxis.updateMinMax(xData, track);
+			final boolean yChanged = yAxis.updateMinMax(yData, track);
+			return xChanged || yChanged;
+		} else {
+			return false;
 		}
 	}
 
@@ -267,11 +197,26 @@ public abstract class PlotterTile extends Tile {
 		yAxis.calculateOffset(spaceY);
 	}
 
-	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
-		if (manager.getTrack() != track) {
-			track = manager.getTrack();
-			updateScale();
+	protected void onScaleChanged(final double scaleX, final double scaleY, final double centerX, final double centerY) {
+		if (!(xAxis.hasMinMax() && yAxis.hasMinMax())) {
+			xAxis.scale = Double.NaN;
+			yAxis.scale = Double.NaN;
+			return;
 		}
+
+		final int spaceX = width - (getMarginLeft() + getMarginRight());
+		final int spaceY = height - (getMarginTop() + getMarginBottom());
+
+		xAxis.scale = scaleX;
+		yAxis.scale = scaleY;
+
+		xAxis.calculateOffset(centerX, spaceX);
+		yAxis.calculateOffset(centerY, spaceY);
+	}
+
+	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
+		// What has this to do with current point change???
+		checkCurrentTrack();
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
@@ -279,10 +224,16 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void showNotify() {
-		if (manager.getTrack() != track) {
-			track = manager.getTrack();
+		checkCurrentTrack();
+	}
+
+	private void checkCurrentTrack() {
+		if (manager.getTrack() != mainTrackPlotter.getTrack()) {
+			extraTrackPlotter.setTrack(mainTrackPlotter.getTrack());
+			mainTrackPlotter.setTrack(manager.getTrack());
+			resetScale();
+			updateScale();
 		}
-		updateScale();
 	}
 
 	protected AxisConfiguration getXAxis() {
@@ -302,28 +253,36 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	protected static class AxisConfiguration {
-		double minValue = Double.NaN;
+		double minValue = Double.MAX_VALUE;
 
-		double maxValue = Double.NaN;
+		double maxValue = Double.MIN_VALUE;
 
 		double scale;
 
 		double offset;
 
 		boolean hasMinMax() {
-			return !(Double.isNaN(minValue) || Double.isNaN(maxValue));
+			return !(minValue > maxValue);
+		}
+
+		void resetMinMax() {
+			minValue = Double.MAX_VALUE;
+			maxValue = Double.MIN_VALUE;
 		}
 
 		boolean updateMinMax(final DataProvider data, final Track track) {
 			final double newMin = data.getMinValue(track);
 			final double newMax = data.getMaxValue(track);
-			if (newMin != minValue || newMax != maxValue) {
+			boolean update = false;
+			if (newMin < minValue) {
 				minValue = newMin;
-				maxValue = newMax;
-				return true;
-			} else {
-				return false;
+				update = true;
 			}
+			if (newMax > maxValue) {
+				maxValue = newMax;
+				update = true;
+			}
+			return update;
 		}
 
 		/**
@@ -332,7 +291,8 @@ public abstract class PlotterTile extends Tile {
 		 * @param space
 		 *            the number of display units available for this axis
 		 * @param smallDelta
-		 *            a "small delta" for the values on this axis, describes a minimum range.
+		 *            a "small delta" for the values on this axis, describes a
+		 *            minimum range.
 		 */
 		void calculateScale(final int space, final double smallDelta) {
 			double range = maxValue - minValue;
@@ -344,6 +304,10 @@ public abstract class PlotterTile extends Tile {
 
 		void calculateOffset(final int space) {
 			offset = ((maxValue + minValue) - (space * scale)) / 2;
+		}
+
+		void calculateOffset(final double value, final int space) {
+			offset = value - space * scale / 2;
 		}
 
 		int getPosition(final double value) {
