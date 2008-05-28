@@ -17,7 +17,9 @@
  */
 package org.bbtracker.mobile.gui;
 
+import java.io.IOException;
 import java.util.TimerTask;
+import java.util.Vector;
 
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -40,6 +42,7 @@ import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackListener;
 import org.bbtracker.mobile.TrackManager;
+import org.bbtracker.mobile.config.ConfigFile;
 
 public class MainCanvas extends Canvas implements TrackListener, CommandListener {
 	private static final int DEFAULT_STATUS_TIMEOUT = 5 * 1000;
@@ -50,7 +53,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private final TrackManager manager;
 
-	private final Tile trackTile;
+	private final TrackTile trackTile;
 
 	private final Tile elevationProfileTile;
 
@@ -91,15 +94,29 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 
 	private int tileConfiguration = 0;
 
+	private Vector mapBackgrounds = new Vector();
+
+	private static final int KEYBOARD_DEFAULT = 0;
+	
+	private static final int KEYBOARD_PAN = 1;
+	
+	private static final int KEYBOARD_ADJUST_MAP = 2;
+	
+	/** Current input mode. */
+	private int keyboardMode;
+	
 	public MainCanvas(final TrackManager manager) {
 		this.manager = manager;
 
 		trackTile = new TrackTile(manager);
+		trackTile.setMainCanvas(this);
 		elevationProfileTile = new ElevationPlotterTile(manager, DataProvider.TIME);
 		speedProfileTile = new SpeedPlotterTile(manager, DataProvider.TIME);
 		statusTile = new StatusTile(manager);
 		detailsTile = new DetailsTile(manager);
 
+		loadBackgrounds();
+		
 		switchViewCommand = new Command("Switch View", Command.SCREEN, 10);
 		markPointCommand = new Command("Mark current Point", Command.ITEM, 0);
 		newTrackCommand = new Command("Start Track", Command.SCREEN, 2);
@@ -124,6 +141,31 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		setCommandListener(this);
 
 		setMainTile(trackTile, true);
+	}
+
+	public void loadBackgrounds() {
+		String mapDirectory = Preferences.getInstance().getMapDirectory();
+		
+		mapBackgrounds = new Vector();
+		int count = 0;
+		if (mapDirectory != null) {
+			try {
+				Vector list = ConfigFile.openList("file:///" + mapDirectory + "list.txt");
+				
+				for (int i = 0; i < list.size(); i++) {
+					String name = (String) list.elementAt(i);
+					try {
+						mapBackgrounds.addElement(MapBackground.create(mapDirectory, mapDirectory + name));
+						++count;
+					} catch (IOException e) {
+						Log.log(this, e, "loadBackground: " + name);
+					}
+				}
+			} catch (IOException e) {
+				Log.log(this, e, "loadBackgrounds");
+			}
+		}
+		Log.log(this, count + " backgrounds found in " + mapDirectory); 
 	}
 
 	protected void setMainTile(final Tile mainTile, final boolean withStatus) {
@@ -464,9 +506,54 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		manager.continueTracking();
 		setStatusMessage("Continuing...");
 	}
-
+	
+	protected void keyRepeated(final int keyCode) {
+		keyReleased(keyCode);
+	}
+	
 	protected void keyReleased(final int keyCode) {
 		final int gameAction = getGameAction(keyCode);
+		switch (keyboardMode) {
+		case KEYBOARD_DEFAULT:
+			handleDefaultKey(keyCode, gameAction);
+			break;
+		case KEYBOARD_PAN:
+			// TODO;
+			break;
+		case KEYBOARD_ADJUST_MAP:
+			handleAdjustMap(keyCode, gameAction);
+			break;
+		default:
+			break;
+		}
+	}
+
+	private void handleAdjustMap(final int keyCode, final int gameAction) {
+		MapBackground mapBackground = trackTile.getMapBackground();
+		if (mapBackground == null) {
+			keyboardMode = KEYBOARD_DEFAULT;
+			return;
+		}
+		switch (gameAction) {
+		case LEFT:
+			mapBackground.adjustMapPosition(-1, 0);
+			break;
+		case RIGHT:
+			mapBackground.adjustMapPosition(1, 0);
+			break;
+		case DOWN:
+			mapBackground.adjustMapPosition(0, 1);
+			break;
+		case UP:
+			mapBackground.adjustMapPosition(0, -1);
+			break;
+		default:
+			mapBackground.saveConfiguration();
+			keyboardMode = KEYBOARD_DEFAULT;
+		}		
+	}
+	
+	private void handleDefaultKey(final int keyCode, final int gameAction) {
 		switch (keyCode) {
 		case ' ':
 		case '0':
@@ -486,6 +573,18 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		case '8':
 			markPointAction();
 			break;
+		case 'z':
+		case '3':
+			changeZoom(1);
+			break;
+		case 'h':
+		case '6':
+			changeZoom(-1);
+			break;
+		case 'a':
+		case '2':
+			keyboardMode = KEYBOARD_ADJUST_MAP;
+			break;
 		default:
 			switch (gameAction) {
 			case LEFT:
@@ -504,6 +603,29 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		}
 	}
 
+	private void changeZoom(int direction) {
+		MapBackground current = trackTile.getBackground();
+		int idx;
+		if (current == null) {
+			if (direction > 0) {
+				idx = -1;
+			} else {
+				idx = mapBackgrounds.size();
+			}
+		} else {
+			idx = mapBackgrounds.indexOf(current);
+		}
+		idx += direction;
+		MapBackground newBackground;
+		if (idx >= mapBackgrounds.size() || idx < 0) {
+			newBackground = null;
+		} else {
+			newBackground = (MapBackground) mapBackgrounds.elementAt(idx);
+		}
+		trackTile.setMapBackground(newBackground);
+		repaint();
+	}
+	
 	private class RepaintTask extends TimerTask {
 		public void run() {
 			MainCanvas.this.repaint();
