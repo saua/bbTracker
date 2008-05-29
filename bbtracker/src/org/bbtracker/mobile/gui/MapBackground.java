@@ -1076,7 +1076,7 @@ public final class MapBackground implements Runnable {
 	public void stop() {
 		stopLoadThread = true;
 		synchronized (tileLoadMutex) {
-			tileLoadQueue = null;
+			tileLoadQueue.removeAllElements();
 			tileLoadMutex.notify();
 		}
 		tileCache.clear();
