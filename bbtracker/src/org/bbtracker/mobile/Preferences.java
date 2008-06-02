@@ -24,7 +24,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import javax.microedition.lcdui.Font;
-import javax.microedition.rms.InvalidRecordIDException;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -34,9 +33,27 @@ import org.bbtracker.ImperialUnitConverter;
 import org.bbtracker.MetricUnitConverter;
 import org.bbtracker.NauticalUnitConverter;
 import org.bbtracker.UnitConverter;
+import org.bbtracker.mobile.config.ConfigFile;
 
 public class Preferences {
-	private static final String RECORD_STORE_NAME = "Preferences";
+
+	private static final String RECORD_STORE_NAME = "PreferencesV2";
+	private static final String OLD_RECORD_STORE_NAME = "Preferences";
+
+	private static final String CONFIGURATION_VERSION = "configurationVersion";
+
+	private static final String START_ACTION = "startAction";
+	private static final String SAMPLE_INTERVAL = "sampleInterval";
+	private static final String STRING = "units";
+	private static final String TRACK_DIRECTORY = "trackDirectory";
+	private static final String EXPORT_DIRECTORY = "exportDirectory";
+	private static final String MAP_DIRECTORY = "mapDirectory";
+	private static final String EXPORT_FORMATS_KEY = "exportFormats";
+	private static final String TRACK_NUMBER = "trackNumber";
+	private static final String BLUETOOTH_NAME = "bluetoothName";
+	private static final String BLUETOOTH_URL = "bluetoothUrl";
+	private static final String DETAILS_FONT_SIZE = "detailsFontSize";
+	private static final String STATUS_FONT_SIZE = "statusFontSize";
 
 	public static final int START_ACTION_SHOW_OPTIONS = -1;
 
@@ -85,56 +102,24 @@ public class Preferences {
 	public static synchronized Preferences getInstance() {
 		if (instance == null) {
 			instance = new Preferences();
-			try {
-				instance.load();
-			} catch (final RecordStoreException ignored) {
-				// ignore
-			}
+			instance.load();
 		}
 		return instance;
 	}
 
-	private int recordIndex = -1;
-
-	private int sampleInterval = 5;
-
-	private int startAction = DEFAULT_START_ACTION;
-
-	private int trackNumber = 1;
-
-	private int exportFormats = 0x03; // export format 0 and 1 are set
-
-	private int units = UNITS_METRIC;
-
-	private int statusFontSize = Font.SIZE_MEDIUM;
-
-	private Font statusFont;
-
-	private int detailsFontSize = Font.SIZE_MEDIUM;
-
-	private Font detailsFont;
-
-	private String mapDirectory;
-	
-	private String trackDirectory;
-
-	private String exportDirectory;
-
-	private String bluetoothUrl = "";
-
-	private String bluetoothName = "";
-
-	private UnitConverter unitConverter;
-
-	private int locationProvider = DEFAULT_LOCATION_PROVIDER;
-
 	private boolean newVersion = true;
+	private ConfigFile conf;
+
+	// cached values
+	private transient UnitConverter unitConverter;
+	private transient Font statusFont;
+	private transient Font detailsFont;
 
 	private Preferences() {
 	}
 
 	public int getLocationProvider() {
-		return locationProvider;
+		return conf.getInteger("locationProvider", DEFAULT_LOCATION_PROVIDER);
 	}
 
 	public void setLocationProvider(final int locationProvider) {
@@ -142,7 +127,7 @@ public class Preferences {
 		case LOCATION_BLUETOOTH:
 		case LOCATION_JSR179:
 		case LOCATION_NONE:
-			this.locationProvider = locationProvider;
+			conf.put("locationProvider", locationProvider);
 			break;
 		default:
 			throw new IllegalArgumentException("Illegal LocationProvider value: " + locationProvider);
@@ -150,104 +135,107 @@ public class Preferences {
 	}
 
 	public int getSampleInterval() {
-		return sampleInterval;
+		return conf.getInteger(SAMPLE_INTERVAL, 5);
 	}
 
 	public void setSampleInterval(final int sampleInterval) {
-		this.sampleInterval = sampleInterval;
+		conf.put(SAMPLE_INTERVAL, sampleInterval);
 	}
 
 	public int getStartAction() {
-		return startAction;
+		return conf.getInteger(START_ACTION, DEFAULT_START_ACTION);
 	}
 
 	public void setStartAction(final int startAction) {
-		this.startAction = startAction;
+		conf.put(START_ACTION, startAction);
 	}
 
 	public String getMapDirectory() {
-		return mapDirectory;
+		return conf.get(MAP_DIRECTORY);
 	}
-	
+
 	public String getTrackDirectory() {
-		return trackDirectory;
+		return conf.get(TRACK_DIRECTORY);
 	}
 
 	public String getExportDirectory() {
-		return exportDirectory;
+		return conf.get(EXPORT_DIRECTORY);
 	}
 
 	public String getEffectiveExportDirectory() {
-		if (exportDirectory != null) {
-			return exportDirectory;
-		} else {
-			return trackDirectory;
+		String dir = getExportDirectory();
+		if (dir == null) {
+			dir = getTrackDirectory();
 		}
+		return dir;
 	}
 
 	public void setMapDirectory(final String mapDirectory) {
-		if (mapDirectory == null || mapDirectory.length() == 0) {
-			this.mapDirectory = null;
-		} else {
-			this.mapDirectory = mapDirectory;
-			if (!this.mapDirectory.endsWith("/")) {
-				this.mapDirectory += "/";
-			}
-		}
+		setDir(MAP_DIRECTORY, mapDirectory);
 	}
-	
+
 	public void setTrackDirectory(final String trackDirectory) {
-		if (trackDirectory == null || trackDirectory.length() == 0) {
-			this.trackDirectory = null;
-		} else {
-			this.trackDirectory = trackDirectory;
-			if (!this.trackDirectory.endsWith("/")) {
-				this.trackDirectory += "/";
-			}
-		}
+		setDir(TRACK_DIRECTORY, trackDirectory);
 	}
 
 	public void setExportDirectory(final String exportDirectory) {
-		if (exportDirectory == null || exportDirectory.length() == 0) {
-			this.exportDirectory = null;
+		setDir(EXPORT_DIRECTORY, exportDirectory);
+	}
+
+	private void setDir(final String key, final String value) {
+		String dir;
+		if (value == null || value.length() == 0) {
+			dir = null;
 		} else {
-			this.exportDirectory = exportDirectory;
-			if (!this.exportDirectory.endsWith("/")) {
-				this.exportDirectory += "/";
+			dir = value;
+			if (!dir.endsWith("/")) {
+				dir += "/";
 			}
 		}
+		conf.put(key, dir);
 	}
 
 	public void setExportFormat(final int index, final boolean value) {
 		if (index >= EXPORT_FORMATS.length || index < 0) {
 			throw new IllegalArgumentException();
 		}
+		int f = getExportFormats();
 		if (value) {
-			exportFormats |= 1 << index;
+			f |= 1 << index;
 		} else {
-			exportFormats &= ~(1 << index);
+			f &= ~(1 << index);
 		}
+		setExportFormats(f);
 	}
 
 	public boolean getExportFormat(final int index) {
-		return (exportFormats & (1 << index)) != 0;
+		return (getExportFormats() & (1 << index)) != 0;
+	}
+
+	private int getExportFormats() {
+		// by default export format 0 and 1 are set
+		return conf.getInteger(EXPORT_FORMATS_KEY, 0x03);
+	}
+
+	private void setExportFormats(final int exportFormats) {
+		conf.put(EXPORT_FORMATS_KEY, exportFormats);
 	}
 
 	public int getUnits() {
-		return units;
+		return conf.getInteger(STRING, UNITS_METRIC);
 	}
 
 	public void setUnits(final int units) {
 		if (units != UNITS_METRIC && units != UNITS_IMPERIAL && units != UNITS_NAUTICAL) {
 			throw new IllegalArgumentException();
 		}
-		this.units = units;
+		conf.put(STRING, units);
 		unitConverter = null;
 	}
 
 	public UnitConverter getUnitsConverter() {
 		if (unitConverter == null) {
-			switch (units) {
+			switch (getUnits()) {
 			case UNITS_METRIC:
 				unitConverter = new MetricUnitConverter();
 				break;
@@ -265,151 +253,120 @@ public class Preferences {
 	}
 
 	public int getStatusFontSize() {
-		return statusFontSize;
+		return conf.getInteger(STATUS_FONT_SIZE, Font.SIZE_MEDIUM);
 	}
 
 	public void setStatusFontSize(final int statusFontSize) {
-		this.statusFontSize = statusFontSize;
+		conf.put(STATUS_FONT_SIZE, statusFontSize);
 		statusFont = null;
 	}
 
 	public Font getStatusFont() {
 		if (statusFont == null) {
-			statusFont = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, statusFontSize);
+			statusFont = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, getStatusFontSize());
 		}
 		return statusFont;
 	}
 
 	public int getDetailsFontSize() {
-		return detailsFontSize;
+		return conf.getInteger(DETAILS_FONT_SIZE, Font.SIZE_MEDIUM);
 	}
 
 	public void setDetailsFontSize(final int detailsFontSize) {
-		this.detailsFontSize = detailsFontSize;
+		conf.put(DETAILS_FONT_SIZE, detailsFontSize);
 		detailsFont = null;
 	}
 
 	public Font getDetailsFont() {
 		if (detailsFont == null) {
-			detailsFont = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, detailsFontSize);
+			detailsFont = Font.getFont(Font.FACE_MONOSPACE, Font.STYLE_PLAIN, getDetailsFontSize());
 		}
 		return detailsFont;
 	}
 
 	public String getBluetoothUrl() {
-		return bluetoothUrl;
+		return conf.get(BLUETOOTH_URL, "");
 	}
 
 	public void setBluetoothUrl(final String bluetoothUrl) {
-		if (bluetoothUrl == null) {
-			this.bluetoothUrl = "";
-		} else {
-			this.bluetoothUrl = bluetoothUrl;
-		}
+		conf.put(BLUETOOTH_URL, bluetoothUrl == null ? "" : bluetoothUrl);
 	}
 
 	public String getBluetoothName() {
-		return bluetoothName;
+		return conf.get(BLUETOOTH_NAME, "");
 	}
 
 	public void setBluetoothName(final String bluetoothName) {
-		if (bluetoothName == null) {
-			this.bluetoothName = "";
-		} else {
-			this.bluetoothName = bluetoothName;
-		}
+		conf.put(BLUETOOTH_NAME, bluetoothName == null ? "" : bluetoothName);
+	}
+
+	public int getTrackNumber() {
+		return conf.getInteger(TRACK_NUMBER, 1);
+	}
+
+	public void setTrackNumber(final int trackNumber) {
+		conf.put(TRACK_NUMBER, trackNumber);
 	}
 
 	public int getNextTrackNumber() {
-		return trackNumber++;
+		final int result = getTrackNumber() + 1;
+		setTrackNumber(result);
+		return result;
 	}
 
 	public boolean isNewVersion() {
 		return newVersion;
 	}
 
-	private void load() throws RecordStoreException {
+	private void load() {
+		if (!loadPreferences()) {
+			conf = ConfigFile.createEmtpyConfig();
+			loadOldPreferences();
+			newVersion = true;
+		}
+		if (newVersion) {
+			Log.log(this, "New bbTracker Version!");
+			setStartAction(START_ACTION_SHOW_OPTIONS);
+			conf.put(CONFIGURATION_VERSION, BBTracker.getVersion());
+		}
+	}
+
+	private boolean loadPreferences() {
+		final byte[] data = loadRecordStore(RECORD_STORE_NAME);
+		if (data == null) {
+			Log.log(this, "No preferences Record Store found.");
+			return false;
+		}
+		try {
+			Log.log(this, "Loading preferences from Record Store.");
+			conf = ConfigFile.openConfig(new ByteArrayInputStream(data));
+			final String s = conf.get(CONFIGURATION_VERSION);
+			newVersion = !BBTracker.getVersion().equals(s);
+			return true;
+		} catch (final IOException e) {
+			Log.log(this, e, "loading preferences");
+			return false;
+		}
+	}
+
+	private byte[] loadRecordStore(final String rsName) {
 		RecordStore rs = null;
 		try {
-			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, false);
+			rs = RecordStore.openRecordStore(rsName, false);
 
-			final byte[] data;
-			if (recordIndex != -1) {
-				data = rs.getRecord(recordIndex);
-			} else {
-				final RecordEnumeration enumerateRecords = rs.enumerateRecords(null, null, false);
-				if (enumerateRecords.hasNextElement()) {
-					data = enumerateRecords.nextRecord();
-					enumerateRecords.destroy();
-				} else {
-					enumerateRecords.destroy();
-					return;
-				}
+			byte[] data = null;
+			;
+			final RecordEnumeration enumerateRecords = rs.enumerateRecords(null, null, false);
+			if (enumerateRecords.hasNextElement()) {
+				data = enumerateRecords.nextRecord();
 			}
-
-			final DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
-
-			try {
-				short s = in.readShort();
-				if (s == -1) {
-					// new options format begins with -1 followed by string containing version that saved the options
-					final String version = in.readUTF();
-					if (!version.equals(BBTracker.getVersion())) {
-						newVersion = true;
-					} else {
-						newVersion = false;
-					}
-					s = in.readShort();
-				} else {
-					// old options format began with startAction
-					newVersion = true;
-				}
-				startAction = s;
-				sampleInterval = in.readInt();
-				trackNumber = in.readInt();
-				final byte dirFlags = in.readByte();
-				if ((dirFlags & 1) != 0) {
-					trackDirectory = in.readUTF();
-				} else {
-					trackDirectory = null;
-				}
-				if ((dirFlags & 2) != 0) {
-					exportDirectory = in.readUTF();
-				} else {
-					exportDirectory = null;
-				}
-				if ((dirFlags & 4) != 0) {
-					mapDirectory = in.readUTF();
-				} else {
-					mapDirectory = null;
-				}
-				exportFormats = in.readInt();
-				units = in.readInt();
-				statusFontSize = in.readInt();
-				detailsFontSize = in.readInt();
-				locationProvider = in.readInt();
-				bluetoothUrl = in.readUTF();
-				bluetoothName = in.readUTF();
-			} finally {
-				try {
-					in.close();
-				} catch (final IOException ignored) {
-					// ignore
-				}
-			}
-
+			enumerateRecords.destroy();
+			return data;
 		} catch (final RecordStoreNotFoundException e) {
-			// ignore, don't load anything, but show options screen
-			Log.log(this, e);
-			startAction = START_ACTION_SHOW_OPTIONS;
-		} catch (final InvalidRecordIDException e) {
-			// ignore, don't load anything, but show options screen
-			Log.log(this, e);
-			startAction = START_ACTION_SHOW_OPTIONS;
-		} catch (final IOException e) {
-			Log.log(this, e);
-			startAction = START_ACTION_SHOW_OPTIONS;
-			throw new RecordStoreException(e.getMessage());
+			return null;
+		} catch (final RecordStoreException e) {
+			Log.log(this, e, "loading RecordStore " + rsName);
+			return null;
 		} finally {
 			if (rs != null) {
 				try {
@@ -421,57 +378,70 @@ public class Preferences {
 		}
 	}
 
+	private void loadOldPreferences() {
+		final byte[] data = loadRecordStore(OLD_RECORD_STORE_NAME);
+		if (data == null) {
+			Log.log(this, "No old Preferences Record Store found!");
+		}
+
+		Log.log(this, "Loading old Preferences from Record store.");
+		final DataInputStream in = new DataInputStream(new ByteArrayInputStream(data));
+		try {
+			short s = in.readShort();
+			if (s == -1) {
+				// new options format begins with -1 followed by string
+				// containing version that saved the options
+				in.readUTF();
+				s = in.readShort();
+				// old options format began with startAction
+			}
+			setSampleInterval(in.readInt());
+			setTrackNumber(in.readInt());
+			final byte dirFlags = in.readByte();
+			if ((dirFlags & 1) != 0) {
+				setTrackDirectory(in.readUTF());
+			}
+			if ((dirFlags & 2) != 0) {
+				setExportDirectory(in.readUTF());
+			}
+			if ((dirFlags & 4) != 0) {
+				setMapDirectory(in.readUTF());
+			}
+			setExportFormats(in.readInt());
+			setUnits(in.readInt());
+			setStatusFontSize(in.readInt());
+			setDetailsFontSize(in.readInt());
+			setLocationProvider(in.readInt());
+			setBluetoothUrl(in.readUTF());
+			setBluetoothName(in.readUTF());
+		} catch (final IOException e) {
+			Log.log(this, e, "loading old preferences");
+		} finally {
+			try {
+				in.close();
+			} catch (final IOException ignored) {
+				// ignore
+			}
+		}
+	}
+
 	public void store() throws RecordStoreException {
 		RecordStore rs = null;
 		try {
-			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
-
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			final DataOutputStream out = new DataOutputStream(baos);
-
-			out.writeShort(-1);
-			out.writeUTF(BBTracker.getVersion());
-			out.writeShort(startAction);
-			out.writeInt(sampleInterval);
-			out.writeInt(trackNumber);
-
-			final byte trackFlags = (byte) ((trackDirectory == null ? 0 : 1) 
-					| (exportDirectory == null ? 0 : 2)
-					| (mapDirectory == null ? 0 : 4));
-			out.writeByte(trackFlags);
-			if (trackDirectory != null) {
-				out.writeUTF(trackDirectory);
-			}
-			if (exportDirectory != null) {
-				out.writeUTF(exportDirectory);
-			}
-			if (mapDirectory != null) {
-				out.writeUTF(mapDirectory);
-			}
-			out.writeInt(exportFormats);
-			out.writeInt(units);
-			out.writeInt(statusFontSize);
-			out.writeInt(detailsFontSize);
-
-			out.writeInt(locationProvider);
-			out.writeUTF(bluetoothUrl);
-			out.writeUTF(bluetoothName);
-
-			out.close();
+			conf.saveConfig(out);
 			final byte[] data = baos.toByteArray();
 
-			if (recordIndex != -1) {
+			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
+			final RecordEnumeration enumerateRecords = rs.enumerateRecords(null, null, false);
+			if (enumerateRecords.hasNextElement()) {
+				final int recordIndex = enumerateRecords.nextRecordId();
 				rs.setRecord(recordIndex, data, 0, data.length);
 			} else {
-				final RecordEnumeration enumerateRecords = rs.enumerateRecords(null, null, false);
-				if (enumerateRecords.hasNextElement()) {
-					recordIndex = enumerateRecords.nextRecordId();
-					rs.setRecord(recordIndex, data, 0, data.length);
-				} else {
-					recordIndex = rs.addRecord(data, 0, data.length);
-				}
-				enumerateRecords.destroy();
+				rs.addRecord(data, 0, data.length);
 			}
+			enumerateRecords.destroy();
 		} catch (final IOException e) {
 			throw new RecordStoreException(e.getMessage());
 		} finally {
