@@ -34,25 +34,30 @@ public class TrackTile extends PlotterTile {
 	private ScaleConfiguration scaleConfiguration;
 
 	private TrackPoint currentPoint;
-	
+
 	private MapBackground mapBackground;
 
 	private MainCanvas mainCanvas;
-	
+
+	/** Pan offset of the map in longitude. */
+	private double panLong;
+
+	/** Pan offset of the map in latitude. */
+	private double panLatitude;
+
 	public TrackTile(final TrackManager manager) {
 		super(manager, DataProvider.LONGITUDE, DataProvider.LATITUDE, true);
 	}
 
 	protected void onScaleChanged() {
 		if (mapBackground != null && currentPoint != null) {
-			double latitude = DataProvider.LATITUDE.getValue(currentPoint);
-			super.onScaleChanged(mapBackground.getScaleX(), mapBackground.getScaleY(latitude), 
-					DataProvider.LONGITUDE.getValue(currentPoint),
-					latitude);
+			final double latitude = DataProvider.LATITUDE.getValue(currentPoint) + panLatitude;
+			final double longitude = DataProvider.LONGITUDE.getValue(currentPoint) + panLong;
+			super.onScaleChanged(mapBackground.getScaleX(), mapBackground.getScaleY(latitude), longitude, latitude);
 		} else {
 			super.onScaleChanged();
 		}
-		
+
 		final double widthInMeter = Utils.distance(getYAxis().minValue, getXAxis().maxValue, getYAxis().maxValue,
 				getXAxis().maxValue);
 		if (widthInMeter < 1) {
@@ -87,13 +92,12 @@ public class TrackTile extends PlotterTile {
 			} else if (location == 1) {
 				label += " " + scaleConfiguration.unit;
 			}
-			g.drawString(label, left + (int) (scaleSizeInPixel * location), textBottom, Graphics.BOTTOM |
-					Graphics.HCENTER);
+			g.drawString(label, left + (int) (scaleSizeInPixel * location), textBottom, Graphics.BOTTOM
+					| Graphics.HCENTER);
 		}
 		g.drawRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel, SCALE_HEIGTH);
 		g.fillRect(left, height - 2 - SCALE_HEIGTH, scaleSizeInPixel / 2, SCALE_HEIGTH);
 	}
-	
 
 	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
 		super.currentPointChanged(newPoint, newIndex);
@@ -108,14 +112,14 @@ public class TrackTile extends PlotterTile {
 
 	protected void doPaintBackground(final Graphics g) {
 		if (mapBackground != null) {
-			mapBackground.paint(g, 
-					DataProvider.LONGITUDE.getValue(currentPoint),
-					DataProvider.LATITUDE.getValue(currentPoint),
-					(width - getMarginLeft() - getMarginRight())/ 2 + getMarginLeft(),
-					(height - getMarginTop() - getMarginBottom()) / 2 + getMarginTop());
+			mapBackground.paint(g, DataProvider.LONGITUDE.getValue(currentPoint) + panLong, DataProvider.LATITUDE
+					.getValue(currentPoint)
+					+ panLatitude, (width - getMarginLeft() - getMarginRight()) / 2 + getMarginLeft(), (height
+					- getMarginTop() - getMarginBottom())
+					/ 2 + getMarginTop());
 		}
 	}
-	
+
 	public void setMapBackground(final MapBackground background) {
 		if (mapBackground != null) {
 			mapBackground.stop();
@@ -127,17 +131,38 @@ public class TrackTile extends PlotterTile {
 		mapBackground = background;
 		onScaleChanged();
 	}
-	
+
 	public MapBackground getBackground() {
 		return mapBackground;
 	}
 
 	public void setMainCanvas(final MainCanvas canvas) {
-		this.mainCanvas = canvas;
+		mainCanvas = canvas;
 	}
-	
 
 	public MapBackground getMapBackground() {
 		return mapBackground;
+	}
+
+	/**
+	 * Pan.
+	 * 
+	 * @param dx
+	 *            position delta in pixels
+	 * @param dy
+	 *            position delta in pixels
+	 */
+	public void panPosition(final int dx, final int dy) {
+		panLong += dx * getXAxis().scale;
+		panLatitude -= dy * getYAxis().scale;
+	}
+
+	/**
+	 * Reset pan.
+	 * 
+	 */
+	public void resetMapPan() {
+		panLong = 0;
+		panLatitude = 0;
 	}
 }
