@@ -27,8 +27,6 @@ import org.bbtracker.TrackSegment;
 import org.bbtracker.mobile.gui.PlotterTile.AxisConfiguration;
 
 public class TrackPlotter {
-	private Track track;
-
 	/** Track style. */
 	public static final int SINGLE = 0;
 
@@ -58,11 +56,7 @@ public class TrackPlotter {
 
 	public void paint(final Graphics g, final DataProvider xData, final DataProvider yData,
 			final AxisConfiguration xAxis, final AxisConfiguration yAxis, final int offsetX, final int offsetY,
-			final int height) {
-		if (track == null) {
-			return;
-		}
-
+			final int height, final Track track) {
 		TrackPoint prevPoint = null;
 
 		int prevX = -1;
@@ -128,8 +122,8 @@ public class TrackPlotter {
 			g.setColor(newSegment ? trackSegmentColor : trackColor);
 			g.drawLine(x1, y1, x2, y2);
 			if (trackStyle == WIDE) {
-				g.drawLine(x1 + 1, y1 + 1, x2 - 1, y2 - 1);
-				g.drawLine(x1 - 1, y1 - 1, x2 + 1, y2 + 1);
+				g.drawLine(x1, y1 + 1, x2, y2 + 1);
+				g.drawLine(x1 + 1, y1, x2 + 1, y2);
 			}
 		}
 
@@ -156,14 +150,6 @@ public class TrackPlotter {
 		g.drawLine(x1 + CURRENT_POINT_SIZE, y1, x1, y1 + CURRENT_POINT_SIZE);
 		g.drawLine(x1, y1 + CURRENT_POINT_SIZE, x1 - CURRENT_POINT_SIZE, y1);
 		g.drawLine(x1 - CURRENT_POINT_SIZE, y1, x1, y1 - CURRENT_POINT_SIZE);
-	}
-
-	public Track getTrack() {
-		return track;
-	}
-
-	public void setTrack(final Track track) {
-		this.track = track;
 	}
 
 	public void setTrackColor(final int color) {

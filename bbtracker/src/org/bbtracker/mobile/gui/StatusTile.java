@@ -24,50 +24,47 @@ import org.bbtracker.Track;
 import org.bbtracker.TrackPoint;
 import org.bbtracker.UnitConverter;
 import org.bbtracker.Utils;
-import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackManager;
 
 public class StatusTile extends Tile {
-
-	/*
-	 * The MAX_* constants represent the string values that each field can take that take up the maximum amount of
-	 * horizontal space.
-	 */
-	private static final String MAX_DEGREE_STRING = "99" + Utils.DEGREE + "99" + Utils.MINUTE + "99.99" + Utils.SECOND +
-			"W";
-
-	private static final String MAX_COURSE_STRING = "359" + Utils.DEGREE + " NW";
-
-	private static final String MAX_SPEED_STRING = "999.9km/h";
-
-	private static final String MAX_ELEVATION_STRING = "9999m";
-
-	private static final String MAX_LENGTH_STRING = "9999.9km";
-
-	private static final String MAX_POINT_STRING = "9999/9999";
-
-	private static final String MAX_TIME_STRING = "99:99:99";
-
-	private static final int MARGIN = 2;
-
-	private static final int MINIMAL_GAP = 5;
+	private static final int ONE_KILOMETER = 1000;
 
 	private final TrackManager manager;
 
-	private int latWidth;
+	/** Widget. */
+	private final MiniWidget widgetLatitude = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetLongitude = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetSpeed = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetHeartRate = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetDistance = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetElevation = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetOrientation = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetOrientationArrow = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetTime = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetPointIndex = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetAverageTotal = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetAverageLastKm = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetInclinationInstant = new MiniWidget();
+	/** Widget. */
+	private final MiniWidget widgetInclinationLastKm = new MiniWidget();
 
-	private int courseWidth;
-
-	private int speedWidth;
-
-	private int elevationWidth;
-
-	private int lengthWidth;
-
-	private int pointWidth;
-
-	private int timeWidth;
+	private final MiniWidget[] allWidgets = new MiniWidget[] { widgetLatitude, widgetLongitude, widgetSpeed,
+			widgetHeartRate, widgetDistance, widgetElevation, widgetOrientation, widgetOrientationArrow, widgetTime,
+			widgetPointIndex, widgetAverageLastKm, widgetAverageTotal, widgetInclinationInstant,
+			widgetInclinationLastKm };
 
 	public StatusTile(final TrackManager manager) {
 		this.manager = manager;
@@ -75,33 +72,56 @@ public class StatusTile extends Tile {
 	}
 
 	private void setFont(final Font font) {
-		latWidth = font.stringWidth(MAX_DEGREE_STRING);
-		courseWidth = font.stringWidth(MAX_COURSE_STRING);
-		speedWidth = font.stringWidth(MAX_SPEED_STRING);
-		elevationWidth = font.stringWidth(MAX_ELEVATION_STRING);
-		lengthWidth = font.stringWidth(MAX_LENGTH_STRING);
-		pointWidth = font.stringWidth(MAX_POINT_STRING);
-		timeWidth = font.stringWidth(MAX_TIME_STRING);
+		for (int i = 0; i < allWidgets.length; i++) {
+			allWidgets[i].setFont(font);
+		}
 	}
 
 	protected void onResize() {
 		getPreferredHeight(width);
 	}
 
-	protected boolean fitsLayout(final int width) {
-		return width >= (MARGIN + latWidth) * 2 + MINIMAL_GAP;
+	private int layout(final int width) {
+		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
+
+		widgetLatitude.setDimensionsForString(unit.getCoordinateTemplate());
+		widgetLongitude.setDimensionsForString(unit.getCoordinateTemplate());
+		widgetSpeed.setDimensionsForString(unit.getSpeedTemplate());
+		widgetHeartRate.setDimensionsForString(unit.getHeartRateTemplate());
+		widgetDistance.setDimensionsForString(unit.getDistanceTemplate());
+		widgetElevation.setDimensionsForString(unit.getElevationTemplate());
+		widgetSpeed.setDimensionsForString(unit.getSpeedTemplate());
+		widgetOrientation.setDimensionsForString("99X XX");
+		widgetPointIndex.setDimensionsForString("9999/9999");
+		widgetTime.setDimensionsForString("9:99:99");
+		widgetOrientationArrow.setOrientationWidth();
+		widgetAverageLastKm.setDimensionsForString(unit.getSpeedTemplate());
+		widgetAverageTotal.setDimensionsForString(unit.getSpeedTemplate());
+		widgetInclinationInstant.setDimensionsForString(Utils.getInclinationTemplate());
+		widgetInclinationLastKm.setDimensionsForString(Utils.getInclinationTemplate());
+
+		// TODO: Do customization through preferences
+		final WidgetLayouter layouter = new WidgetLayouter();
+		layouter.setTopToBottom(true);
+		layouter.setY(0);
+		layouter.setWidth(width);
+		// notused:
+		layouter.addLine(new Widget[] { widgetLatitude, widgetLongitude });
+		layouter.addLine(new Widget[] { widgetSpeed, widgetOrientationArrow, widgetElevation, widgetHeartRate,
+				widgetInclinationLastKm });
+		layouter.addLine(new Widget[] { widgetTime, widgetDistance, widgetPointIndex, widgetAverageTotal });
+		// layouter.addLine(new Widget[] { widgetAverageTotal,
+		// widgetAverageLastKm, widgetInclinationLastKm,
+		// widgetInclinationInstant, });
+
+		return layouter.getY();
 	}
 
-	protected void doPaint(final Graphics g) {
+	private void update() {
 		final Track track = manager.getTrack();
 		final TrackPoint p = manager.getCurrentPoint();
 		final int pi = manager.getCurrentPointIndex();
-
-		final Font font = Preferences.getInstance().getStatusFont();
-		g.setColor(0x00ffffff);
-		g.fillRect(0, 0, width, height);
-		g.setColor(0x00000000);
-		g.setFont(font);
+		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
 
 		final String point;
 		if (pi == -1) {
@@ -114,6 +134,7 @@ public class StatusTile extends Tile {
 		float speedValue = Float.NaN;
 		float courseValue = Float.NaN;
 		float elevationValue = Float.NaN;
+		int heartRate = manager.getHeartRateProvider().getHeartRate();
 		double lengthValue = Double.NaN;
 		long timeValue = -1;
 		if (p != null) {
@@ -122,59 +143,75 @@ public class StatusTile extends Tile {
 			speedValue = p.getSpeed();
 			courseValue = p.getCourse();
 			elevationValue = p.getElevation();
+			heartRate = p.getHeartRate();
 			if (track != null) {
 				timeValue = track.getPointOffset(p);
 				lengthValue = p.getDistance();
 			}
 		}
+		TrackPoint lastP = null;
+		TrackPoint lastKmP = null;
+		if (track != null) {
+			try {
+				lastP = track.getPoint(pi - 1);
+				for (int i = pi - 1; i > 0; i--) {
+					lastKmP = track.getPoint(i);
+					if (lengthValue - lastKmP.getDistance() >= ONE_KILOMETER) {
+						break;
+					}
+				}
+			} catch (final IndexOutOfBoundsException e) {
+				// ignore
+			}
+		}
+		final StringBuffer speedBuffer = new StringBuffer();
+		if (timeValue > 0 && lengthValue > 0) {
+			speedBuffer.append(" (avg:");
+			speedBuffer.append(unit.speedToString(timeValue, lengthValue));
+			speedBuffer.append(")");
+		}
+		widgetInclinationInstant.setText(Utils.inclinationToString(getInclination(elevationValue, lengthValue, lastP)));
+		widgetInclinationLastKm
+				.setText(Utils.inclinationToString(getInclination(elevationValue, lengthValue, lastKmP)));
+		String speedLastKm;
+		if (lastKmP != null) {
+			speedLastKm = unit.speedToString(timeValue - track.getPointOffset(lastKmP), lengthValue
+					- lastKmP.getDistance());
+		} else {
+			speedLastKm = "-km/h";
+		}
+		widgetAverageLastKm.setText(speedLastKm);
+		widgetAverageTotal.setText(unit.speedToString(timeValue, lengthValue));
+		widgetLongitude.setText(Utils.longitudeToString(lonValue));
+		widgetLatitude.setText(Utils.latitudeToString(latValue));
+		widgetOrientation.setText(Utils.courseToString(courseValue) + " " + Utils.courseToHeadingString(courseValue));
+		widgetOrientationArrow.setOrientation((int) courseValue);
 
-		final String lon = Utils.longitudeToString(lonValue);
-		final String lat = Utils.latitudeToString(latValue);
-		final String course = Utils.courseToString(courseValue) + " " + Utils.courseToHeadingString(courseValue);
+		widgetSpeed.setText(unit.speedToString(speedValue));
+		widgetHeartRate.setText(Utils.heartRateToString(heartRate));
+		widgetElevation.setText(unit.elevationToString(elevationValue));
+		widgetDistance.setText(unit.distanceToString(lengthValue));
+		widgetTime.setText(timeValue == -1 ? "-" : Utils.durationToString(timeValue));
+		widgetPointIndex.setText(point);
+	}
 
-		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
-		final String speed = unit.speedToString(speedValue);
-		final String elevation = unit.elevationToString(elevationValue);
-		final String length = unit.distanceToString(lengthValue);
-		final String time = timeValue == -1 ? "-" : Utils.durationToString(timeValue);
+	private double getInclination(final float elevationValue, final double lengthValue, final TrackPoint lastP) {
+		if (lastP != null) {
+			return (elevationValue - lastP.getElevation()) / (lengthValue - lastP.getDistance());
+		} else {
+			return Double.NaN;
+		}
+	}
 
-		final int line1 = MARGIN;
-		final int line2 = line1 + font.getHeight();
-		final int line3 = line2 + font.getHeight();
+	protected void doPaint(final Graphics g) {
+		g.setColor(0x00ffffff);
+		g.fillRect(0, 0, width, height);
 
-		final int right = width - MARGIN;
-		int x;
-		int gapWidth;
+		update();
 
-		// the space available for text
-		final int availableWidth = width - 2 * MARGIN;
-		final int topRight = Graphics.TOP | Graphics.RIGHT;
-
-		// longitude / latitude
-		x = width / 2;
-		g.drawString(lon, x, line1, topRight);
-		x = right;
-		g.drawString(lat, x, line1, topRight);
-
-		gapWidth = (availableWidth - (speedWidth + elevationWidth + courseWidth)) / 3;
-
-		// speed / course / elevation
-		x = MARGIN + speedWidth + gapWidth;
-		g.drawString(speed, x, line2, topRight);
-		x += courseWidth + gapWidth;
-		g.drawString(course, x, line2, topRight);
-		x = right;
-		g.drawString(elevation, x, line2, topRight);
-
-		gapWidth = (availableWidth - (timeWidth + lengthWidth + pointWidth)) / 3;
-
-		// track length / point number
-		x = MARGIN + timeWidth + gapWidth;
-		g.drawString(time, x, line3, topRight);
-		x += lengthWidth + gapWidth;
-		g.drawString(length, x, line3, topRight);
-		x = right;
-		g.drawString(point, x, line3, topRight);
+		for (int i = 0; i < allWidgets.length; i++) {
+			allWidgets[i].paint(g);
+		}
 	}
 
 	public void showNotify() {
@@ -184,16 +221,7 @@ public class StatusTile extends Tile {
 	public int getPreferredHeight(final int width) {
 		final Preferences pref = Preferences.getInstance();
 		setFont(pref.getStatusFont());
-		if (!fitsLayout(width)) {
-			Log.log(this, "getPreferredHeight: Setting Font size to medium, because layout doesn't fit!");
-			pref.setStatusFontSize(Font.SIZE_MEDIUM);
-			setFont(pref.getStatusFont());
-			if (!fitsLayout(width)) {
-				Log.log(this, "getPreferredHeight: Setting Font size to small, because layout still doesn't fit!");
-				pref.setStatusFontSize(Font.SIZE_SMALL);
-				setFont(pref.getStatusFont());
-			}
-		}
-		return MARGIN + pref.getStatusFont().getHeight() * 3 + MARGIN;
+
+		return layout(width);
 	}
 }

@@ -60,9 +60,8 @@ public abstract class PlotterTile extends Tile {
 		mainTrackPlotter = new TrackPlotter();
 		mainTrackPlotter.setTrackColor(0);
 		extraTrackPlotter = new TrackPlotter();
-		extraTrackPlotter.setTrackColor(0x9090ff);
+		extraTrackPlotter.setTrackColor(0x801010);
 		extraTrackPlotter.setTrackStyle(TrackPlotter.WIDE);
-		mainTrackPlotter.setTrack(manager.getTrack());
 		manager.addPointListener(this);
 		updateScale();
 	}
@@ -127,9 +126,12 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	protected void doPaintPlot(final Graphics g) {
-		extraTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
-
-		mainTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height);
+		final Track extraTrack = manager.getExtraTrack();
+		if (extraTrack != null) {
+			extraTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height, extraTrack);
+		}
+		mainTrackPlotter.paint(g, xData, yData, xAxis, yAxis, getMarginLeft(), getMarginTop(), height, manager
+				.getTrack());
 		final TrackPoint currentPoint = manager.getCurrentPoint();
 		if (currentPoint != null) {
 			mainTrackPlotter.paintCurrentPoint(g, currentPoint, xData, yData, xAxis, yAxis, getMarginLeft(),
@@ -152,10 +154,11 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	private void updateScale() {
-		if (updateScale(mainTrackPlotter)) {
+		final Track track = manager.getTrack();
+		if (track != null) {
 			resetScale();
-			updateScale(mainTrackPlotter);
-			updateScale(extraTrackPlotter);
+			updateScale(track);
+			updateScale(manager.getExtraTrack());
 			onScaleChanged();
 		}
 	}
@@ -165,8 +168,11 @@ public abstract class PlotterTile extends Tile {
 		yAxis.resetMinMax();
 	}
 
-	private boolean updateScale(final TrackPlotter plotter) {
-		final Track track = plotter.getTrack();
+	public void stateChanged(final int newState) {
+		updateScale();
+	}
+
+	private boolean updateScale(final Track track) {
 		if (track != null && track.getLength() > 0) {
 			final boolean xChanged = xAxis.updateMinMax(xData, track);
 			final boolean yChanged = yAxis.updateMinMax(yData, track);
@@ -215,25 +221,12 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
-		// What has this to do with current point change???
-		checkCurrentTrack();
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
-		updateScale();
 	}
 
 	public void showNotify() {
-		checkCurrentTrack();
-	}
-
-	private void checkCurrentTrack() {
-		if (manager.getTrack() != mainTrackPlotter.getTrack()) {
-			extraTrackPlotter.setTrack(mainTrackPlotter.getTrack());
-			mainTrackPlotter.setTrack(manager.getTrack());
-			resetScale();
-			updateScale();
-		}
 	}
 
 	protected AxisConfiguration getXAxis() {
