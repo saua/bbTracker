@@ -99,6 +99,7 @@ public class DetailsTile extends Tile {
 		double lonValue = Double.NaN;
 		double latValue = Double.NaN;
 		float speedValue = Float.NaN;
+		long timeOffsetValue = 0;
 		float courseValue = Float.NaN;
 		float elevationValue = Float.NaN;
 		double lengthValue = Double.NaN;
@@ -117,8 +118,8 @@ public class DetailsTile extends Tile {
 		if (track != null) {
 			if (p != null) {
 				lengthValue = p.getDistance();
-				final long offset = track.getPointOffset(p);
-				time = Utils.durationToString(offset) + " (" + pointTime + ")";
+				timeOffsetValue = track.getPointOffset(p);
+				time = Utils.durationToString(timeOffsetValue) + " (" + pointTime + ")";
 			}
 		} else if (p != null) {
 			time = pointTime;
@@ -149,7 +150,14 @@ public class DetailsTile extends Tile {
 		final String course = Utils.courseToHeadingString(courseValue) + " (" + Utils.courseToString(courseValue) + ")";
 
 		final UnitConverter unit = Preferences.getInstance().getUnitsConverter();
-		final String speed = unit.speedToString(speedValue);
+		final StringBuffer speedBuffer = new StringBuffer();
+		speedBuffer.append(unit.speedToString(speedValue));
+		if (timeOffsetValue > 0 && lengthValue > 0) {
+			speedBuffer.append(" (avg:");
+			speedBuffer.append(unit.speedToString(timeOffsetValue, lengthValue));
+			speedBuffer.append(")");
+		}
+
 		final String elevation = unit.elevationToString(elevationValue);
 		final String length = unit.distanceToString(lengthValue);
 		final String satellites = satellitesValue > 0 ? String.valueOf(satellitesValue) : "-";
@@ -165,7 +173,7 @@ public class DetailsTile extends Tile {
 		g.drawString(point, x, y, Graphics.TOP | Graphics.LEFT);
 		y += fontHeight;
 		g.drawString(SPEED_LABEL, MARGIN, y, Graphics.TOP | Graphics.LEFT);
-		g.drawString(speed, x, y, Graphics.TOP | Graphics.LEFT);
+		g.drawString(speedBuffer.toString(), x, y, Graphics.TOP | Graphics.LEFT);
 		y += fontHeight;
 		g.drawString(DISTANCE_LABEL, MARGIN, y, Graphics.TOP | Graphics.LEFT);
 		g.drawString(length, x, y, Graphics.TOP | Graphics.LEFT);
