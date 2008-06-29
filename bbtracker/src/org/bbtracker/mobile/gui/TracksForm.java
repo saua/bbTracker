@@ -43,6 +43,8 @@ public class TracksForm extends List implements CommandListener {
 
 	private final Command selectCommand;
 
+	private final Command selectExtraCommand;
+
 	private final Command exportCommand;
 
 	private final Command deleteCommand;
@@ -57,11 +59,13 @@ public class TracksForm extends List implements CommandListener {
 		this.trackManager = trackManager;
 
 		selectCommand = new Command("Display", Command.ITEM, 0);
-		exportCommand = new Command("Export", Command.ITEM, 1);
-		deleteCommand = new Command("Delete", Command.ITEM, 2);
+		selectExtraCommand = new Command("Shadow Track", Command.ITEM, 1);
+		exportCommand = new Command("Export", Command.ITEM, 2);
+		deleteCommand = new Command("Delete", Command.ITEM, 3);
 		cancelCommand = new Command("Cancel", Command.CANCEL, 3);
 
 		addCommand(selectCommand);
+		addCommand(selectExtraCommand);
 		addCommand(exportCommand);
 		addCommand(deleteCommand);
 		addCommand(cancelCommand);
@@ -102,8 +106,8 @@ public class TracksForm extends List implements CommandListener {
 				loadEntries();
 			} catch (final TrackStoreException e) {
 				Log.log(this, e, "deleting track and listing tracks");
-				final Alert alert = new Alert("Couldn't delete Track.", "The track " + tse.getName() +
-						" couldn't be deleted: " + e.getMessage(), null, AlertType.INFO);
+				final Alert alert = new Alert("Couldn't delete Track.", "The track " + tse.getName()
+						+ " couldn't be deleted: " + e.getMessage(), null, AlertType.INFO);
 				BBTracker.alert(alert, this);
 			}
 		} else {
@@ -120,10 +124,14 @@ public class TracksForm extends List implements CommandListener {
 				track = tse.loadTrack();
 			} catch (final TrackStoreException e) {
 				Log.log(this, e, "loading track");
-				final Alert alert = new Alert("Couldn't load Track.", "The track " + tse.getName() +
-						" couldn't be loaded: " + e.getMessage(), null, AlertType.INFO);
+				final Alert alert = new Alert("Couldn't load Track.", "The track " + tse.getName()
+						+ " couldn't be loaded: " + e.getMessage(), null, AlertType.INFO);
 				BBTracker.alert(alert, this);
 				return;
+			}
+			if (command == selectExtraCommand) {
+				trackManager.setExtraTrack(track);
+				BBTracker.getInstance().showMainCanvas();
 			}
 			if (command == selectCommand) {
 				trackManager.setTrack(track);
@@ -155,8 +163,8 @@ public class TracksForm extends List implements CommandListener {
 			return;
 		}
 
-		final Alert alert = new Alert("Finished exporting", "The track " + track.getName() +
-				" has been exported successfully to " + count + " formats!", null, AlertType.INFO);
+		final Alert alert = new Alert("Finished exporting", "The track " + track.getName()
+				+ " has been exported successfully to " + count + " formats!", null, AlertType.INFO);
 		BBTracker.alert(alert, next);
 	}
 	// #endif

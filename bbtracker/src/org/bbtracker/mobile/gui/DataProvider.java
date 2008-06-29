@@ -68,6 +68,29 @@ public abstract class DataProvider {
 
 	};
 
+	public static final DataProvider HEARTRATE = new DataProvider() {
+		public String getName() {
+			return "heartRate";
+		}
+
+		public double getMaxValue(Track track) {
+			return 220d;
+		}
+
+		public double getMinValue(Track track) {
+			return 0d;
+		}
+
+		public double getValue(TrackPoint point) {
+			return point.getHeartRate();
+		}
+
+		public double getSmallDelta() {
+			return 5;
+		}
+
+	};
+
 	public static final DataProvider ELEVATION = new DataProvider() {
 		public String getName() {
 			return "elevation";
@@ -159,8 +182,9 @@ public abstract class DataProvider {
 	public abstract double getValue(final TrackPoint point);
 
 	/**
-	 * Returns a "small delta" for the value. This should represent a reasonable default unit that can be used to define
-	 * the minimal range to be viewed or similar constraints.
+	 * Returns a "small delta" for the value. This should represent a reasonable
+	 * default unit that can be used to define the minimal range to be viewed or
+	 * similar constraints.
 	 */
 	public abstract double getSmallDelta();
 }

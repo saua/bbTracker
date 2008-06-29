@@ -43,6 +43,7 @@ import org.bbtracker.mobile.Preferences;
 import org.bbtracker.mobile.TrackListener;
 import org.bbtracker.mobile.TrackManager;
 import org.bbtracker.mobile.config.ConfigFile;
+import org.bbtracker.mobile.heartRate.HeartRateProvider;
 
 public class MainCanvas extends Canvas implements TrackListener, CommandListener {
 	private static final int DEFAULT_STATUS_TIMEOUT = 5 * 1000;
@@ -58,6 +59,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	private final Tile elevationProfileTile;
 
 	private final Tile speedProfileTile;
+
+	private final Tile heartRateProfileTile;
 
 	private final StatusTile statusTile;
 
@@ -82,6 +85,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	private final Command exitCommand;
 
 	private final Command markPointCommand;
+
+	private final Command startHeartRate;
+
+	private final Command stopHeartRate;
 
 	// #ifndef AVOID_FILE_API
 	private final Command exportCommand;
@@ -112,6 +119,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		trackTile.setMainCanvas(this);
 		elevationProfileTile = new ElevationPlotterTile(manager, DataProvider.TIME);
 		speedProfileTile = new SpeedPlotterTile(manager, DataProvider.TIME);
+		heartRateProfileTile = new HeartRatePlotterTile(manager, DataProvider.TIME);
 		statusTile = new StatusTile(manager);
 		detailsTile = new DetailsTile(manager);
 
@@ -126,6 +134,8 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		tracksCommand = new Command("Tracks", Command.SCREEN, 5);
 		optionsCommand = new Command("Options", Command.SCREEN, 6);
 		aboutCommand = new Command("About", Command.SCREEN, 7);
+		startHeartRate = new Command("Start HR", Command.SCREEN, 5);
+		stopHeartRate = new Command("Stop HR", Command.SCREEN, 5);
 		// #ifndef AVOID_FILE_API
 		exportCommand = new Command("Export Track", Command.SCREEN, 1);
 		// #endif
@@ -137,6 +147,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		addCommand(optionsCommand);
 		addCommand(aboutCommand);
 		addCommand(exitCommand);
+		addCommand(startHeartRate);
 
 		setCommandListener(this);
 
@@ -292,7 +303,7 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	private void nextTileConfiguration() {
-		tileConfiguration = (tileConfiguration + 1) % 4;
+		tileConfiguration = (tileConfiguration + 1) % 5;
 		switch (tileConfiguration) {
 		case 0:
 			setMainTile(trackTile, true);
@@ -307,6 +318,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			setStatusMessage("Speed over time");
 			break;
 		case 3:
+			setMainTile(heartRateProfileTile, true);
+			setStatusMessage("HR over time");
+			break;
+		case 4:
 			setMainTile(detailsTile, false);
 			setStatusMessage("Details");
 			break;
@@ -330,10 +345,21 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	}
 
 	public void commandAction(final Command command, final Displayable displayable) {
+		final HeartRateProvider heartRateProvider = manager.getHeartRateProvider();
 		if (command == exitCommand) {
 			exitAction();
 		} else if (command == markPointCommand) {
 			markPointAction();
+		} else if (command == startHeartRate) {
+			if (heartRateProvider.start()) {
+				removeCommand(startHeartRate);
+				addCommand(stopHeartRate);
+				heartRateProvider.setCanvas(this);
+			}
+		} else if (command == stopHeartRate) {
+			heartRateProvider.stop();
+			removeCommand(stopHeartRate);
+			addCommand(startHeartRate);
 		} else if (command == pauseTrackingCommand) {
 			pauseTrackingAction();
 		} else if (command == continueTrackingCommand) {

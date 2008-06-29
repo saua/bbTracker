@@ -37,6 +37,7 @@ import org.bbtracker.mobile.exporter.TrackExporter;
 import org.bbtracker.mobile.gps.LocationException;
 import org.bbtracker.mobile.gps.LocationListener;
 import org.bbtracker.mobile.gps.LocationProvider;
+import org.bbtracker.mobile.heartRate.HeartRateProvider;
 
 public class TrackManager {
 
@@ -61,11 +62,15 @@ public class TrackManager {
 
 	private Track track;
 
+	private Track extraTrack;
+
 	private TrackStore[] trackStores;
 
 	private final Vector listeners = new Vector();
 
 	private boolean trackInterrupted = false;
+
+	private final HeartRateProvider heartRateProvider = new HeartRateProvider();
 
 	private final LocationListener locationListener = new LocationListener() {
 		public void locationUpdated(final TrackPoint location) {
@@ -73,6 +78,9 @@ public class TrackManager {
 				return;
 			}
 			if (location != null) {
+				if (heartRateProvider != null) {
+					location.setHeartRate(heartRateProvider.getHeartRate());
+				}
 				boolean boundsChanged = false;
 				boolean newSegment = false;
 				if (trackInterrupted == true) {
@@ -85,7 +93,8 @@ public class TrackManager {
 					if (!paused) {
 						final int pointCount = track.getPointCount();
 						if (currentPointIndex == pointCount - 1) {
-							// activate the new point only, when the last point is currently selected.
+							// activate the new point only, when the last point
+							// is currently selected.
 							currentPointIndex = pointCount;
 							currentPoint = location;
 							currentPointChanged = true;
@@ -243,6 +252,10 @@ public class TrackManager {
 		return track;
 	}
 
+	public Track getExtraTrack() {
+		return extraTrack;
+	}
+
 	/**
 	 * Start a new track.
 	 * 
@@ -270,6 +283,14 @@ public class TrackManager {
 	}
 
 	/**
+	 * @param extraTrack
+	 *            the extraTrack to set
+	 */
+	public void setExtraTrack(final Track extraTrack) {
+		this.extraTrack = extraTrack;
+	}
+
+	/**
 	 * Sets the current track. This also sets the state to STATE_TRACKING.
 	 * 
 	 * @throws IllegalStateException
@@ -293,8 +314,9 @@ public class TrackManager {
 	}
 
 	/**
-	 * Saves the currently recording track, if any. This is different from {@link #saveTrack()} in that it is a no-op if
-	 * {@link #state} is not {@link #STATE_TRACKING}.
+	 * Saves the currently recording track, if any. This is different from
+	 * {@link #saveTrack()} in that it is a no-op if {@link #state} is not
+	 * {@link #STATE_TRACKING}.
 	 * 
 	 * @throws TrackStoreException
 	 *             if saving fails
@@ -475,5 +497,9 @@ public class TrackManager {
 		while (e.hasMoreElements()) {
 			((TrackListener) e.nextElement()).currentPointChanged(currentPoint, currentPointIndex);
 		}
+	}
+
+	public HeartRateProvider getHeartRateProvider() {
+		return heartRateProvider;
 	}
 }

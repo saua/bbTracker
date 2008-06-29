@@ -43,6 +43,7 @@
 		<property name="wtk.locationservices.enabled" value="true" />
 		<property name="wtk.optionalpda.enabled" value="true" />
 		<property name="wtk.bluetooth.enabled" value="true" />
+		<property name="wtk.mmapi.enabled" value="true" />
 
 		<taskdef resource="antenna.properties" classpath="antenna.jar" />
 
