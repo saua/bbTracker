@@ -115,7 +115,7 @@ public abstract class PlotterTile extends Tile {
 		g.fillRect(xOffset, yOffset, width, height);
 		g.setColor(0x00000000);
 
-		if (Double.isNaN(xAxis.scale) || Double.isNaN(yAxis.scale)) {
+		if (isInvalidAxis()) {
 			doPaintNoScale(g);
 			return;
 		}
@@ -123,6 +123,10 @@ public abstract class PlotterTile extends Tile {
 		doPaintBackground(g);
 		doPaintPlot(g);
 		doPaintAxis(g);
+	}
+
+	private boolean isInvalidAxis() {
+		return Double.isNaN(xAxis.scale) || Double.isNaN(yAxis.scale);
 	}
 
 	protected void doPaintPlot(final Graphics g) {
@@ -169,7 +173,7 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void stateChanged(final int newState) {
-		updateScale();
+		// do nothing
 	}
 
 	private boolean updateScale(final Track track) {
@@ -221,6 +225,10 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void currentPointChanged(final TrackPoint newPoint, final int newIndex) {
+		// pool the track as long as no point is present
+		if (isInvalidAxis()) {
+			updateScale();
+		}
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {

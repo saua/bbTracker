@@ -1,5 +1,9 @@
 #! /usr/bin/perl -w
 
+# Usage:
+
+# convert.pl <baseName> [dir]
+
 use strict;
 
 sub doMap($);
@@ -19,6 +23,7 @@ foreach my $d (@dirEntries) {
     my $zoom = $1;
     print "Zoom Level: " . $zoom . "\n";
     doMap($zoom);
+    print LIST $zoom . ".txt\n";
   }
 }
 closedir(DIR);
@@ -31,7 +36,9 @@ sub doMap($) {
   my $dir = "$baseName$zoomLevel/$name2/";
   print LIST $dir . "set/\n";
   
-  open(IN, "<" . $dir . $name2 . ".map") || die "Could not open map file";
+  my $mapFileName = $dir . $name2 . ".map";
+  
+  open(IN, "<" . $mapFileName) || die "Could not open map file $mapFileName";
   my $wPixels;
   my $hPixels;
   my $longStart;
@@ -58,7 +65,8 @@ sub doMap($) {
 
   print $wPixels . ":" . $hPixels . " -> " . $longStart . ":" . $latStart . " to " . $longEnd . ":" . $latEnd . "\n";
 
-  open(OUT, ">" . $dir . "set/map.txt") || die "Could not open map.txt";
+  my $mapOutput = $zoomLevel . ".txt";
+  open(OUT, ">" . $mapOutput) || die "Could not open $mapOutput";
 
   print OUT "baseFileName $name2\n";
   print OUT "longDiff " . ($longEnd - $longStart). "\n";
