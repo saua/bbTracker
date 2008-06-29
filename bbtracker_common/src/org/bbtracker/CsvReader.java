@@ -51,7 +51,7 @@ public class CsvReader {
 		try {
 			String f;
 			while ((f = nextField()) != null) {
-				v.add(f);
+				v.addElement(f);
 			}
 		} catch (final IOException e) {
 			close();
