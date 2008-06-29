@@ -93,7 +93,8 @@ public final class Utils {
 	}
 
 	/**
-	 * Taken and converted to Java from http://www.movable-type.co.uk/scripts/latlong-vincenty.html
+	 * Taken and converted to Java from
+	 * http://www.movable-type.co.uk/scripts/latlong-vincenty.html
 	 * 
 	 * All parameters are interpreted as degrees.
 	 * 
@@ -116,8 +117,8 @@ public final class Utils {
 		int iterLimit = 20;
 		while (Math.abs(lambda - lambdaP) > 1e-12 && --iterLimit > 0) {
 			final double sinLambda = Math.sin(lambda), cosLambda = Math.cos(lambda);
-			sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) +
-					(cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
+			sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda)
+					+ (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda));
 			if (sinSigma == 0) {
 				return 0; // coincident points
 			}
@@ -131,8 +132,8 @@ public final class Utils {
 			}
 			final double C = WGS84_F / 16 * cosSqAlpha * (4 + WGS84_F * (4 - 3 * cosSqAlpha));
 			lambdaP = lambda;
-			lambda = L + (1 - C) * WGS84_F * sinAlpha *
-					(sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
+			lambda = L + (1 - C) * WGS84_F * sinAlpha
+					* (sigma + C * sinSigma * (cos2SigmaM + C * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)));
 		}
 		if (iterLimit == 0) {
 			return Double.NaN; // formula failed to converge
@@ -141,12 +142,12 @@ public final class Utils {
 		final double uSq = cosSqAlpha * (WGS84_A * WGS84_A - WGS84_B * WGS84_B) / (WGS84_B * WGS84_B);
 		final double A = 1 + uSq / 16384 * (4096 + uSq * (-768 + uSq * (320 - 175 * uSq)));
 		final double B = uSq / 1024 * (256 + uSq * (-128 + uSq * (74 - 47 * uSq)));
-		final double deltaSigma = B *
-				sinSigma *
-				(cos2SigmaM + B /
-						4 *
-						(cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) - B / 6 * cos2SigmaM *
-								(-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
+		final double deltaSigma = B
+				* sinSigma
+				* (cos2SigmaM + B
+						/ 4
+						* (cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM) - B / 6 * cos2SigmaM
+								* (-3 + 4 * sinSigma * sinSigma) * (-3 + 4 * cos2SigmaM * cos2SigmaM)));
 		final double s = WGS84_B * A * (sigma - deltaSigma);
 
 		return s;
@@ -155,7 +156,8 @@ public final class Utils {
 	public static String dateToString(final Date date) {
 		final String orig = date.toString();
 		final int size = orig.length();
-		// luckily enough Date.toString() is well-defined, so we can cut the TimeZone info out
+		// luckily enough Date.toString() is well-defined, so we can cut the
+		// TimeZone info out
 		return orig.substring(0, 20) + orig.substring(size - 4, size);
 	}
 
@@ -174,7 +176,8 @@ public final class Utils {
 	/**
 	 * Calculates a valid xsd:dateTime value from a given date.
 	 * 
-	 * The XML Schema standard defines a dateTime roughly as "YYYY-MM-DDThh:mm:ss(.s+)? (zzzzzz)?"
+	 * The XML Schema standard defines a dateTime roughly as
+	 * "YYYY-MM-DDThh:mm:ss(.s+)? (zzzzzz)?"
 	 * 
 	 * @param date
 	 * @return
@@ -226,6 +229,14 @@ public final class Utils {
 		}
 	}
 
+	public static String heartRateToString(final int hr) {
+		if (hr == 0) {
+			return "-";
+		} else {
+			return String.valueOf(hr);
+		}
+	}
+
 	public static String courseToHeadingString(final float course) {
 		if (Float.isNaN(course)) {
 			return "??";
@@ -255,16 +266,16 @@ public final class Utils {
 	}
 
 	/**
-	 * Converts a given double value to a String with a single digit after that decimal point and optionally strips ".0"
-	 * if present.
+	 * Converts a given double value to a String with a single digit after that
+	 * decimal point and optionally strips ".0" if present.
 	 */
 	public static String doubleToString(final double value, final boolean stripDotZero) {
 		return fixedPointToString((long) (value * 10), stripDotZero);
 	}
 
 	/**
-	 * Converts a given float value to a String with a single digit after that decimal point and optionally strips ".0"
-	 * if present.
+	 * Converts a given float value to a String with a single digit after that
+	 * decimal point and optionally strips ".0" if present.
 	 */
 	public static String floatToString(final float value, final boolean stripDotZero) {
 		return fixedPointToString((long) (value * 10), stripDotZero);
@@ -346,24 +357,25 @@ public final class Utils {
 	/**
 	 * Tokenize a string.
 	 * 
-	 * @param value Source string
-	 * @param token Token
-	 * @return Vector with the string separated or null is nothing to split
-	 * if found.
+	 * @param value
+	 *            Source string
+	 * @param token
+	 *            Token
+	 * @return Vector with the string separated or null is nothing to split if
+	 *         found.
 	 */
-	public static Vector splitToStringVector(final String value, 
-			final char token) {
-	
+	public static Vector splitToStringVector(final String value, final char token) {
+
 		if (value != null && value.length() > 0) {
-			Vector tmpRet = new Vector();
+			final Vector tmpRet = new Vector();
 			int pos = -1;
 			int lastPos = 0;
-			
+
 			do {
 				lastPos = pos + 1;
 				pos = value.indexOf(token, lastPos);
 				if (pos >= lastPos) {
-					final String tmpString;		
+					final String tmpString;
 					tmpString = value.substring(lastPos, pos).trim();
 					if (tmpString.length() <= 0) {
 						tmpRet.addElement(null);
@@ -372,7 +384,6 @@ public final class Utils {
 					}
 				}
 			} while (pos >= lastPos);
-			
 
 			final String tmpString;
 			/* Add the last link. */
@@ -382,10 +393,27 @@ public final class Utils {
 			} else {
 				tmpRet.addElement(tmpString);
 			}
-			
+
 			return tmpRet;
 		}
 
 		return null;
+	}
+
+	/**
+	 * @return template used to compute the width of the inclination percent
+	 *         widget
+	 */
+	public static String getInclinationTemplate() {
+		return "99.9%";
+	}
+
+	/** Convert inclination percent. */
+	public static String inclinationToString(final double value) {
+		if (Double.isNaN(value)) {
+			return "-%";
+		} else {
+			return (doubleToString(value * 100, false)) + "%";
+		}
 	}
 }
