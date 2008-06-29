@@ -18,11 +18,43 @@
 package org.bbtracker;
 
 /**
- * Converts the values and units as handled internally by bbTracker to displayable strings.
+ * Converts the values and units as handled internally by bbTracker to
+ * displayable strings.
  * 
  * @author Joachim Sauer
  */
 public abstract class UnitConverter {
+	/**
+	 * @return template used to compute the width of the speed widget
+	 */
+	public abstract String getSpeedTemplate();
+
+	/**
+	 * @return template used to compute the width of the elevation widget
+	 */
+	public abstract String getElevationTemplate();
+
+	/**
+	 * @return template used to compute the width of the distance widget
+	 */
+	public abstract String getDistanceTemplate();
+
+	/**
+	 * @return template used to compute the width of the longitude and latitude
+	 *         widget
+	 */
+	public String getCoordinateTemplate() {
+		return "N99\u00B099\'99.99\"";
+	}
+
+	/**
+	 * @return template used to compute the width of the longitude and latitude
+	 *         widget
+	 */
+	public String getHeartRateTemplate() {
+		return "999";
+	}
+
 	/**
 	 * @param speed
 	 *            the speed in m/s
@@ -31,9 +63,21 @@ public abstract class UnitConverter {
 	public abstract String speedToString(final float speed);
 
 	/**
+	 * @param timeOffsetValue
+	 *            timeOffset in ms
+	 * @param lengthValue
+	 *            distance in meter
+	 * @return a human readable String containing the speed including a unit.
+	 */
+	public String speedToString(final long timeOffsetValue, final double lengthValue) {
+		return speedToString((float) (lengthValue / (timeOffsetValue / 1000)));
+	}
+
+	/**
 	 * @param elevation
 	 *            the elevation in meters
-	 * @return a human readable String containing the elevation including a unit.
+	 * @return a human readable String containing the elevation including a
+	 *         unit.
 	 */
 	public abstract String elevationToString(final float elevation);
 
@@ -49,6 +93,10 @@ public abstract class UnitConverter {
 	public abstract ScaleConfiguration getScaleElevation(final int min, final int max);
 
 	public abstract ScaleConfiguration getScaleSpeed(final double maxSpeed);
+
+	public final ScaleConfiguration getScaleHeartRate(final int min, final int max) {
+		return getScaleConfiguration("hr", min, max);
+	}
 
 	/**
 	 * Finds a "round" number that's less than or equal to the boundary.
@@ -73,41 +121,46 @@ public abstract class UnitConverter {
 
 	protected static ScaleConfiguration getScaleConfiguration(final String unit, final double min, final double max) {
 		final double diff = max - min;
-		if (diff == 0) {
-			final ScaleConfiguration conf = new ScaleConfiguration();
+		int ticks = -1;
+		final ScaleConfiguration conf = new ScaleConfiguration();
+		// calculate approximate tick size (find correct power of ten)
+		double tickSize = 0;
+		if (diff != 0) {
+			conf.unit = unit;
+			conf.lengthInSourceUnits = diff;
+
+			// I wanted to use log10 to find the correct magnitude, but that's
+			// not
+			// available in CLDC 1.1
+			tickSize = 1;
+			if (tickSize > diff) {
+				while (tickSize > diff && tickSize > 1) {
+					tickSize /= 10;
+				}
+			} else {
+				while (tickSize < diff / 10 && tickSize < 1000000) {
+					tickSize *= 10;
+				}
+			}
+
+			// adjust to get a reasonable number of ticks (usually between 3 and
+			// 6)
+			ticks = (int) (diff / tickSize);
+			if (ticks > 5) {
+				tickSize *= 2;
+			}
+
+			// might be one to big, but that's better than one to small
+			ticks = (int) (diff / tickSize) + 1;
+		}
+
+		if (ticks < 1) {
 			conf.unit = unit;
 			conf.lengthInSourceUnits = diff;
 			conf.labelLocation = new float[] { (float) min };
 			conf.labelValue = new float[] { 0.0f };
 			return conf;
 		}
-
-		final ScaleConfiguration conf = new ScaleConfiguration();
-		conf.unit = unit;
-		conf.lengthInSourceUnits = diff;
-
-		// calculate approximate tick size (find correct power of ten)
-		double tickSize;
-		// I wanted to use log10 to find the correct magnitude, but that's not available in CLDC 1.1
-		tickSize = 1;
-		if (tickSize > diff) {
-			while (tickSize > diff) {
-				tickSize /= 10;
-			}
-		} else {
-			while (tickSize < diff / 10) {
-				tickSize *= 10;
-			}
-		}
-
-		// adjust to get a reasonable number of ticks (usually between 3 and 6)
-		int ticks = (int) (diff / tickSize);
-		if (ticks > 5) {
-			tickSize *= 2;
-		}
-
-		// might be one to big, but that's better than one to small
-		ticks = (int) (diff / tickSize) + 1;
 
 		conf.labelLocation = new float[ticks];
 		conf.labelValue = new float[ticks];
@@ -121,7 +174,8 @@ public abstract class UnitConverter {
 		double t = tMin;
 		int i = 0;
 		do {
-			// adding a multiple results in smaller numerical errors than adding each iteration
+			// adding a multiple results in smaller numerical errors than adding
+			// each iteration
 			conf.labelValue[i] = (float) t;
 			conf.labelLocation[i] = (float) ((t - min) / diff);
 			t = tMin + (++i) * tickSize;
@@ -143,8 +197,8 @@ public abstract class UnitConverter {
 		/**
 		 * The values for the labels.
 		 * 
-		 * Any value might be {@link Float#NaN} to indicate an unused entry (this is used to avoid unnecessary
-		 * re-allocation of a smaller array).
+		 * Any value might be {@link Float#NaN} to indicate an unused entry
+		 * (this is used to avoid unnecessary re-allocation of a smaller array).
 		 */
 		public float[] labelValue;
 
@@ -156,7 +210,8 @@ public abstract class UnitConverter {
 		public float[] labelLocation;
 
 		/**
-		 * The length in source units (meter for distance and elevation, m/s for speed)
+		 * The length in source units (meter for distance and elevation, m/s for
+		 * speed)
 		 */
 		public double lengthInSourceUnits;
 	}

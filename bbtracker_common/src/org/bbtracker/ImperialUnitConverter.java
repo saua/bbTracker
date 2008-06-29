@@ -34,6 +34,27 @@ public class ImperialUnitConverter extends UnitConverter {
 		return Utils.floatToString(mph, false) + "mph";
 	}
 
+	/**
+	 * @return template used to compute the width of the speed widget
+	 */
+	public String getSpeedTemplate() {
+		return "999.9mph";
+	}
+
+	/**
+	 * @return template used to compute the width of the elevation widget
+	 */
+	public String getElevationTemplate() {
+		return "99999ft";
+	}
+
+	/**
+	 * @return template used to compute the width of the distance widget
+	 */
+	public String getDistanceTemplate() {
+		return "999.99ft";
+	}
+
 	public String elevationToString(final float elevation) {
 		if (Float.isNaN(elevation)) {
 			return "-ft";

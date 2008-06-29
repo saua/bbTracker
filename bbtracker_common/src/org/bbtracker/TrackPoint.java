@@ -34,6 +34,8 @@ public class TrackPoint {
 
 	private float course;
 
+	private int heartRate;
+
 	private double distance;
 
 	private String name;
@@ -147,9 +149,10 @@ public class TrackPoint {
 		out.writeFloat(elevation);
 		out.writeFloat(speed);
 		out.writeFloat(course);
-		// we're now writing the number of satellites instead of the (unused) interpolated property
+		// we're now writing the number of satellites instead of the (unused)
+		// interpolated property
 		// since interpolated was always 0 this shouldn't be a problem.
-		out.writeByte(satellites);
+		out.writeByte((byte) heartRate);
 		out.writeBoolean(standing);
 		out.writeUTF(name == null ? "" : name);
 	}
@@ -161,12 +164,21 @@ public class TrackPoint {
 		final float elevation = in.readFloat();
 		final float speed = in.readFloat();
 		final float course = in.readFloat();
-		final byte satellites = in.readByte();
+		final byte hrByte = in.readByte();
+		// final byte satellites = in.readByte();
+		final int heartRate;
+		if (hrByte < 0) {
+			heartRate = hrByte + 256;
+		} else {
+			heartRate = hrByte;
+		}
+		final byte satellites = 0;
 		final boolean standing = in.readBoolean();
 		final String name = in.readUTF();
 		final TrackPoint point = new TrackPoint(timestamp, latitude, longitude, elevation, speed, course, satellites);
 		point.setName(name.length() == 0 ? null : name);
 		point.setStanding(standing);
+		point.setHeartRate(heartRate);
 		return point;
 	}
 
@@ -178,5 +190,13 @@ public class TrackPoint {
 		final double lon2 = Math.toRadians(point.getLongitude());
 
 		return Utils.distance(lat1, lon1, lat2, lon2);
+	}
+
+	public int getHeartRate() {
+		return heartRate;
+	}
+
+	public void setHeartRate(final int heartRate) {
+		this.heartRate = heartRate;
 	}
 }

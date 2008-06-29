@@ -23,6 +23,27 @@ public class MetricUnitConverter extends UnitConverter {
 	// while I'm at putting magic values into constants ...
 	public static final int METER_TO_KM_FACTOR = 1000;
 
+	/**
+	 * @return template used to compute the width of the speed widget
+	 */
+	public String getSpeedTemplate() {
+		return "999.9km/h";
+	}
+
+	/**
+	 * @return template used to compute the width of the elevation widget
+	 */
+	public String getElevationTemplate() {
+		return "9999m";
+	}
+
+	/**
+	 * @return template used to compute the width of the distance widget
+	 */
+	public String getDistanceTemplate() {
+		return "999.99km";
+	}
+
 	public String speedToString(final float speed) {
 		if (Float.isNaN(speed)) {
 			return "-km/h";

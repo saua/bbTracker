@@ -24,6 +24,27 @@ public class NauticalUnitConverter extends UnitConverter {
 
 	public static final float MS_TO_NMH_FACTOR = METER_TO_NAUTICAL_MILE_FACTOR * 3600;
 
+	/**
+	 * @return template used to compute the width of the speed widget
+	 */
+	public String getSpeedTemplate() {
+		return "999.9nm/h";
+	}
+
+	/**
+	 * @return template used to compute the width of the elevation widget
+	 */
+	public String getElevationTemplate() {
+		return "99999ft";
+	}
+
+	/**
+	 * @return template used to compute the width of the distance widget
+	 */
+	public String getDistanceTemplate() {
+		return "999.99nm";
+	}
+
 	public String speedToString(final float speed) {
 		if (Float.isNaN(speed)) {
 			return "-nm/h";
