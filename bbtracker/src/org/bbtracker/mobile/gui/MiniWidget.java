@@ -72,7 +72,7 @@ public final class MiniWidget implements Widget {
 	private static final int TEXT_FRONT_COLOR = 0;
 
 	/** Padding for text content. */
-	private static final int TEXT_PADDING_W = 3;
+	private static final int TEXT_PADDING_W = 4;
 	/** Padding for text content. */
 	private static final int TEXT_PADDING_H = 2;
 
@@ -177,9 +177,9 @@ public final class MiniWidget implements Widget {
 		paintBackground(g);
 
 		if (text != null) {
+			g.setFont(font);
 			g.setColor(TEXT_FRONT_COLOR);
 			g.drawString(text, px + TEXT_PADDING_W, py + TEXT_PADDING_H, Graphics.TOP | Graphics.LEFT);
-			// TODO: Implement scrolling !
 		} else if (image != null) {
 			g.drawImage(image, px + width / 2, py + height / 2, IMAGE_FLAGS);
 		} else if (orientation != 1) {
