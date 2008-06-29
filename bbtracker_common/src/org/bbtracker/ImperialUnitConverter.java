@@ -52,7 +52,7 @@ public class ImperialUnitConverter extends UnitConverter {
 	 * @return template used to compute the width of the distance widget
 	 */
 	public String getDistanceTemplate() {
-		return "999.99ft";
+		return "999.9ft";
 	}
 
 	public String elevationToString(final float elevation) {

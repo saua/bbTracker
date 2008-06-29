@@ -42,7 +42,7 @@ public class NauticalUnitConverter extends UnitConverter {
 	 * @return template used to compute the width of the distance widget
 	 */
 	public String getDistanceTemplate() {
-		return "999.99nm";
+		return "999.9nm";
 	}
 
 	public String speedToString(final float speed) {

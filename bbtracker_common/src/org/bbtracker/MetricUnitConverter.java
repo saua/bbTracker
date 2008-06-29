@@ -41,7 +41,7 @@ public class MetricUnitConverter extends UnitConverter {
 	 * @return template used to compute the width of the distance widget
 	 */
 	public String getDistanceTemplate() {
-		return "999.99km";
+		return "999.9km";
 	}
 
 	public String speedToString(final float speed) {
