@@ -232,9 +232,13 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void newPoint(final TrackPoint newPoint, final boolean boundsChanged, final boolean newSegment) {
+		updateScale();
 	}
 
 	public void showNotify() {
+		if (isInvalidAxis()) {
+			updateScale();
+		}
 	}
 
 	protected AxisConfiguration getXAxis() {
