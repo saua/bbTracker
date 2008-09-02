@@ -20,7 +20,7 @@ package org.bbtracker;
 /**
  * The CsvWriter is used produce a CSV stream according to RFC 4180.
  */
-class CsvWriter {
+public class CsvWriter {
 	private final StringBuffer buffer = new StringBuffer();
 
 	private boolean firstField = true;
@@ -38,27 +38,47 @@ class CsvWriter {
 		} else {
 			buffer.append(',');
 		}
+		appendQuoted(buffer, s);
+		return this;
+	}
+
+	public static String quote(final String s) {
+		final StringBuffer buf = appendQuoted(null, s);
+		if (buf == null) {
+			return s;
+		} else {
+			return buf.toString();
+		}
+	}
+
+	private static StringBuffer appendQuoted(StringBuffer buf, final String s) {
 		final boolean hasWhitespace = s.indexOf(' ') != -1 || s.indexOf('\r') != -1 || s.indexOf('\n') != -1;
 		final boolean hasQuote = s.indexOf('"') != -1;
 		if (hasWhitespace || hasQuote) {
-			buffer.append('"');
+			if (buf == null) {
+				// quoted is at least 2 longer, let's give it some more space,
+				// in
+				// case it contains quotes
+				buf = new StringBuffer(s.length() + 4);
+			}
+			buf.append('"');
 			if (hasQuote) {
-				int offset = buffer.length();
-				buffer.append(s);
+				int offset = buf.length();
+				buf.append(s);
 				int i = s.indexOf('"');
 				while (i != -1) {
-					buffer.insert(offset + i, '"');
+					buf.insert(offset + i, '"');
 					offset++;
 					i = s.indexOf('"', i + 1);
 				}
 			} else {
-				buffer.append(s);
+				buf.append(s);
 			}
-			buffer.append('"');
-		} else {
-			buffer.append(s);
+			buf.append('"');
+		} else if (buf != null) {
+			buf.append(s);
 		}
-		return this;
+		return buf;
 	}
 
 	public CsvWriter nl() {
