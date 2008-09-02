@@ -8,7 +8,8 @@ import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 
 public class SerialLocationProvider extends LocationProvider {
-	// wait at most 60 seconds for new NMEA sentences, before attempting recovery
+	// wait at most 60 seconds for new NMEA sentences, before attempting
+	// recovery
 	private static final int NO_NMEA_TIMEOUT = 60 * 1000;
 
 	private final Gps gps;
@@ -50,14 +51,17 @@ public class SerialLocationProvider extends LocationProvider {
 	}
 
 	public int tryRecover(final int escalationLevel) {
+		Log.log(this, "Serial - tryRecover(" + escalationLevel + ")");
 		if (gps.isOpen()) {
 			// all is well
+			Log.log(this, "Everything seems to be in order ...");
 			return 0;
 		} else {
 			final String url = Preferences.getInstance().getBluetoothUrl();
 			try {
 				gps.open(url);
 				setState(AVAILABLE);
+				Log.log(this, "Serial - recovery seems to be successful!");
 				return 0;
 			} catch (final LocationException e) {
 				Log.log(this, e, "Failed to re-open connection to GPS at " + url);
@@ -75,9 +79,8 @@ public class SerialLocationProvider extends LocationProvider {
 			final boolean open = gps.isOpen();
 			if (!gps.getFix() || nmeaCount == lastNmeaCount || !open) {
 				final long lastChange = lastNmeaChangeTimestamp - System.currentTimeMillis();
-				Log.log(this, "No new GPS data. Fix: " + gps.getFix() + " nmeaCount: " + nmeaCount +
-						" lastNmeaCount: " + lastNmeaCount + " last NMEA change " + lastChange + "ms ago, GPS open? " +
-						open);
+				Log.log(this, "No new GPS data. Fix: " + gps.getFix() + " nmeaCount: " + nmeaCount + " lastNmeaCount: "
+						+ lastNmeaCount + " last NMEA change " + lastChange + "ms ago, GPS open? " + open);
 				if (lastChange >= NO_NMEA_TIMEOUT || !open) {
 					setState(TEMPORARILY_UNAVAILABLE);
 					return;

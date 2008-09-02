@@ -27,16 +27,17 @@ import org.bbtracker.mobile.Log;
 import org.bbtracker.mobile.Preferences;
 
 public class Jsr179LocationProvider extends LocationProvider {
-	private static final int RECOVERY_DELAY_PER_LEVEL = 30 * 1000; // half a minute
+	private static final int RECOVERY_DELAY_PER_LEVEL = 30 * 1000; // half a
+	// minute
 
 	private javax.microedition.location.LocationProvider provider;
 
 	private final javax.microedition.location.LocationListener locationListener = new javax.microedition.location.LocationListener() {
-		public void locationUpdated(javax.microedition.location.LocationProvider provider, Location location) {
+		public void locationUpdated(final javax.microedition.location.LocationProvider provider, final Location location) {
 			if (location.isValid()) {
 				final QualifiedCoordinates coordinates = location.getQualifiedCoordinates();
-				String nmea = location.getExtraInfo("application/X-jsr179-location-nmea");
-				byte nrOfSatellites = getNrOfSatellites(nmea);
+				final String nmea = location.getExtraInfo("application/X-jsr179-location-nmea");
+				final byte nrOfSatellites = getNrOfSatellites(nmea);
 				final TrackPoint trackPoint = new TrackPoint(location.getTimestamp(), coordinates.getLatitude(),
 						coordinates.getLongitude(), coordinates.getAltitude(), location.getSpeed(), location
 								.getCourse(), nrOfSatellites);
@@ -126,6 +127,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 	}
 
 	public int tryRecover(final int escalationLevel) {
+		Log.log(this, "JSR179 - tryRecover(" + escalationLevel + ")");
 		if (escalationLevel == 1) {
 			provider.reset();
 			applyUpdateInterval();
@@ -135,6 +137,7 @@ public class Jsr179LocationProvider extends LocationProvider {
 			provider = null;
 			try {
 				init();
+				Log.log(this, "JSR179 - recovery seems to be successful!");
 				return 0;
 			} catch (final org.bbtracker.mobile.gps.LocationException e) {
 				Log.log(this, e);

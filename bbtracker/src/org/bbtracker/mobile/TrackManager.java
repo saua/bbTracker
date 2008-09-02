@@ -348,10 +348,11 @@ public class TrackManager {
 		for (int i = 0; i < trackStores.length; i++) {
 			try {
 				trackStores[i].saveTrack(track);
+				Log.log(this, "Successfully stored track <" + track.getName() + "> in TrackStore " + i);
 				success = true;
 				break;
 			} catch (final TrackStoreException e) {
-				Log.log(this, e, "saving track");
+				Log.log(this, e, "saving track in trackStore " + i);
 				final String msg = e.getMessage();
 				error = error == null ? msg : error + "\n" + msg;
 			}
