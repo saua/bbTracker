@@ -48,7 +48,7 @@
 		<taskdef resource="antenna.properties" classpath="antenna.jar" />
 
 		<!-- that's a bit of a hack to find out MIDlet-Version -->
-		<loadproperties srcfile="bbtracker.jad">
+		<loadproperties srcfile="Application Descriptor">
 			<filterchain>
 				<linecontainsregexp>
 					<regexp pattern="^MIDlet-Version" />
@@ -82,7 +82,7 @@
 			<param name="pp.symbols" value="" />
 			<!-- <param name="pp.symbols" value="AVOID_FILE_API" /> -->
 		</antcall>
-		<copy file="bbtracker.jad" todir="${build.dir}" />
+		<copy file="Application Descriptor" tofile="${build.dir}/bbtracker.jad" />
 		<wtkpackage jarfile="${build.dir}/bbtracker.jar" jadfile="${build.dir}/bbtracker.jad" preverify="true" obfuscate="${do-obfuscate}">
 			<fileset dir="${classes.dir}" />
 			<fileset dir="${bbtracker.res}" />
