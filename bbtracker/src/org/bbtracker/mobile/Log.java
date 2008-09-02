@@ -77,13 +77,13 @@ public class Log {
 	}
 
 	public static void log(final Object source, final Throwable e) {
-		log(source, "Exception: " + e.toString());
+		log(source, "Exception: " + e.getMessage() + " <" + e.toString() + ">");
 		// this is only useful for debugging in the emulator
 		e.printStackTrace();
 	}
 
 	public static void log(final Object source, final Throwable e, final String message) {
-		log(source, "Exception <" + message + ">: " + e.toString());
+		log(source, "Exception <" + message + ">: " + e.getMessage() + " <" + e.toString() + ">");
 		// this is only useful for debugging in the emulator
 		e.printStackTrace();
 	}
