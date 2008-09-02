@@ -29,6 +29,7 @@ import java.util.Vector;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
 
+import org.bbtracker.CsvReader;
 import org.bbtracker.CsvWriter;
 
 /**
@@ -158,6 +159,37 @@ public final class ConfigFile {
 	}
 
 	/**
+	 * Create a configuration object and read data from an InputStream in CSV
+	 * format.
+	 * 
+	 * @param in
+	 *            InputStream
+	 * @return config object
+	 * @throws IOException
+	 *             io error
+	 */
+	public static ConfigFile openCSVConfig(final InputStream in) throws IOException {
+		final ConfigFile self = new ConfigFile();
+
+		try {
+			final InputStreamReader reader = new InputStreamReader(in);
+			final CsvReader csv = new CsvReader(reader);
+			String[] fields;
+			while ((fields = csv.nextLine()) != null) {
+				if (fields.length != 2) {
+					throw new IOException("Malformed CSV!");
+
+				}
+				self.params.put(fields[0], fields[1]);
+			}
+		} finally {
+			in.close();
+		}
+
+		return self;
+	}
+
+	/**
 	 * Save the content of this config file back to a file.
 	 * 
 	 * @param url
@@ -172,6 +204,35 @@ public final class ConfigFile {
 			saveConfig(out);
 		} finally {
 			connection.close();
+		}
+	}
+
+	/**
+	 * Save the content of this config back to a OutputStream in CSV format.
+	 * 
+	 * @param out
+	 *            OutputStream
+	 * @throws IOException
+	 *             io error
+	 */
+	public void saveCSVConfig(final OutputStream out) throws IOException {
+		final OutputStreamWriter writer = new OutputStreamWriter(out);
+		final CsvWriter csv = new CsvWriter();
+		try {
+			final Enumeration keys = params.keys();
+			final Enumeration values = params.elements();
+			while (keys.hasMoreElements()) {
+				final String key = (String) keys.nextElement();
+				final String value = (String) values.nextElement();
+				csv.append(key);
+				csv.append(value);
+				csv.nl();
+				writer.write(csv.toString());
+				csv.reset();
+			}
+		} finally {
+			writer.close();
+			out.close();
 		}
 	}
 
@@ -301,8 +362,8 @@ public final class ConfigFile {
 	}
 
 	/**
-	 * Get matching integer value (or null). throws NumberFormatException on
-	 * invalid value.
+	 * Get matching integer value. throws NumberFormatException on invalid
+	 * value.
 	 * 
 	 * @param key
 	 *            key
@@ -320,19 +381,36 @@ public final class ConfigFile {
 	}
 
 	/**
-	 * Get matching double value (or null). throws NumberFormatException on
-	 * invalid value.
+	 * Get matching double value. throws NumberFormatException on invalid value.
 	 * 
 	 * @param key
 	 *            key
 	 * @param defaultValue
 	 *            value
-	 * @return integer value or default value if key not found
+	 * @return double value or default value if key not found
 	 */
 	public double getDouble(final String key, final double defaultValue) {
 		final String value = get(key);
 		if (value != null) {
 			return Double.parseDouble(value);
+		} else {
+			return defaultValue;
+		}
+	}
+
+	/**
+	 * Get matching boolean value.
+	 * 
+	 * @param key
+	 *            key
+	 * @param defaultValue
+	 *            value
+	 * @return boolean value or default value if key not found
+	 */
+	public boolean getBoolean(final String key, final boolean defaultValue) {
+		final String value = get(key);
+		if (value != null) {
+			return "true".equals(value);
 		} else {
 			return defaultValue;
 		}
@@ -360,6 +438,18 @@ public final class ConfigFile {
 	 */
 	public void put(final String key, final int value) {
 		put(key, Integer.toString(value));
+	}
+
+	/**
+	 * Add name / value pair.
+	 * 
+	 * @param key
+	 *            key
+	 * @param value
+	 *            value
+	 */
+	public void put(final String key, final boolean value) {
+		put(key, value ? "true" : "false");
 	}
 
 	/**
