@@ -152,7 +152,7 @@ public class TrackPoint {
 		// we're now writing the number of satellites instead of the (unused)
 		// interpolated property
 		// since interpolated was always 0 this shouldn't be a problem.
-		out.writeByte((byte) heartRate);
+		out.writeByte(satellites);
 		out.writeBoolean(standing);
 		out.writeUTF(name == null ? "" : name);
 	}
@@ -164,21 +164,12 @@ public class TrackPoint {
 		final float elevation = in.readFloat();
 		final float speed = in.readFloat();
 		final float course = in.readFloat();
-		final byte hrByte = in.readByte();
-		// final byte satellites = in.readByte();
-		final int heartRate;
-		if (hrByte < 0) {
-			heartRate = hrByte + 256;
-		} else {
-			heartRate = hrByte;
-		}
-		final byte satellites = 0;
+		final byte satellites = in.readByte();
 		final boolean standing = in.readBoolean();
 		final String name = in.readUTF();
 		final TrackPoint point = new TrackPoint(timestamp, latitude, longitude, elevation, speed, course, satellites);
 		point.setName(name.length() == 0 ? null : name);
 		point.setStanding(standing);
-		point.setHeartRate(heartRate);
 		return point;
 	}
 
