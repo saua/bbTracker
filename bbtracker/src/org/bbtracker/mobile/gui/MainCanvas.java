@@ -113,13 +113,18 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 	private int keyboardMode;
 
 	public MainCanvas(final TrackManager manager) {
+		final Preferences pref = Preferences.getInstance();
 		this.manager = manager;
 
 		trackTile = new TrackTile(manager);
 		trackTile.setMainCanvas(this);
 		elevationProfileTile = new ElevationPlotterTile(manager, DataProvider.TIME);
 		speedProfileTile = new SpeedPlotterTile(manager, DataProvider.TIME);
-		heartRateProfileTile = new HeartRatePlotterTile(manager, DataProvider.TIME);
+		if (pref.isHeartRateEnabled()) {
+			heartRateProfileTile = new HeartRatePlotterTile(manager, DataProvider.TIME);
+		} else {
+			heartRateProfileTile = null;
+		}
 		statusTile = new StatusTile(manager);
 		detailsTile = new DetailsTile(manager);
 
@@ -147,7 +152,9 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 		addCommand(optionsCommand);
 		addCommand(aboutCommand);
 		addCommand(exitCommand);
-		addCommand(startHeartRate);
+		if (pref.isHeartRateEnabled()) {
+			addCommand(startHeartRate);
+		}
 
 		setCommandListener(this);
 
@@ -198,6 +205,10 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			final int statusTileHeight = statusTile.getPreferredHeight(w);
 			visibleTiles[0].resize(0, 0, w, h - statusTileHeight);
 			visibleTiles[1].resize(0, h - statusTileHeight, w, statusTileHeight);
+		}
+		visibleTiles[0].showNotify();
+		if (visibleTiles[1] != null) {
+			visibleTiles[1].showNotify();
 		}
 	}
 
@@ -318,9 +329,14 @@ public class MainCanvas extends Canvas implements TrackListener, CommandListener
 			setStatusMessage("Speed over time");
 			break;
 		case 3:
-			setMainTile(heartRateProfileTile, true);
-			setStatusMessage("HR over time");
-			break;
+			if (Preferences.getInstance().isHeartRateEnabled()) {
+				setMainTile(heartRateProfileTile, true);
+				setStatusMessage("HR over time");
+				break;
+			} else {
+				tileConfiguration++;
+				// deliberate fall-through
+			}
 		case 4:
 			setMainTile(detailsTile, false);
 			setStatusMessage("Details");

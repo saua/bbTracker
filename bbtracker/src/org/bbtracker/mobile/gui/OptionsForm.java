@@ -56,7 +56,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	// #ifndef AVOID_FILE_API
 	private final Command browseMapCommand;
-	
+
 	private final Command browseTrackCommand;
 
 	private final Command browseExportCommand;
@@ -77,7 +77,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 	// #ifndef AVOID_FILE_API
 	private final TextField mapDirectoryField;
-	
+
 	private final TextField trackDirectoryField;
 
 	private final TextField exportDirectoryField;
@@ -91,6 +91,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 	private final ChoiceGroup statusFontSizeGroup;
 
 	private final ChoiceGroup detailsFontSizeGroup;
+
+	private final ChoiceGroup heartRateGroup;
 
 	public OptionsForm(final TrackManager trackManager) {
 		super("Options");
@@ -110,8 +112,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 
 		bluetoothUrl = pref.getBluetoothUrl();
 		selectBluetoothDeviceCommand = new Command("Select GPS device", Command.ITEM, 0);
-		bluetoothNameField = new TextField("GPS device: ", pref.getBluetoothName(), 20, TextField.ANY |
-				TextField.UNEDITABLE);
+		bluetoothNameField = new TextField("GPS device: ", pref.getBluetoothName(), 20, TextField.ANY
+				| TextField.UNEDITABLE);
 		bluetoothNameField.setDefaultCommand(selectBluetoothDeviceCommand);
 		bluetoothNameField.setItemCommandListener(this);
 
@@ -137,13 +139,6 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		startTypeGroup.setSelectedIndex(startAction, true);
 
 		// #ifndef AVOID_FILE_API
-		
-		mapDirectoryField = new TextField("Map directory: ", pref.getMapDirectory(), 100, TextField.URL);
-		browseMapCommand = new Command("Browse for map", Command.ITEM, 1);
-		addCommand(browseMapCommand);
-		mapDirectoryField.setItemCommandListener(this);
-		addCommand(browseMapCommand);
-		
 		trackDirectoryField = new TextField("Track directory: ", pref.getTrackDirectory(), 100, TextField.URL);
 		browseTrackCommand = new Command("Browse for track", Command.ITEM, 1);
 		addCommand(browseTrackCommand);
@@ -159,7 +154,16 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		for (int i = 0; i < Preferences.EXPORT_FORMATS.length; i++) {
 			exportFormatGroup.setSelectedIndex(i, pref.getExportFormat(i));
 		}
+
+		mapDirectoryField = new TextField("Map directory: ", pref.getMapDirectory(), 100, TextField.URL);
+		browseMapCommand = new Command("Browse for map", Command.ITEM, 1);
+		addCommand(browseMapCommand);
+		mapDirectoryField.setItemCommandListener(this);
+		addCommand(browseMapCommand);
 		// #endif
+
+		heartRateGroup = new ChoiceGroup(null, Choice.MULTIPLE, new String[] { "Heartbeat detection enabled" }, null);
+		heartRateGroup.setSelectedIndex(0, pref.isHeartRateEnabled());
 
 		append(locationProviderGroup);
 		if (BBTracker.isBluetoothAvailable()) {
@@ -171,11 +175,12 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		append(detailsFontSizeGroup);
 		append(startTypeGroup);
 		// #ifndef AVOID_FILE_API
-		append(mapDirectoryField);
 		append(trackDirectoryField);
 		append(exportDirectoryField);
 		append(exportFormatGroup);
+		append(mapDirectoryField);
 		// #endif
+		append(heartRateGroup);
 
 		addCommand(GuiUtils.OK_COMMAND);
 		addCommand(GuiUtils.CANCEL_COMMAND);
@@ -272,8 +277,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 		String restartResult = null;
 		final Preferences pref = Preferences.getInstance();
 		if (locationProviderGroup.getSelectedIndex() != pref.getLocationProvider()) {
-			restartResult = BBTracker.getName() +
-					" needs to be restarted, for location provider changes to take effect!";
+			restartResult = BBTracker.getName()
+					+ " needs to be restarted, for location provider changes to take effect!";
 		}
 
 		// #ifndef AVOID_FILE_API
@@ -285,7 +290,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			return restartResult + "\n" + dirResult;
 		}
 		// #else
-// @ return restartResult;
+		// @ return restartResult;
 		// #endif
 	}
 
@@ -358,6 +363,8 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 			final String bluetoothName = bluetoothNameField.getString();
 			pref.setBluetoothName(bluetoothName);
 
+			pref.setHeartRateEnabled(heartRateGroup.isSelected(0));
+
 			pref.store();
 		} catch (final RecordStoreException e) {
 			BBTracker.nonFatal(e, "storing preferences", null);
@@ -375,14 +382,14 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 				return;
 			}
 			showBluetoothBrowser();
-// #ifndef AVOID_FILE_API
+			// #ifndef AVOID_FILE_API
 		} else if (command == browseTrackCommand) {
 			showDirectoryBrowser("Track Storage Directory", trackDirectoryField);
 		} else if (command == browseMapCommand) {
 			showDirectoryBrowser("Track Storage Directory", mapDirectoryField);
 		} else if (command == browseExportCommand) {
 			showDirectoryBrowser("Track Export Directory", exportDirectoryField);
-// #endif
+			// #endif
 		}
 	}
 
@@ -415,7 +422,7 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 					Log.log(this, "BLUElet 'selected' event");
 					final RemoteDevice device = bluelet.getSelectedDevice();
 					if (device != null) {
-						Alert alert = new Alert("Device selected", "Looking for service", null, AlertType.INFO);
+						final Alert alert = new Alert("Device selected", "Looking for service", null, AlertType.INFO);
 						alert.setIndicator(new Gauge(null, false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING));
 						alert.setTimeout(Alert.FOREVER);
 						BBTracker.getDisplay().setCurrent(alert);
@@ -426,18 +433,19 @@ public class OptionsForm extends Form implements CommandListener, ItemCommandLis
 					String deviceName;
 					try {
 						deviceName = device.getFriendlyName(false);
-					} catch (IOException e) {
+					} catch (final IOException e) {
 						deviceName = device.getBluetoothAddress();
 					}
 					final ServiceRecord serviceRecord = bluelet.getFirstDiscoveredService();
 					Log.log(this, "Selected Bluetooth Device: " + deviceName);
 					if (serviceRecord != null) {
-						String url = serviceRecord.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
+						final String url = serviceRecord
+								.getConnectionURL(ServiceRecord.NOAUTHENTICATE_NOENCRYPT, false);
 						Log.log(this, "ServiceRecord with URL " + url);
 						bluetoothUrl = url;
 						bluetoothNameField.setString(deviceName);
 					} else {
-						Alert alert = new Alert(
+						final Alert alert = new Alert(
 								"No matching service found",
 								"No matching service found was found for this Bluetooth device. Please make sure that you selected a GPS device",
 								null, AlertType.INFO);

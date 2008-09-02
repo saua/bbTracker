@@ -54,6 +54,7 @@ public class Preferences {
 	private static final String BLUETOOTH_URL = "bluetoothUrl";
 	private static final String DETAILS_FONT_SIZE = "detailsFontSize";
 	private static final String STATUS_FONT_SIZE = "statusFontSize";
+	private static final String HEARTRATE_ENABLED = "heartrateEnabled";
 
 	public static final int START_ACTION_SHOW_OPTIONS = -1;
 
@@ -300,6 +301,14 @@ public class Preferences {
 		conf.put(BLUETOOTH_NAME, bluetoothName == null ? "" : bluetoothName);
 	}
 
+	public boolean isHeartRateEnabled() {
+		return conf.getBoolean(HEARTRATE_ENABLED, false);
+	}
+
+	public void setHeartRateEnabled(final boolean enabled) {
+		conf.put(HEARTRATE_ENABLED, enabled);
+	}
+
 	public int getTrackNumber() {
 		return conf.getInteger(TRACK_NUMBER, 1);
 	}
@@ -339,7 +348,7 @@ public class Preferences {
 		}
 		try {
 			Log.log(this, "Loading preferences from Record Store.");
-			conf = ConfigFile.openConfig(new ByteArrayInputStream(data));
+			conf = ConfigFile.openCSVConfig(new ByteArrayInputStream(data));
 			final String s = conf.get(CONFIGURATION_VERSION);
 			newVersion = !BBTracker.getVersion().equals(s);
 			return true;
@@ -382,6 +391,7 @@ public class Preferences {
 		final byte[] data = loadRecordStore(OLD_RECORD_STORE_NAME);
 		if (data == null) {
 			Log.log(this, "No old Preferences Record Store found!");
+			return;
 		}
 
 		Log.log(this, "Loading old Preferences from Record store.");
@@ -430,7 +440,7 @@ public class Preferences {
 		try {
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			final DataOutputStream out = new DataOutputStream(baos);
-			conf.saveConfig(out);
+			conf.saveCSVConfig(out);
 			final byte[] data = baos.toByteArray();
 
 			rs = RecordStore.openRecordStore(RECORD_STORE_NAME, true);
