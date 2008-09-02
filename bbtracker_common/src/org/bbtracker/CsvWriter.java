@@ -87,6 +87,11 @@ public class CsvWriter {
 		return this;
 	}
 
+	public void reset() {
+		buffer.setLength(0);
+		firstField = true;
+	}
+
 	public String toString() {
 		return buffer.toString();
 	}
