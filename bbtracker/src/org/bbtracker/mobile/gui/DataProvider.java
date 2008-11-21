@@ -26,21 +26,25 @@ public abstract class DataProvider {
 			return "time";
 		}
 
-		public double getMaxValue(Track track) {
+		public double getMaxValue(final Track track) {
 			return getValue(track.getPoint(track.getPointCount() - 1));
 		}
 
-		public double getMinValue(Track track) {
+		public double getMinValue(final Track track) {
 			return getValue(track.getPoint(0));
 		}
 
-		public double getValue(TrackPoint point) {
+		public double getValue(final TrackPoint point) {
 			return point.getTimestamp();
 		}
 
 		public double getSmallDelta() {
 			// one second should be sufficiently small
 			return 1000d;
+		}
+
+		public boolean isHorizontalGraph() {
+			return false;
 		}
 	};
 
@@ -49,15 +53,15 @@ public abstract class DataProvider {
 			return "speed";
 		}
 
-		public double getMaxValue(Track track) {
+		public double getMaxValue(final Track track) {
 			return track.getMaxSpeed();
 		}
 
-		public double getMinValue(Track track) {
+		public double getMinValue(final Track track) {
 			return 0d;
 		}
 
-		public double getValue(TrackPoint point) {
+		public double getValue(final TrackPoint point) {
 			return point.getSpeed();
 		}
 
@@ -66,6 +70,9 @@ public abstract class DataProvider {
 			return 1 / 3.6d;
 		}
 
+		public boolean isHorizontalGraph() {
+			return true;
+		}
 	};
 
 	public static final DataProvider HEARTRATE = new DataProvider() {
@@ -73,15 +80,15 @@ public abstract class DataProvider {
 			return "heartRate";
 		}
 
-		public double getMaxValue(Track track) {
+		public double getMaxValue(final Track track) {
 			return 220d;
 		}
 
-		public double getMinValue(Track track) {
+		public double getMinValue(final Track track) {
 			return 0d;
 		}
 
-		public double getValue(TrackPoint point) {
+		public double getValue(final TrackPoint point) {
 			return point.getHeartRate();
 		}
 
@@ -89,6 +96,9 @@ public abstract class DataProvider {
 			return 5;
 		}
 
+		public boolean isHorizontalGraph() {
+			return true;
+		}
 	};
 
 	public static final DataProvider ELEVATION = new DataProvider() {
@@ -96,15 +106,15 @@ public abstract class DataProvider {
 			return "elevation";
 		}
 
-		public double getMaxValue(Track track) {
+		public double getMaxValue(final Track track) {
 			return track.getMaxElevation();
 		}
 
-		public double getMinValue(Track track) {
+		public double getMinValue(final Track track) {
 			return track.getMinElevation();
 		}
 
-		public double getValue(TrackPoint point) {
+		public double getValue(final TrackPoint point) {
 			return point.getElevation();
 		}
 
@@ -113,6 +123,9 @@ public abstract class DataProvider {
 			return 1;
 		}
 
+		public boolean isHorizontalGraph() {
+			return true;
+		}
 	};
 
 	public static final DataProvider LONGITUDE = new DataProvider() {
@@ -120,21 +133,25 @@ public abstract class DataProvider {
 			return "longitude";
 		}
 
-		public double getMaxValue(Track track) {
+		public double getMaxValue(final Track track) {
 			return track.getMaxLongitude();
 		}
 
-		public double getMinValue(Track track) {
+		public double getMinValue(final Track track) {
 			return track.getMinLongitude();
 		}
 
-		public double getValue(TrackPoint point) {
+		public double getValue(final TrackPoint point) {
 			return point.getLongitude();
 		}
 
 		public double getSmallDelta() {
 			// 0.25 seconds should be fine
 			return (1 / 60) / 4;
+		}
+
+		public boolean isHorizontalGraph() {
+			return false;
 		}
 	};
 
@@ -143,21 +160,25 @@ public abstract class DataProvider {
 			return "latitude";
 		}
 
-		public double getMaxValue(Track track) {
+		public double getMaxValue(final Track track) {
 			return track.getMaxLatitude();
 		}
 
-		public double getMinValue(Track track) {
+		public double getMinValue(final Track track) {
 			return track.getMinLatitude();
 		}
 
-		public double getValue(TrackPoint point) {
+		public double getValue(final TrackPoint point) {
 			return point.getLatitude();
 		}
 
 		public double getSmallDelta() {
 			// 0.25 seconds should be fine
 			return (1 / 60) / 4;
+		}
+
+		public boolean isHorizontalGraph() {
+			return false;
 		}
 	};
 
@@ -187,4 +208,11 @@ public abstract class DataProvider {
 	 * similar constraints.
 	 */
 	public abstract double getSmallDelta();
+
+	/**
+	 * An horizontal graph will be smoothed by averaging the values.
+	 * 
+	 * @return true for horizontal graph
+	 */
+	public abstract boolean isHorizontalGraph();
 }

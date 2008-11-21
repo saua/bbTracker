@@ -162,7 +162,6 @@ public abstract class PlotterTile extends Tile {
 		if (track != null) {
 			resetScale();
 			updateScale(track);
-			updateScale(manager.getExtraTrack());
 			onScaleChanged();
 		}
 	}
@@ -173,7 +172,7 @@ public abstract class PlotterTile extends Tile {
 	}
 
 	public void stateChanged(final int newState) {
-		// do nothing
+		updateScale();
 	}
 
 	private boolean updateScale(final Track track) {

@@ -62,22 +62,41 @@ public class TrackPlotter {
 		int prevX = -1;
 		int prevY = -1;
 		final Enumeration segments = track.getSegments();
+		final boolean doAverage = yData.isHorizontalGraph();
 		while (segments.hasMoreElements()) {
 			final TrackSegment segment = (TrackSegment) segments.nextElement();
 			final Enumeration points = segment.getPoints();
 			boolean newSegment = true;
+			int sumY = 0;
+			int nPoints = 0;
 			while (points.hasMoreElements()) {
 				final TrackPoint point = (TrackPoint) points.nextElement();
 				final double xValue = xData.getValue(point);
 				final double yValue = yData.getValue(point);
 				final int x = offsetX + xAxis.getPosition(xValue);
 				final int y = height - (offsetY + yAxis.getPosition(yValue));
+				int paintY = y;
+				boolean skip = false;
+				if (doAverage) {
+					if (x == prevX) {
+						sumY += y;
+						++nPoints;
+						skip = true;
+					} else {
+						if (nPoints > 0) {
+							paintY = sumY / nPoints;
+						}
+						nPoints = 0;
+						sumY = 0;
+					}
+				}
+				if (!skip) {
+					paintConnection(g, prevPoint, prevX, prevY, point, x, paintY, newSegment);
+					prevPoint = point;
+					prevX = x;
+					prevY = paintY;
+				}
 
-				paintConnection(g, prevPoint, prevX, prevY, point, x, y, newSegment);
-
-				prevPoint = point;
-				prevX = x;
-				prevY = y;
 				newSegment = false;
 			}
 		}
@@ -87,9 +106,9 @@ public class TrackPlotter {
 	/**
 	 * Draws a connection between two points. The first time this method is
 	 * called for any given redraw operation <code>point1</code> will be null
-	 * (and <code>x1</code> and <code>y1</code> will be -1). The last time
-	 * it is called the same is true for <code>point2</code>, <code>x2</code>
-	 * and <code>y2</code>.
+	 * (and <code>x1</code> and <code>y1</code> will be -1). The last time it is
+	 * called the same is true for <code>point2</code>, <code>x2</code> and
+	 * <code>y2</code>.
 	 * 
 	 * This is so that every point will always occur once in position 1 and once
 	 * in position 2.
