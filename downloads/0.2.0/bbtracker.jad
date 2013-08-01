@@ -1,0 +1,9 @@
+MIDlet-1: bbTracker,bbtracker.png,org.bbtracker.mobile.BBTracker
+MIDlet-Jar-Size: 59912
+MIDlet-Jar-URL: bbtracker.jar
+MIDlet-Name: bbTracker
+MIDlet-Permissions: javax.microedition.location.Location, javax.microedition.location.Orientation, javax.microedition.io.Connector.file.read, javax.microedition.io.Connector.file.write
+MIDlet-Vendor: Joachim Sauer
+MIDlet-Version: 0.2.0
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.0

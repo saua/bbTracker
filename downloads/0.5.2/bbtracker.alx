@@ -1,0 +1,13 @@
+
+			<loader version="1.0">
+			<application id="bbTracker">
+				<name>bbTracker </name>
+				<description>bbTracker - GPS tracking for smartphones</description>
+				<version>0.5.2</version>
+				<vendor>Joachim Sauer</vendor>
+				<copyright>Copyright 2007 by Joachim Sauer</copyright>
+				<fileset Java="1.0">
+					<files>bbtracker.cod</files>
+				</fileset>
+			</application>
+		</loader>
