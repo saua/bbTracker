@@ -48,5 +48,24 @@ $(document).ready(function(){
     $(window).scrollTop(0);
     return false;
   })
+
+  ga(function() {
+    var filetypes = /\.(jad|jar|cod|alx)$/i;
+    var versionRE = /\/(([0-9]+.)+[0-9]+)\//;
+    $('a').each(function() {
+      var a = $(this);
+      var href = a.attr('href');
+      if (href && href.search(filetypes) != -1) {
+        a.click(function() {
+          var extension = /[^.]+$/.exec(href)[0];
+          var version = href.match(versionRE)[1];
+          ga('send', 'event', 'download', 'download-' + extension, version, {
+            'hitCallback': function() { location.href = href; }
+          });
+          return false;
+        });
+      }
+    });
+  });
 });
 })(jQuery)
